@@ -2,12 +2,15 @@ using System;
 
 namespace DroneLab.Physics
 {
-    // Test controller allocator: four parallel +Y rotors only. Physics itself accepts arbitrary rotors.
+    // Four parallel +Y rotors only. Physics itself accepts arbitrary rotors.
     // A * thrusts = [collective_N, torqueX_Nm, torqueY_Nm, torqueZ_Nm].
     public sealed class QuadAllocator
     {
         private readonly double[,] inverse=new double[4,4];
         private readonly RuntimeDroneParameters p;
+        public double TorqueScale { get; private set; } = 1;
+        public double AchievedCollective { get; private set; }
+        private double collectiveCapacity=double.PositiveInfinity;
         public QuadAllocator(RuntimeDroneParameters parameters)
         {
             p=parameters;
@@ -31,22 +34,33 @@ namespace DroneLab.Physics
                 { double f=a[row,col]; for(int k=0;k<8;k++) a[row,k]-=f*a[col,k]; }
             }
             for(int i=0;i<4;i++) for(int j=0;j<4;j++) inverse[i,j]=a[i,j+4];
+            for(int i=0;i<4;i++)
+            {
+                if(inverse[i,0]<=0) throw new ArgumentException("Rotor layout cannot produce positive collective with zero torque.");
+                collectiveCapacity=Math.Min(collectiveCapacity,p.Rotors[i].MaxThrust/inverse[i,0]);
+            }
         }
-        // Scaling the entire requested wrench preserves its proportions at upper saturation.
-        // Negative thrust clipping loses authority; surfaced to telemetry, never hidden.
+        // Preserve collective first; scale all requested torque axes together to fit motor bounds.
+        // No negative-thrust clipping that accidentally raises collective during a yaw step.
         public bool Allocate(double collective,DVector3 torque,double[] commands)
         {
             if (commands == null || commands.Length != 4) throw new ArgumentException("Four output commands required.");
-            bool saturated=false; double scale=1;
+            if(double.IsNaN(collective) || double.IsInfinity(collective) ||
+                double.IsNaN(torque.Length) || double.IsInfinity(torque.Length)) throw new ArgumentException("Finite wrench required.");
+            AchievedCollective=PhysicsMath.Clamp(collective,0,collectiveCapacity);
+            TorqueScale=1;
             for(int i=0;i<4;i++)
             {
-                double thrust=inverse[i,0]*collective+inverse[i,1]*torque.X+inverse[i,2]*torque.Y+inverse[i,3]*torque.Z;
-                if(thrust<0) saturated=true;
-                commands[i]=Math.Max(0,thrust)/p.Rotors[i].MaxThrust;
-                scale=Math.Max(scale,commands[i]);
+                double baseline=inverse[i,0]*AchievedCollective;
+                double delta=inverse[i,1]*torque.X+inverse[i,2]*torque.Y+inverse[i,3]*torque.Z;
+                if(delta>0) TorqueScale=Math.Min(TorqueScale,(p.Rotors[i].MaxThrust-baseline)/delta);
+                else if(delta<0) TorqueScale=Math.Min(TorqueScale,-baseline/delta);
+                commands[i]=delta;
             }
-            for(int i=0;i<4;i++) commands[i]=Math.Sqrt(commands[i]/scale);
-            return saturated || scale>1;
+            TorqueScale=PhysicsMath.Clamp(TorqueScale,0,1);
+            for(int i=0;i<4;i++) commands[i]=Math.Sqrt(PhysicsMath.Clamp(
+                (inverse[i,0]*AchievedCollective+TorqueScale*commands[i])/p.Rotors[i].MaxThrust,0,1));
+            return TorqueScale<1-1e-9 || Math.Abs(AchievedCollective-collective)>1e-9;
         }
     }
 }

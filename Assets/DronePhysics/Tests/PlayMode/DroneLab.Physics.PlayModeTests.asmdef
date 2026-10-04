@@ -2,7 +2,8 @@
   "name": "DroneLab.Physics.PlayModeTests",
   "references": [
     "DroneLab.Physics",
-    "DroneLab.Simulation"
+    "DroneLab.Simulation",
+    "Unity.InputSystem"
   ],
   "optionalUnityReferences": [
     "TestAssemblies"

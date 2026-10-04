@@ -72,5 +72,38 @@ namespace DroneLab.Physics.Tests
             Assert.That(physics.Body.linearVelocity.magnitude,Is.LessThan(0.1f));
             Assert.That(Mathf.Abs(physics.Body.position.y-100),Is.LessThan(0.2f));
         }
+        [UnityTest] public IEnumerator LeavingAltitudeHoldWithZeroThrottleSpinsDownEveryMotor()
+        {
+            yield return StartHover(); pilot.altitudeHold=false; pilot.SetTestInput(0,0,0,0);
+            for(int i=0;i<150;i++) yield return new WaitForFixedUpdate();
+            foreach(double omega in physics.Omega) Assert.That(omega,Is.LessThan(0.001));
+            Assert.That(physics.Body.linearVelocity.y,Is.LessThan(-5));
+        }
+        [UnityTest] public IEnumerator AcroStopsRotationWithoutLevelingThenAngleLevels()
+        {
+            yield return StartHover(); pilot.autoLevel=false; pilot.SetTestInput(0.25f,0,0,0);
+            for(int i=0;i<60;i++) yield return new WaitForFixedUpdate();
+            pilot.SetTestInput(0,0,0,0);
+            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            Assert.That(Vector3.Angle(go.transform.up,Vector3.up),Is.GreaterThan(5));
+            Assert.That(physics.Body.angularVelocity.magnitude,Is.LessThan(0.05f));
+            pilot.autoLevel=true;
+            for(int i=0;i<400;i++) yield return new WaitForFixedUpdate();
+            Assert.That(Vector3.Angle(go.transform.up,Vector3.up),Is.LessThan(2));
+        }
+        [UnityTest] public IEnumerator EnteringAltitudeHoldBlendsCollectiveAndDoesNotKickYaw()
+        {
+            yield return StartHover();
+            pilot.altitudeHold=false; pilot.SetTestInput(0,0,0,1);
+            for(int i=0;i<60;i++) yield return new WaitForFixedUpdate();
+            double before=0; foreach(double t in physics.ThrustN) before+=t;
+            pilot.altitudeHold=true; pilot.SetTestInput(0,0,0,0);
+            yield return new WaitForFixedUpdate();
+            double after=0; foreach(double t in physics.ThrustN) after+=t;
+            Assert.That(System.Math.Abs(after-before),Is.LessThan(0.5));
+            Assert.That(pilot.RequestedTorqueLocal.magnitude,Is.LessThan(0.01f));
+            for(int i=0;i<600;i++) yield return new WaitForFixedUpdate();
+            Assert.That(Mathf.Abs(physics.Body.linearVelocity.y),Is.LessThan(0.2f));
+        }
     }
 }
