@@ -10,6 +10,7 @@ Unity UAV simulation laboratory. Project version: Unity 6000.3.25f1, HDRP.
 - [Полный реестр параметров JSON](Docs/Physics/PARAMETERS.md)
 - [План следующих этапов](Docs/Physics/ROADMAP.md)
 - [Фактически выполненные проверки](Docs/Physics/VALIDATION.md)
+- [Метровые ориентиры и поведение RPM](Docs/Physics/BEHAVIOR_BASELINE.md)
 
 Контракт: `Tools/generate_physics_contract.py`. После его изменения выполнить:
 

@@ -112,6 +112,11 @@ namespace DroneLab.Simulation
         {
             if(!drawForces || !IsReady) return;
             Gizmos.color=Color.yellow; Gizmos.DrawSphere(Body.worldCenterOfMass,0.015f);
+            var previousMatrix=Gizmos.matrix;
+            Gizmos.matrix=transform.localToWorldMatrix;
+            Gizmos.color=Color.magenta;
+            Gizmos.DrawWireCube(ToUnity(Parameters.CenterOfMass),ToUnity(Parameters.Dimensions));
+            Gizmos.matrix=previousMatrix;
             for(int i=0;i<Parameters.Rotors.Count;i++)
             {
                 var r=Parameters.Rotors[i]; var pos=transform.TransformPoint(ToUnity(r.Position));

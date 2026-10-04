@@ -21,7 +21,10 @@ namespace DroneLab.Simulation
         public float verticalVelocityGain = 3;
         public float climbSpeedMps = 1.5f;
         public bool showTelemetry = true;
+        public bool readKeyboard = true;
         public bool Saturated { get; private set; }
+        public Vector3 DesiredAngularRateLocal { get; private set; }
+        public Vector3 RequestedTorqueLocal { get; private set; }
         private DronePhysicsBody physicsBody;
         private QuadAllocator allocator;
         private readonly double[] commands=new double[4];
@@ -42,6 +45,7 @@ namespace DroneLab.Simulation
         }
         private void Update()
         {
+            if(!readKeyboard) return;
             right=forward=yaw=vertical=0;
             var kb=Keyboard.current;
             if(kb == null || !Application.isFocused) return;
@@ -64,12 +68,18 @@ namespace DroneLab.Simulation
                 targetAltitude=startPosition.y;
             }
         }
+        // Development/test input only. Disable Read Keyboard before supplying input.
+        public void SetTestInput(float rollInput,float pitchInput,float yawInput,float climbInput)
+        {
+            float Valid(float value) => float.IsNaN(value) || float.IsInfinity(value) ? 0 : Mathf.Clamp(value,-1,1);
+            right=Valid(rollInput); forward=Valid(pitchInput); yaw=Valid(yawInput); vertical=Valid(climbInput);
+        }
         private void FixedUpdate()
         {
             if(allocator == null || !physicsBody.IsReady) return;
             var body=physicsBody.Body; var p=physicsBody.Parameters;
             if(altitudeHold != previousAltitudeHold) { targetAltitude=body.position.y; previousAltitudeHold=altitudeHold; }
-            if(!physicsBody.Armed) { targetAltitude=body.position.y; return; }
+            if(!physicsBody.Armed) { targetAltitude=body.position.y; DesiredAngularRateLocal=RequestedTorqueLocal=Vector3.zero; Saturated=false; return; }
             float upright=Vector3.Dot(transform.up,Vector3.up);
             double collective;
             if(altitudeHold)
@@ -82,7 +92,7 @@ namespace DroneLab.Simulation
             }
             else collective=vertical>0 ? p.MaxTotalThrust*manualCollectiveFraction : 0;
             // No hidden motor floor when manual throttle is released, even with auto-level enabled.
-            if(collective<=0) { for(int i=0;i<4;i++) physicsBody.SetMotorCommand(i,0); Saturated=false; return; }
+            if(collective<=0) { for(int i=0;i<4;i++) physicsBody.SetMotorCommand(i,0); Saturated=false; DesiredAngularRateLocal=RequestedTorqueLocal=Vector3.zero; return; }
             Vector3 rate=transform.InverseTransformDirection(body.angularVelocity);
             Vector3 desiredRate;
             if(autoLevel)
@@ -96,11 +106,14 @@ namespace DroneLab.Simulation
                 desiredRate.y=yaw*yawRateDegrees*Mathf.Deg2Rad;
             }
             else desiredRate=new Vector3(forward*maxRateDegrees,yaw*yawRateDegrees,-right*maxRateDegrees)*Mathf.Deg2Rad;
-            Vector3 acceleration=(desiredRate-rate)*rateGain;
+            DesiredAngularRateLocal=desiredRate;
+            Vector3 acceleration=DronePhysicsBody.ToUnity(PilotMath.RateAcceleration(
+                DronePhysicsBody.FromUnity(desiredRate),DronePhysicsBody.FromUnity(rate),rateGain));
             // Multiply by full principal-axis inertia; do not assume tensor axes match body axes.
             Quaternion axes=body.inertiaTensorRotation;
             Vector3 MultiplyInertia(Vector3 v) => axes*Vector3.Scale(body.inertiaTensor,Quaternion.Inverse(axes)*v);
             Vector3 torque=MultiplyInertia(acceleration)+Vector3.Cross(rate,MultiplyInertia(rate));
+            RequestedTorqueLocal=torque;
             Saturated=allocator.Allocate(collective,DronePhysicsBody.FromUnity(torque),commands);
             for(int i=0;i<4;i++) physicsBody.SetMotorCommand(i,commands[i]);
         }
@@ -110,12 +123,22 @@ namespace DroneLab.Simulation
         {
             if(!showTelemetry || physicsBody == null || !physicsBody.IsReady) return;
             var p=physicsBody.Parameters;
-            GUILayout.BeginArea(new Rect(12,12,430,380),GUI.skin.box);
+            Vector3 velocity=physicsBody.Body.linearVelocity;
+            Vector3 rate=transform.InverseTransformDirection(physicsBody.Body.angularVelocity)*Mathf.Rad2Deg;
+            double minRpm=double.MaxValue,maxRpm=0;
+            foreach(double omega in physicsBody.Omega)
+            { double rpm=PhysicsMath.OmegaToRpm(omega); minRpm=Math.Min(minRpm,rpm); maxRpm=Math.Max(maxRpm,rpm); }
+            float tilt=Mathf.Acos(Mathf.Clamp(Vector3.Dot(transform.up,Vector3.up),-1,1))*Mathf.Rad2Deg;
+            GUILayout.BeginArea(new Rect(12,12,510,430),GUI.skin.box);
             GUILayout.Label($"DroneLab | {(physicsBody.Armed?"ARMED":"DISARMED")} | {(autoLevel?"ANGLE":"RATE")} | Alt hold: {altitudeHold}");
             GUILayout.Label("F arm | WASD tilt | Q/E yaw | Space/Ctrl lift\nZ level | H altitude hold | Backspace reset");
             GUILayout.Label($"Mass {p.Mass:F2} kg | T/W {p.ThrustToWeight:F2} | Saturation {Saturated}");
-            GUILayout.Label($"Height {transform.position.y:F2} m | Velocity {physicsBody.Body.linearVelocity}\nAir velocity {physicsBody.AirVelocity} | Drag {physicsBody.DragForce}");
-            for(int i=0;i<p.Rotors.Count;i++) GUILayout.Label($"{p.Rotors[i].Id}: {PhysicsMath.OmegaToRpm(physicsBody.Omega[i]):F0} RPM | {physicsBody.ThrustN[i]:F2} N | {physicsBody.ReactionTorqueNm[i]:F3} Nm");
+            GUILayout.Label($"Speed {velocity.magnitude:F2} m/s = {velocity.magnitude*3.6f:F1} km/h | Horizontal {new Vector2(velocity.x,velocity.z).magnitude:F2} m/s");
+            GUILayout.Label($"Vertical {velocity.y:F2} m/s | World Y {transform.position.y:F2} m | From reset {Vector3.Distance(startPosition,transform.position):F2} m");
+            GUILayout.Label($"Tilt {tilt:F1} deg | Yaw {rate.y:F1} / target {DesiredAngularRateLocal.y*Mathf.Rad2Deg:F1} deg/s");
+            GUILayout.Label($"RPM spread {maxRpm-minRpm:F2} | Torque local [{RequestedTorqueLocal.x:F4}, {RequestedTorqueLocal.y:F4}, {RequestedTorqueLocal.z:F4}] Nm");
+            GUILayout.Label($"Profile dimensions {p.Dimensions.X:F2} x {p.Dimensions.Y:F2} x {p.Dimensions.Z:F2} m | Air velocity {physicsBody.AirVelocity}");
+            for(int i=0;i<p.Rotors.Count;i++) GUILayout.Label($"{p.Rotors[i].Id}: {PhysicsMath.OmegaToRpm(physicsBody.Omega[i]):F1} RPM | {physicsBody.ThrustN[i]:F2} N | {physicsBody.ReactionTorqueNm[i]:F4} Nm");
             GUILayout.EndArea();
         }
     }

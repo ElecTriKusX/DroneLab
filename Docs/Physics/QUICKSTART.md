@@ -102,3 +102,6 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
 ```
 
 Результаты текущей проверки и её ограничения записаны в `VALIDATION.md`.
+
+Метровые ориентиры и проверка отклика: [BEHAVIOR_BASELINE.md](BEHAVIOR_BASELINE.md).
+После выделения дрона можно выполнить **DroneLab → Create Scale References (meters)**.
