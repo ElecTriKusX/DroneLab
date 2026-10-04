@@ -35,6 +35,10 @@
 ExportedObj/
 .consulo/
 *.csproj
+!Tests/DotNet/*.csproj
+Tests/DotNet/bin/
+Tests/DotNet/obj/
+Tools/__pycache__/
 *.unityproj
 *.sln
 *.suo

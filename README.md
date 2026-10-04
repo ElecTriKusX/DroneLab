@@ -1,0 +1,22 @@
+# DroneLab
+
+Unity UAV simulation laboratory. Project version: Unity 6000.3.25f1, HDRP.
+
+Начат модуль параметризованной физики мультироторного дрона. Чистое математическое
+ядро отделено от Unity Rigidbody, клавиатуры и редактора.
+
+- [Запустить тестовый дрон на Terrain](Docs/Physics/QUICKSTART.md)
+- [Принятая физика, формулы, ограничения](Docs/Physics/SPECIFICATION.md)
+- [Полный реестр параметров JSON](Docs/Physics/PARAMETERS.md)
+- [План следующих этапов](Docs/Physics/ROADMAP.md)
+- [Фактически выполненные проверки](Docs/Physics/VALIDATION.md)
+
+Контракт: `Tools/generate_physics_contract.py`. После его изменения выполнить:
+
+```bash
+python Tools/generate_physics_contract.py
+dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
+```
+
+Первый стенд использует синтетический TestQuad 1 kg. Расширенные эффекты сохранены
+в контракте и roadmap; включение ещё не реализованных моделей явно отклоняется.

@@ -1,0 +1,10 @@
+{
+  "name": "DroneLab.Physics.PlayModeTests",
+  "references": [
+    "DroneLab.Physics",
+    "DroneLab.Simulation"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

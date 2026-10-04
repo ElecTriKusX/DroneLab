@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dronelab:environment-profile:1.0.0",
+  "$ref": "#/$defs/EnvironmentProfile",
+  "$defs": {
+    "EnvironmentProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "enum": [
+            "1.0.0"
+          ]
+        },
+        "gravityMps2": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "airDensityMode": {
+          "type": "string",
+          "enum": [
+            "Constant",
+            "StandardAtmosphere"
+          ]
+        },
+        "airDensityKgM3": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "temperatureK": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "pressurePa": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "altitudeM": {
+          "type": "number"
+        },
+        "windMode": {
+          "type": "string",
+          "enum": [
+            "None",
+            "Constant",
+            "Gust",
+            "Turbulence",
+            "CustomField"
+          ]
+        },
+        "windVelocityWorldMps": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "gustEnabled": {
+          "type": "boolean"
+        },
+        "gustIntensityMps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "gustTimeScaleS": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "turbulenceSeed": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "gravityMps2",
+        "airDensityMode",
+        "airDensityKgM3",
+        "windMode",
+        "windVelocityWorldMps",
+        "gustEnabled"
+      ]
+    }
+  }
+}
