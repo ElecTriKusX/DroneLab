@@ -127,3 +127,24 @@ Vhorizontal≈0.49 m/s не противоречит отсутствию positi
 Контракт 1.0.0 не менялся. Flapping/induced/gyroscopic modules по-прежнему отклоняются.
 Ground gain не корректирует Q/current; исходные характеристики должны быть free-air.
 Модель и click-by-click инструкция — [ROTOR_EFFECTS.md](ROTOR_EFFECTS.md).
+
+## Проверка этапа 5 у пользователя и исправление теста — 2026-10-05
+
+Пользователь сообщил: все EditMode прошли; в PlayMode повторяемо не прошёл только
+WindCreatesSeparateBodyAndRotorDragForces. Unity верно выдала 0.673749983 N, но тест
+ожидал 0.6125 N: в ожидаемой величине был пропущен CdX=1.1 из quad_test_rotor_drag.json.
+Правильная независимая оценка корпуса: 0.5 × 1.225 × 1.1 × 0.04 × 5² = 0.67375 N.
+Rotor drag отдельно составляет 4 × 0.0001 × (5000 × 2π/60) × 5 ≈ 1.047197551 N.
+Исправлено только ожидание PlayMode; допуск 1e-6 сохранён. Физика и профиль не менялись.
+
+Добавлен EditMode WindFixtureProducesIndependentBodyAndRotorDrag: загружает тот же
+профиль/ветер, проверяет обе силы, их направления и отсутствие суммарного момента.
+Фактический запуск Core + EditMode через Roslyn/NUnitLite: **166 passed, 0 failed**.
+Syntax check всех 45 C# файлов: 0 ошибок. Исправленный PlayMode здесь не запускался;
+необходим повтор этого теста в Unity у пользователя.
+
+На двух скриншотах H активен, Saturation=false, сумма тяги≈9.81 N, вертикальная
+скорость≈0. При высоте роторов 0.850 m ground gain округляется до 1.000; при 0.152 m
+составляет 1.011, RPM немного ниже при той же тяге. Это согласуется с R=0.0635 m
+и формулой ground effect. Новый Assets/drone_rotor_effects.json принят текущим
+loader и QuadAllocator: 4 ротора, 13 LUT, T/W=4.

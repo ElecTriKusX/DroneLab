@@ -118,6 +118,21 @@ namespace DroneLab.Physics.Tests
             Assert.That(RotorAerodynamics.Drag(n*5,n,500,.0001).Length,Is.LessThan(1e-12));
             var f=RotorAerodynamics.Drag(new DVector3(4,-1,2),n,500,.0001); Assert.That(Math.Abs(DVector3.Dot(f,n)),Is.LessThan(1e-12));
         }
+        [Test] public void WindFixtureProducesIndependentBodyAndRotorDrag()
+        {
+            var result=ProfileLoader.Load(Read("quad_test_rotor_drag"),Read("environment_wind"),Read("drone-profile.schema"),Read("environment-profile.schema"));
+            Assert.That(result.Success,Is.True,string.Join("\n",result.Issues)); var p=result.Parameters;
+            var airVelocity=p.Wind*-1; // Stationary body in +X wind, no rotation.
+            var body=BodyAerodynamics.Evaluate(p,airVelocity,default);
+            double omega=PhysicsMath.RpmToOmega(5000);
+            var rotors=RotorAerodynamics.DragWrench(p,new[]{omega,omega,omega,omega},airVelocity,default);
+            // Independent analytical baselines for this fixture, including its CdX=1.1.
+            double expectedBodyDrag=.5*1.225*1.1*.04*5*5;
+            double expectedRotorDrag=4*.0001*omega*5;
+            Assert.That((body.Force-new DVector3(expectedBodyDrag,0,0)).Length,Is.LessThan(1e-12));
+            Assert.That((rotors.Force-new DVector3(expectedRotorDrag,0,0)).Length,Is.LessThan(1e-12));
+            Assert.That(body.Torque.Length+rotors.Torque.Length,Is.LessThan(1e-12));
+        }
         [Test] public void YawDragOpposesRotationWithoutSymmetricTranslation()
         {
             var p=Parameters(); var w=RotorAerodynamics.DragWrench(p,new[]{500.0,500,500,500},default,new DVector3(0,2,0));

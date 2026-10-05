@@ -92,8 +92,11 @@ namespace DroneLab.Physics.Tests
         [UnityTest] public IEnumerator WindCreatesSeparateBodyAndRotorDragForces()
         {
             Create("quad_test_rotor_drag",environment:"environment_wind"); Step(); var p=rig.Physics;
-            double expected=4*.0001*PhysicsMath.RpmToOmega(5000)*5;
-            Assert.That(p.RotorDragForce.x,Is.EqualTo(expected).Within(1e-6)); Assert.That(p.DragForce.x,Is.EqualTo(.6125).Within(1e-6));
+            double expectedRotorDrag=4*.0001*PhysicsMath.RpmToOmega(5000)*5;
+            // Axis fixture: rho=1.225 kg/m³, CdX=1.1, areaX=.04 m², windX=5 m/s.
+            double expectedBodyDrag=.5*1.225*1.1*.04*5*5;
+            Assert.That(p.RotorDragForce.x,Is.EqualTo(expectedRotorDrag).Within(1e-6));
+            Assert.That(p.DragForce.x,Is.EqualTo(expectedBodyDrag).Within(1e-6));
             Assert.That(p.Body.linearVelocity.x,Is.GreaterThan(0)); Assert.That(p.RotorDragTorque.magnitude,Is.LessThan(1e-6)); yield break;
         }
         [UnityTest] public IEnumerator YawRotorDragBrakesRotationWithoutAddingTranslation()
