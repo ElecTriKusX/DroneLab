@@ -148,3 +148,45 @@ Syntax check всех 45 C# файлов: 0 ошибок. Исправленны
 составляет 1.011, RPM немного ниже при той же тяге. Это согласуется с R=0.0635 m
 и формулой ground effect. Новый Assets/drone_rotor_effects.json принят текущим
 loader и QuadAllocator: 4 ротора, 13 LUT, T/W=4.
+
+## Подтверждение этапа 5, input isolation и этап 6 — 2026-10-05
+
+Пользователь сообщил, что после исправления ожидаемого Cd все тесты прошли.
+Однако KeyboardMapsSignsActionsAndZeroThrottleOnRelease и
+GamepadMapsTwoSticksTriggerAndModeButtons иногда проваливались по bool действий,
+после повторов проходили. Поэтому input-тесты переведены с общей Input System state
+на официальный InputTestFixture: отдельный runtime, ручной update, полное восстановление
+состояния и предварительная регистрация wasPressedThisFrame свежих ButtonControl.
+Документация Unity допускает пропуск быстрых нажатий при первом чтении этого свойства;
+это согласуется со сбоем, но здесь исходный сбой и исправление в Unity не воспроизведены.
+Physics/Rigidbody тесты уже используют отдельные local physics scenes; новая сцена
+вручную не нужна. Ссылки на первичные источники и TestFramework setup — POWER_SYSTEM.md.
+
+Первый новый скриншот: rotor height≈0.035 m, gain=1.206, суммарная тяга≈7.00 N,
+vy=0, WorldY≈0.03 m. Это контакт с землёй: опора поддерживает часть веса, не свободное
+висение. Второй: height≈0.167 m, gain=1.009, сумма T≈9.81 N, vy=0, RPM выше;
+согласуется со свободным висением с меньшим ground effect. Оба Saturation=false.
+
+| Проверка этапа 6 | Фактический результат |
+|---|---|
+| Roslyn C# 8 / .NET 8 / NUnitLite 3.14 / Newtonsoft 13.0.2 | **217 passed, 0 failed**; 51 новых случаев |
+| Simple Qω/efficiency, no-load loss; Electrical Kv/R/I0, back-EMF, ESC loss | Прошло против независимых формул |
+| Корень constant-power sag, R=0 / очень малое R, невозможная нагрузка | Прошло |
+| SOC/OCV, mAh, energy balance, отсутствие двойного подсчёта потерь | Прошло |
+| Battery/motor/ESC current, maxPower, low voltage, empty pack, residual charge bounds | Прошло |
+| Disarm, reset, disabled discharge, immutable snapshot, ошибочные настройки | Прошло |
+| Совместимость CtCq / RPM table, ток CSV отдельно; явный reject battery+map/curve | Прошло |
+| 500 случайных асимметричных команд на каждый режим | Ток/энергия/voltage/RPM/SOC bounds прошли |
+| SOC: постоянная и переменная OCV, 50/100/200 Hz | Прошло |
+| Altitude PID + allocator + motor lag + battery, оба режима, 50/100/200 Hz | Прошло: через 10 s высота в ±0.025 m, скорость <0.01 m/s |
+| JSON Schema Draft 2020-12 | Обе схемы и 17 профилей прошли, включая 3 профиля пользователя |
+| Пользовательский drone_rotor_effects.json + demo battery Simple / Electrical | Обе временные версии приняты текущим loader и QuadAllocator; исходный профиль сохранён |
+| Roslyn syntax всех 50 C# файлов | 0 syntax errors; не заменяет Unity-компиляцию |
+| 6 новых PowerRigidbodyTests (36 PlayMode случаев проекта всего) | Добавлены; здесь не запускались |
+| InputTestFixture повтор, Unity импорт/editor/полёт с батареей | Ожидается у пользователя |
+
+Контракт JSON 1.0.0 не менялся. Электрическая модель квазистационарная и не включает
+индуктивность, rotor kinetic energy, regen/thermal или нагрузку бортовой электроники.
+Governor ограничивает фактические RPM, а PID учитывает power limited для anti-windup.
+Ограничения battery+RPM/J map / efficiency curve фиксируются явно, не скрываются.
+Настройка и формулы — [POWER_SYSTEM.md](POWER_SYSTEM.md).

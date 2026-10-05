@@ -27,3 +27,5 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
 Характеристики винтов и CSV-импорт: [PROPELLER_PERFORMANCE.md](Docs/Physics/PROPELLER_PERFORMANCE.md).
 
 Ground effect и rotor drag: [ROTOR_EFFECTS.md](Docs/Physics/ROTOR_EFFECTS.md).
+
+Аккумулятор, ток, напряжение и ограничения моторов: [POWER_SYSTEM.md](Docs/Physics/POWER_SYSTEM.md).

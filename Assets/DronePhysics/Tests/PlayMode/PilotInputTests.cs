@@ -6,19 +6,19 @@ using UnityEngine.InputSystem.LowLevel;
 
 namespace DroneLab.Physics.Tests
 {
-    public sealed class PilotInputTests
+    public sealed class PilotInputTests : InputTestFixture
     {
-        private Keyboard keyboard, previousKeyboard;
-        private Gamepad gamepad, previousGamepad;
-        [SetUp] public void SetUp()
+        private Keyboard keyboard;
+        private Gamepad gamepad;
+        public override void Setup()
         {
-            previousKeyboard=Keyboard.current; previousGamepad=Gamepad.current;
+            base.Setup();
+            InputSystem.settings.updateMode=InputSettings.UpdateMode.ProcessEventsManually;
             keyboard=InputSystem.AddDevice<Keyboard>(); gamepad=InputSystem.AddDevice<Gamepad>();
-        }
-        [TearDown] public void TearDown()
-        {
-            InputSystem.RemoveDevice(keyboard); InputSystem.RemoveDevice(gamepad);
-            previousKeyboard?.MakeCurrent(); previousGamepad?.MakeCurrent();
+            InputSystem.Update();
+            // Register edge tracking on fresh ButtonControls before sending the first press.
+            DronePilotInput.Read(PilotDevice.Keyboard,0.38);
+            DronePilotInput.Read(PilotDevice.Gamepad,0.38);
         }
         [Test] public void KeyboardMapsSignsActionsAndZeroThrottleOnRelease()
         {
@@ -28,7 +28,10 @@ namespace DroneLab.Physics.Tests
             Assert.That(frame.Command.Yaw,Is.EqualTo(1)); Assert.That(frame.Command.Climb,Is.EqualTo(1));
             Assert.That(frame.Command.Throttle,Is.EqualTo(0.38)); Assert.That(frame.Arm,Is.True);
             InputSystem.QueueStateEvent(keyboard,new KeyboardState()); InputSystem.Update();
-            Assert.That(DronePilotInput.Read(PilotDevice.Keyboard,0.38).Command.Throttle,Is.Zero);
+            var released=DronePilotInput.Read(PilotDevice.Keyboard,0.38);
+            Assert.That(released.Command.Throttle,Is.Zero); Assert.That(released.Arm,Is.False);
+            InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.F)); InputSystem.Update();
+            Assert.That(DronePilotInput.Read(PilotDevice.Keyboard,0.38).Arm,Is.True);
         }
         [Test] public void GamepadMapsTwoSticksTriggerAndModeButtons()
         {
@@ -40,6 +43,10 @@ namespace DroneLab.Physics.Tests
             Assert.That(frame.Command.Roll,Is.LessThan(-0.5)); Assert.That(frame.Command.Pitch,Is.LessThan(-0.5));
             Assert.That(frame.Command.Yaw,Is.GreaterThan(0.5)); Assert.That(frame.Command.Climb,Is.GreaterThan(0.5));
             Assert.That(frame.Command.Throttle,Is.EqualTo(0.5).Within(1e-6));
+            InputSystem.Update();
+            var held=DronePilotInput.Read(PilotDevice.Gamepad,0.38);
+            Assert.That(held.Arm || held.Mode || held.Altitude,Is.False);
+            Assert.That(held.Command.Throttle,Is.EqualTo(0.5).Within(1e-6));
         }
     }
 }

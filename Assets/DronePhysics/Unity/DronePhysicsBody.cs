@@ -19,6 +19,7 @@ namespace DroneLab.Simulation
         public bool IsReady => Parameters != null;
         public bool Armed { get; private set; }
         public double[] Omega { get; private set; }
+        public PowerSystem Power { get; private set; }
         public double[] ThrustN { get; private set; }
         public double[] ReactionTorqueNm { get; private set; }
         public double[] AdvanceRatio { get; private set; }
@@ -35,7 +36,8 @@ namespace DroneLab.Simulation
         public double ProjectedAreaM2 { get; private set; }
         // Explicit stepping for isolated integration tests. Normal scenes use FixedUpdate.
         public bool AutomaticSimulation { get; set; } = true;
-        private double[] commands;
+        private double[] commands,candidateOmega;
+        private Vector3[] pointAirVelocities;
         private Vector3[] rotorPoints,rotorAxes,groundPoints;
         private bool[] groundHits;
         private readonly RotorGroundProbe groundProbe=new RotorGroundProbe();
@@ -50,7 +52,7 @@ namespace DroneLab.Simulation
         public bool Initialize(TextAsset drone,TextAsset environment)
         {
             if (Body == null) Body=GetComponent<Rigidbody>();
-            Parameters=null; Armed=false;
+            Parameters=null; Power=null; Armed=false;
             var ds=Resources.Load<TextAsset>("DronePhysics/drone-profile.schema");
             var es=Resources.Load<TextAsset>("DronePhysics/environment-profile.schema");
             if(drone == null || environment == null || ds == null || es == null)
@@ -78,10 +80,11 @@ namespace DroneLab.Simulation
             Body.interpolation=RigidbodyInterpolation.Interpolate;
             Body.collisionDetectionMode=CollisionDetectionMode.ContinuousDynamic;
             int count=Parameters.Rotors.Count;
-            commands=new double[count]; Omega=new double[count]; ThrustN=new double[count]; ReactionTorqueNm=new double[count];
+            commands=new double[count]; candidateOmega=new double[count]; pointAirVelocities=new Vector3[count]; Omega=new double[count]; ThrustN=new double[count]; ReactionTorqueNm=new double[count];
             AdvanceRatio=new double[count]; MeasuredCurrentA=new double?[count]; PerformanceClamped=new bool[count];
             GroundHeightM=new double[count]; GroundEffectMultiplier=new double[count]; RotorDragForceN=new Vector3[count];
             rotorPoints=new Vector3[count]; rotorAxes=new Vector3[count]; groundPoints=new Vector3[count]; groundHits=new bool[count];
+            Power=Parameters.Battery==null ? null : new PowerSystem(Parameters);
             ClearRotorEffects();
             if(Mathf.Abs(Time.fixedDeltaTime-0.01f)>1e-6f) Debug.LogWarning("DroneLab recommends Fixed Timestep = 0.01 s. No global setting was changed.",this);
             enabled=true;
@@ -109,7 +112,7 @@ namespace DroneLab.Simulation
         }
         public void ResetMotorState()
         {
-            SetArmed(false);
+            SetArmed(false); Power?.Reset();
             if(Omega == null) return;
             Array.Clear(Omega,0,Omega.Length); Array.Clear(ThrustN,0,ThrustN.Length); Array.Clear(ReactionTorqueNm,0,ReactionTorqueNm.Length);
             Array.Clear(AdvanceRatio,0,AdvanceRatio.Length); Array.Clear(MeasuredCurrentA,0,MeasuredCurrentA.Length); Array.Clear(PerformanceClamped,0,PerformanceClamped.Length); ClearRotorEffects();
@@ -127,13 +130,20 @@ namespace DroneLab.Simulation
                 {
                     var r=Parameters.Rotors[i];
                     double target=Armed && commands[i]>0 ? Math.Max(r.MinOmega,commands[i]*r.MaxOmega) : 0;
-                    Omega[i]=PhysicsMath.MotorStep(Omega[i],target,target>Omega[i] ? r.TauUp:r.TauDown,dt);
+                    candidateOmega[i]=PhysicsMath.MotorStep(Omega[i],target,target>Omega[i] ? r.TauUp:r.TauDown,dt);
                     Vector3 pointWorld=transform.TransformPoint(ToUnity(r.Position));
                     Vector3 axisWorld=transform.TransformDirection(ToUnity(r.Axis));
                     rotorPoints[i]=pointWorld; rotorAxes[i]=axisWorld;
                     var pointAirVelocity=Body.GetPointVelocity(pointWorld)-ToUnity(Parameters.Wind);
+                    pointAirVelocities[i]=pointAirVelocity;
+                }
+                if(Power!=null) Power.Resolve(candidateOmega,candidateOmega,dt,Armed);
+                for(int i=0;i<Parameters.Rotors.Count;i++)
+                {
+                    var r=Parameters.Rotors[i]; var pointWorld=rotorPoints[i]; var axisWorld=rotorAxes[i];
+                    var pointAirVelocity=pointAirVelocities[i];
                     double axial=Vector3.Dot(pointAirVelocity,axisWorld);
-                    var sample=r.Performance.Evaluate(Omega[i],axial);
+                    var sample=r.Performance.Evaluate(candidateOmega[i],axial);
                     if(Parameters.GroundEffect!=null && groundProbe.Sample(this,pointWorld,axisWorld,(float)(r.Diameter/2),groundLayers.value,out var hit))
                     {
                         groundHits[i]=true; groundPoints[i]=hit.point; GroundHeightM[i]=hit.distance;
@@ -143,14 +153,15 @@ namespace DroneLab.Simulation
                     ThrustN[i]=RotorAerodynamics.ThrustWithGroundEffect(sample.Thrust,GroundEffectMultiplier[i]);
                     ReactionTorqueNm[i]=r.ReactionSign*sample.Torque;
                     if(Parameters.RotorDrag)
-                        RotorDragForceN[i]=ToUnity(RotorAerodynamics.Drag(FromUnity(pointAirVelocity),FromUnity(axisWorld),Omega[i],r.RotorDragCoefficient));
+                        RotorDragForceN[i]=ToUnity(RotorAerodynamics.Drag(FromUnity(pointAirVelocity),FromUnity(axisWorld),candidateOmega[i],r.RotorDragCoefficient));
                     AdvanceRatio[i]=sample.AdvanceRatio; MeasuredCurrentA[i]=sample.Current; PerformanceClamped[i]=sample.Clamped;
                 }
             }
             catch(ArgumentOutOfRangeException ex)
             {
-                Parameters=null; ResetMotorState(); Fail("Propeller range rejected simulation step: "+ex.Message); return;
+                Parameters=null; ResetMotorState(); Fail("Physics/power query rejected simulation step: "+ex.Message); return;
             }
+            Array.Copy(candidateOmega,Omega,Omega.Length); Power?.Commit(dt);
             Body.AddForce(Vector3.down*(float)(Parameters.Mass*Parameters.Gravity),ForceMode.Force);
             for(int i=0;i<Parameters.Rotors.Count;i++)
             {

@@ -3,7 +3,8 @@
   "references": [
     "DroneLab.Physics",
     "DroneLab.Simulation",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.InputSystem.TestFramework"
   ],
   "optionalUnityReferences": [
     "TestAssemblies"

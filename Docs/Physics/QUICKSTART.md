@@ -112,3 +112,5 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
 Таблицы/карты винтов, CSV и проверка этапа 4: [PROPELLER_PERFORMANCE.md](PROPELLER_PERFORMANCE.md).
 
 Эффекты роторов и запуск на своей геометрии: [ROTOR_EFFECTS.md](ROTOR_EFFECTS.md).
+
+Энергетика, батарея и проверка этапа 6: [POWER_SYSTEM.md](POWER_SYSTEM.md).

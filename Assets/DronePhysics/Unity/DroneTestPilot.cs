@@ -112,7 +112,7 @@ namespace DroneLab.Simulation
                 previousAltitudeHold=altitudeHold; previousAutoLevel=autoLevel; return;
             }
             if(!previousArmed) { ResetControl(); targetAltitude=body.position.y; previousArmed=true; }
-            bool integrate=!Saturated;
+            bool integrate=!Saturated && !(physicsBody.Power?.Limited ?? false);
             if(altitudeHold!=previousAltitudeHold || autoLevel!=previousAutoLevel)
             {
                 controller.Reset(); integrate=false;
@@ -188,7 +188,7 @@ namespace DroneLab.Simulation
             foreach(double omega in physicsBody.Omega)
             { double rpm=PhysicsMath.OmegaToRpm(omega); minRpm=Math.Min(minRpm,rpm); maxRpm=Math.Max(maxRpm,rpm); }
             float tilt=Mathf.Acos(Mathf.Clamp(Vector3.Dot(transform.up,Vector3.up),-1,1))*Mathf.Rad2Deg;
-            GUILayout.BeginArea(new Rect(12,12,720,620),GUI.skin.box);
+            GUILayout.BeginArea(new Rect(12,12,720,700),GUI.skin.box);
             GUILayout.Label($"DroneLab | {(physicsBody.Armed?"ARMED":"DISARMED")} | {(autoLevel?"ANGLE":"ACRO")} | Alt hold: {altitudeHold}");
             GUILayout.Label($"Input {inputDevice} | throttle {input.Throttle:P0} | torque authority {allocator?.TorqueScale ?? 0:P0}");
             GUILayout.Label("F arm | WASD tilt | Q/E yaw | Space/Ctrl lift\nZ Angle/Acro | H altitude hold | Backspace reset");
@@ -202,10 +202,17 @@ namespace DroneLab.Simulation
             GUILayout.Label($"Body {p.DragModel} | silhouette {physicsBody.ProjectedAreaM2:F4} m² | drag {physicsBody.DragForce.magnitude:F3} N | aero torque {physicsBody.DragTorque.magnitude:F4} Nm");
             if(p.RotorDrag || p.GroundEffect!=null)
                 GUILayout.Label($"Rotor drag {physicsBody.RotorDragForce.magnitude:F3} N | rotor torque {physicsBody.RotorDragTorque.magnitude:F4} Nm | ground effect {(p.GroundEffect!=null ? "ON" : "OFF")}");
+            if(physicsBody.Power!=null)
+            {
+                var power=physicsBody.Power;
+                GUILayout.Label($"Battery {p.Battery.Mode} | SOC {power.Soc:P1} | OCV {power.OpenVoltage:F2} V | bus {power.TerminalVoltage:F2} V | {power.Current:F2} A");
+                GUILayout.Label($"Power {power.ElectricalPower:F1} W | shaft {power.MechanicalPower:F1} W | used {power.ConsumedAh*1000:F1} mAh | RPM authority {power.RpmScale:P0} | power limited {power.Limited}");
+            }
             if(p.Rotors[0].Performance.Model=="PerformanceMap") GUILayout.Label("Map: physics uses rotor-point axial flow; test pilot allocation uses static J=0 reference.");
             for(int i=0;i<p.Rotors.Count;i++)
             {
                 GUILayout.Label($"{p.Rotors[i].Id}: {PhysicsMath.OmegaToRpm(physicsBody.Omega[i]):F1} RPM | {physicsBody.ThrustN[i]:F2} N | {physicsBody.ReactionTorqueNm[i]:F4} Nm | I {physicsBody.MeasuredCurrentA[i]?.ToString("F2") ?? "—"} A | J {physicsBody.AdvanceRatio[i]:F2} | {(physicsBody.PerformanceClamped[i] ? "CLAMP" : "in range")}");
+                if(physicsBody.Power!=null) GUILayout.Label($"  {p.Rotors[i].Id} estimated bus current {physicsBody.Power.RotorCurrentA[i]:F2} A");
                 if(p.GroundEffect!=null) GUILayout.Label($"  {p.Rotors[i].Id} ground h {(double.IsPositiveInfinity(physicsBody.GroundHeightM[i]) ? "—" : physicsBody.GroundHeightM[i].ToString("F3"))} m | GE x{physicsBody.GroundEffectMultiplier[i]:F3}");
             }
             GUILayout.EndArea();

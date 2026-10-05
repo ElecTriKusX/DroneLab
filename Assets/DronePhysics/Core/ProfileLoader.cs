@@ -80,7 +80,7 @@ namespace DroneLab.Physics
             }
             var modules=p.physicsConfiguration.modules;
             foreach(var field in typeof(PhysicsModulesProfile).GetFields())
-                if (field.Name != "motorResponse" && field.Name != "bodyDrag" && field.Name != "windInteraction" && field.Name != "groundEffect" && field.Name != "rotorAerodynamics" && (bool)field.GetValue(modules))
+                if (field.Name != "motorResponse" && field.Name != "bodyDrag" && field.Name != "windInteraction" && field.Name != "groundEffect" && field.Name != "rotorAerodynamics" && field.Name != "batteryDischarge" && field.Name != "batteryVoltageSag" && field.Name != "motorElectrical" && (bool)field.GetValue(modules))
                     unsupported("physicsConfiguration.modules."+field.Name);
             if(modules.groundEffect)
             {
@@ -176,7 +176,9 @@ namespace DroneLab.Physics
                     }
                 }
             }
-            if (p.powerSystem.battery.mode != "None") unsupported("powerSystem.battery.mode");
+            foreach(var issue in PowerValidation.Check(p,json)) error(issue.Path,issue.Message);
+            if(p.powerSystem.battery.mode!="None")
+                r.Issues.Add(new ValidationIssue("powerSystem","Quasi-steady battery model: currents are estimated, CSV current is separate, no regeneration or rotor acceleration energy. Electrical derives motor losses from Kv/R/I0; motorEfficiency is used only by Simple.","Warning"));
             if (e.airDensityMode != "Constant") unsupported("environment.airDensityMode");
             if (e.windMode != "None" && e.windMode != "Constant") unsupported("environment.windMode");
             if (e.gustEnabled) unsupported("environment.gustEnabled");
