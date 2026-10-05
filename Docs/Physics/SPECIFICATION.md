@@ -132,6 +132,21 @@ regen, тепловой/химической динамики и потребл�
 ток=0; остаточное вращение — прежняя эмпирическая модель затухания. Пустая батарея
 обнуляет доступные обороты. Численные пределы и инструкция — POWER_SYSTEM.md.
 
+Среда (этап 7): Constant или сухая тропосфера StandardAtmosphere −500…11000 m.
+Начальная MSL-высота задаётся altitudeM, далее добавляется изменение world COM Y.
+В StandardAtmosphere temperatureK/pressurePa задают опорные значения уровня моря;
+при отсутствии используются 288.15 K / 101325 Pa. airDensityKgM3 используется только
+Constant. Текущая плотность передаётся в CtCq/PerformanceMap, корпус и Qω энергетики
+однократно. OmegaSquared/RpmTable отклоняют переменную атмосферу. Пульт компенсирует
+плотность в статическом allocator; ограничения J=0 и battery+map сохраняются.
+
+Ветер задаётся в мировых осях: None / Constant / периодический Gust / stateless seeded
+Turbulence / CustomField. Турбулентность — ограниченное аналитическое Fourier поле,
+не Dryden/CFD. Ветер запрашивается в точке каждого ротора и CP/patch корпуса.
+IWindProvider не должен менять состояние или зависеть от порядка запросов.
+Часы среды принадлежат дрону и обнуляются при reset. Формулы, пределы параметров,
+смысл интенсивности/временного масштаба и инструкция — ENVIRONMENT.md.
+
 Для визуализации висения: `Adisk=πD²/4`, `vi≈sqrt(T/(2ρAdisk))`.
 Это оценка индуцированного потока в режиме висения; она не создаёт взаимодействующий с
 окружением CFD-поток. Реализованный helper возвращает скорость, но пока не управляет VFX.
@@ -168,7 +183,7 @@ ManualPrincipal задаёт положительные главные моме�
 | Flapping, induced drag, gyroscopic effects | Контракт; включение отклоняется до принятия моделей |
 | Battery Simple / Electrical, SOC/OCV/sag, RPM/current/power envelope | Реализовано в этапе 6; ограничения — POWER_SYSTEM.md |
 | Battery + RPM/J map, efficiency curve, motor inductance / thermal | Ожидают модели; map/efficiency curve с батареей явно отклоняются |
-| Atmosphere, gust/turbulence | Контракт; включение отклоняется |
+| StandardAtmosphere, Gust, seeded Turbulence, CustomField/IWindProvider | Реализовано в этапе 7; ограничения и формулы — ENVIRONMENT.md |
 
 `fidelity` — категория интерфейса, а не переключатель неизвестных формул.
 Неиспользуемые исходные характеристики можно хранить; включённая неподдерживаемая модель

@@ -40,6 +40,7 @@ namespace DroneLab.Physics
         private readonly RuntimeDroneParameters parameters;
         private readonly RuntimeBattery battery;
         private readonly double[] motorPower,motorCurrent,requiredVoltage;
+        private double queryDensity;
         public double Soc { get; private set; }
         public double OpenVoltage { get; private set; }
         public double TerminalVoltage { get; private set; }
@@ -83,7 +84,7 @@ namespace DroneLab.Physics
             for(int i=0;i<requested.Length;i++)
             {
                 double omega=requested[i]*scale; var r=parameters.Rotors[i]; var m=r.Power;
-                double q=r.Performance.Evaluate(omega).Torque;
+                double q=r.Performance.Evaluate(omega,density:queryDensity).Torque;
                 double shaft=q*omega; mechanical+=shaft;
                 if(omega==0) { motorPower[i]=motorCurrent[i]=requiredVoltage[i]=0; continue; }
                 if(battery.Mode=="Electrical")
@@ -118,8 +119,10 @@ namespace DroneLab.Physics
             return true;
         }
         // requested/output may be the same array. Commit SOC only after the caller's force queries succeed.
-        public void Resolve(double[] requested,double[] output,double dt,bool powered)
+        public void Resolve(double[] requested,double[] output,double dt,bool powered,double? density=null)
         {
+            queryDensity=density ?? parameters.Density;
+            if(!Finite(queryDensity) || queryDensity<=0) throw new ArgumentOutOfRangeException(nameof(density));
             if(!Finite(dt) || dt<=0) throw new ArgumentOutOfRangeException(nameof(dt));
             if(requested==null || output==null || requested.Length!=parameters.Rotors.Count || output.Length!=requested.Length)
                 throw new ArgumentException("One speed per rotor is required.");

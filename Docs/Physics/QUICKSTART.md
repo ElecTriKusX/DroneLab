@@ -114,3 +114,5 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
 Эффекты роторов и запуск на своей геометрии: [ROTOR_EFFECTS.md](ROTOR_EFFECTS.md).
 
 Энергетика, батарея и проверка этапа 6: [POWER_SYSTEM.md](POWER_SYSTEM.md).
+
+Среда и проверка этапа 7: [ENVIRONMENT.md](ENVIRONMENT.md).

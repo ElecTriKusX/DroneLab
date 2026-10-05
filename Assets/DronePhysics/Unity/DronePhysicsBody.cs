@@ -10,6 +10,13 @@ namespace DroneLab.Simulation
     {
         public TextAsset droneProfile;
         public TextAsset environmentProfile;
+        [Tooltip("For CustomField only: component implementing DroneLab.Physics.IWindProvider.")]
+        public MonoBehaviour customWindProvider;
+        public IWindProvider CustomWindProvider { get; set; }
+        public AirSample Air { get; private set; }
+        public double SimulationTimeS { get; private set; }
+        public Vector3 WindVelocityWorld { get; private set; }
+        public Vector3[] RotorWindVelocityWorld { get; private set; }
         public bool drawForces = true;
         public float forceGizmoScale = 0.08f;
         [Tooltip("Colliders considered by rotor ground probes. Triggers and the drone hierarchy are ignored.")]
@@ -36,8 +43,10 @@ namespace DroneLab.Simulation
         public double ProjectedAreaM2 { get; private set; }
         // Explicit stepping for isolated integration tests. Normal scenes use FixedUpdate.
         public bool AutomaticSimulation { get; set; } = true;
+        private IWindProvider activeWind;
+        private double referenceWorldY;
         private double[] commands,candidateOmega;
-        private Vector3[] pointAirVelocities;
+        private Vector3[] pointAirVelocities,bodyPointForces;
         private Vector3[] rotorPoints,rotorAxes,groundPoints;
         private bool[] groundHits;
         private readonly RotorGroundProbe groundProbe=new RotorGroundProbe();
@@ -70,6 +79,12 @@ namespace DroneLab.Simulation
                 if(issue.Severity == "Error") Debug.LogError(issue.ToString(),this); else Debug.LogWarning(issue.ToString(),this);
             if(!loaded.Success) { Fail("Physics profile rejected. See validation errors."); return false; }
             Parameters=loaded.Parameters;
+            activeWind=Parameters.Environment;
+            if(Parameters.Environment.WindEnabled && Parameters.Environment.WindMode=="CustomField")
+            {
+                activeWind=CustomWindProvider ?? customWindProvider as IWindProvider;
+                if(activeWind==null) { Parameters=null; Fail("CustomField requires a component implementing IWindProvider."); return false; }
+            }
             Body.mass=(float)Parameters.Mass;
             Body.centerOfMass=ToUnity(Parameters.CenterOfMass);
             Body.inertiaTensorRotation=new Quaternion((float)Parameters.RotationX,(float)Parameters.RotationY,(float)Parameters.RotationZ,(float)Parameters.RotationW);
@@ -80,6 +95,9 @@ namespace DroneLab.Simulation
             Body.interpolation=RigidbodyInterpolation.Interpolate;
             Body.collisionDetectionMode=CollisionDetectionMode.ContinuousDynamic;
             int count=Parameters.Rotors.Count;
+            RotorWindVelocityWorld=new Vector3[count];
+            bodyPointForces=new Vector3[Parameters.DragModel=="Surfaces" ? Parameters.Surfaces.Count : 1];
+            referenceWorldY=Body.worldCenterOfMass.y; Air=Parameters.Environment.SampleAir(0); SimulationTimeS=0; WindVelocityWorld=Vector3.zero;
             commands=new double[count]; candidateOmega=new double[count]; pointAirVelocities=new Vector3[count]; Omega=new double[count]; ThrustN=new double[count]; ReactionTorqueNm=new double[count];
             AdvanceRatio=new double[count]; MeasuredCurrentA=new double?[count]; PerformanceClamped=new bool[count];
             GroundHeightM=new double[count]; GroundEffectMultiplier=new double[count]; RotorDragForceN=new Vector3[count];
@@ -112,7 +130,11 @@ namespace DroneLab.Simulation
         }
         public void ResetMotorState()
         {
-            SetArmed(false); Power?.Reset();
+            SetArmed(false); Power?.Reset(); SimulationTimeS=0; WindVelocityWorld=Vector3.zero;
+            DragForce=DragTorque=AirVelocity=Vector3.zero; ProjectedAreaM2=0;
+            if(bodyPointForces!=null) Array.Clear(bodyPointForces,0,bodyPointForces.Length);
+            if(Parameters!=null) Air=Parameters.Environment.SampleAir(0);
+            if(RotorWindVelocityWorld!=null) Array.Clear(RotorWindVelocityWorld,0,RotorWindVelocityWorld.Length);
             if(Omega == null) return;
             Array.Clear(Omega,0,Omega.Length); Array.Clear(ThrustN,0,ThrustN.Length); Array.Clear(ReactionTorqueNm,0,ReactionTorqueNm.Length);
             Array.Clear(AdvanceRatio,0,AdvanceRatio.Length); Array.Clear(MeasuredCurrentA,0,MeasuredCurrentA.Length); Array.Clear(PerformanceClamped,0,PerformanceClamped.Length); ClearRotorEffects();
@@ -126,6 +148,8 @@ namespace DroneLab.Simulation
             ClearRotorEffects();
             try
             {
+                Air=Parameters.Environment.SampleAir(Body.worldCenterOfMass.y-referenceWorldY);
+                WindVelocityWorld=WindAt(Body.worldCenterOfMass);
                 for(int i=0;i<Parameters.Rotors.Count;i++)
                 {
                     var r=Parameters.Rotors[i];
@@ -134,16 +158,17 @@ namespace DroneLab.Simulation
                     Vector3 pointWorld=transform.TransformPoint(ToUnity(r.Position));
                     Vector3 axisWorld=transform.TransformDirection(ToUnity(r.Axis));
                     rotorPoints[i]=pointWorld; rotorAxes[i]=axisWorld;
-                    var pointAirVelocity=Body.GetPointVelocity(pointWorld)-ToUnity(Parameters.Wind);
+                    RotorWindVelocityWorld[i]=WindAt(pointWorld);
+                    var pointAirVelocity=Body.GetPointVelocity(pointWorld)-RotorWindVelocityWorld[i];
                     pointAirVelocities[i]=pointAirVelocity;
                 }
-                if(Power!=null) Power.Resolve(candidateOmega,candidateOmega,dt,Armed);
+                if(Power!=null) Power.Resolve(candidateOmega,candidateOmega,dt,Armed,Air.Density);
                 for(int i=0;i<Parameters.Rotors.Count;i++)
                 {
                     var r=Parameters.Rotors[i]; var pointWorld=rotorPoints[i]; var axisWorld=rotorAxes[i];
                     var pointAirVelocity=pointAirVelocities[i];
                     double axial=Vector3.Dot(pointAirVelocity,axisWorld);
-                    var sample=r.Performance.Evaluate(candidateOmega[i],axial);
+                    var sample=r.Performance.Evaluate(candidateOmega[i],axial,Air.Density);
                     if(Parameters.GroundEffect!=null && groundProbe.Sample(this,pointWorld,axisWorld,(float)(r.Diameter/2),groundLayers.value,out var hit))
                     {
                         groundHits[i]=true; groundPoints[i]=hit.point; GroundHeightM[i]=hit.distance;
@@ -156,12 +181,27 @@ namespace DroneLab.Simulation
                         RotorDragForceN[i]=ToUnity(RotorAerodynamics.Drag(FromUnity(pointAirVelocity),FromUnity(axisWorld),candidateOmega[i],r.RotorDragCoefficient));
                     AdvanceRatio[i]=sample.AdvanceRatio; MeasuredCurrentA[i]=sample.Current; PerformanceClamped[i]=sample.Clamped;
                 }
+                // Sample all body points before applying any forces or spending charge.
+                DVector3 localForce=default,localTorque=default; double area=0;
+                AirVelocity=Body.linearVelocity-WindVelocityWorld;
+                int points=Parameters.DragModel=="Surfaces" ? Parameters.Surfaces.Count : 1;
+                if(Parameters.BodyDrag) for(int i=0;i<points;i++)
+                {
+                    var localPoint=Parameters.DragModel=="Surfaces" ? Parameters.Surfaces[i].Position : Parameters.DragPoint;
+                    var worldPoint=transform.TransformPoint(ToUnity(localPoint));
+                    var flow=Body.GetPointVelocity(worldPoint)-WindAt(worldPoint);
+                    var wrench=BodyAerodynamics.EvaluatePoint(Parameters,FromUnity(transform.InverseTransformDirection(flow)),Air.Density,i);
+                    bodyPointForces[i]=transform.TransformDirection(ToUnity(wrench.Force));
+                    localForce+=wrench.Force; localTorque+=wrench.Torque; area=wrench.ProjectedArea;
+                    if(Parameters.DragModel!="Surfaces") AirVelocity=flow;
+                }
+                DragForce=transform.TransformDirection(ToUnity(localForce)); DragTorque=transform.TransformDirection(ToUnity(localTorque)); ProjectedAreaM2=area;
             }
-            catch(ArgumentOutOfRangeException ex)
+            catch(Exception ex) when(ex is ArgumentException || ex is InvalidOperationException)
             {
                 Parameters=null; ResetMotorState(); Fail("Physics/power query rejected simulation step: "+ex.Message); return;
             }
-            Array.Copy(candidateOmega,Omega,Omega.Length); Power?.Commit(dt);
+            Array.Copy(candidateOmega,Omega,Omega.Length); Power?.Commit(dt); SimulationTimeS+=dt;
             Body.AddForce(Vector3.down*(float)(Parameters.Mass*Parameters.Gravity),ForceMode.Force);
             for(int i=0;i<Parameters.Rotors.Count;i++)
             {
@@ -172,16 +212,15 @@ namespace DroneLab.Simulation
                 RotorDragTorque+=Vector3.Cross(rotorPoints[i]-Body.worldCenterOfMass,RotorDragForceN[i]);
                 Body.AddTorque(axis*(float)ReactionTorqueNm[i],ForceMode.Force);
             }
-            Vector3 point=transform.TransformPoint(ToUnity(Parameters.DragPoint));
-            AirVelocity=Body.GetPointVelocity(point)-ToUnity(Parameters.Wind);
-            var local=FromUnity(transform.InverseTransformDirection(Body.linearVelocity-ToUnity(Parameters.Wind)));
-            var angular=FromUnity(transform.InverseTransformDirection(Body.angularVelocity));
-            var wrench=BodyAerodynamics.Evaluate(Parameters,local,angular);
-            DragForce=transform.TransformDirection(ToUnity(wrench.Force));
-            DragTorque=transform.TransformDirection(ToUnity(wrench.Torque));
-            ProjectedAreaM2=wrench.ProjectedArea;
-            // Equivalent to summing forces at every CP, with moments about COM; no second r x F.
+            // Equivalent CP wrench about COM, with no second r x F.
             Body.AddForce(DragForce,ForceMode.Force); Body.AddTorque(DragTorque,ForceMode.Force);
+        }
+        private Vector3 WindAt(Vector3 point)
+        {
+            var wind=activeWind.Sample(FromUnity(point),SimulationTimeS); EnvironmentMath.Finite(wind);
+            if(Math.Abs(wind.X)>1e6 || Math.Abs(wind.Y)>1e6 || Math.Abs(wind.Z)>1e6)
+                throw new ArgumentOutOfRangeException(nameof(wind),"Wind provider exceeds runtime safety bound 1e6 m/s.");
+            return ToUnity(wind);
         }
         private void OnDisable() { SetArmed(false); }
         private void OnDrawGizmos()
@@ -202,17 +241,16 @@ namespace DroneLab.Simulation
                 Gizmos.color=new Color(1,0.5f,0); Gizmos.DrawLine(pos,pos+RotorDragForceN[i]*forceGizmoScale);
                 if(groundHits[i]) { Gizmos.color=Color.yellow; Gizmos.DrawLine(pos,groundPoints[i]); Gizmos.DrawWireSphere(groundPoints[i],0.01f); }
             }
-            Gizmos.color=Color.blue; Gizmos.DrawLine(Body.worldCenterOfMass,Body.worldCenterOfMass+ToUnity(Parameters.Wind)*0.15f);
+            Gizmos.color=Color.blue; Gizmos.DrawLine(Body.worldCenterOfMass,Body.worldCenterOfMass+WindVelocityWorld*0.15f);
             Gizmos.color=Color.red; var cp=transform.TransformPoint(ToUnity(Parameters.DragPoint));
             if(Parameters.DragModel!="Surfaces") { Gizmos.DrawLine(cp,cp+DragForce*forceGizmoScale); Gizmos.DrawWireSphere(cp,0.02f); }
-            foreach(var surface in Parameters.Surfaces)
+            for(int i=0;i<Parameters.Surfaces.Count;i++)
             {
+                var surface=Parameters.Surfaces[i];
                 var pos=transform.TransformPoint(ToUnity(surface.Position));
                 Gizmos.color=Color.cyan; Gizmos.DrawLine(pos,pos+transform.TransformDirection(ToUnity(surface.Normal))*0.1f);
                 Gizmos.DrawWireSphere(pos,0.015f);
-                var velocity=FromUnity(transform.InverseTransformDirection(Body.GetPointVelocity(pos)-ToUnity(Parameters.Wind)));
-                var force=BodyAerodynamics.SurfaceDrag(velocity,surface.Normal,Parameters.Density,surface.Cd,surface.Area);
-                Gizmos.color=Color.red; Gizmos.DrawLine(pos,pos+transform.TransformDirection(ToUnity(force))*forceGizmoScale);
+                Gizmos.color=Color.red; Gizmos.DrawLine(pos,pos+bodyPointForces[i]*forceGizmoScale);
             }
         }
         public static Vector3 ToUnity(DVector3 v) => new Vector3((float)v.X,(float)v.Y,(float)v.Z);

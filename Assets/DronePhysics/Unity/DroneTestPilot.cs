@@ -106,6 +106,7 @@ namespace DroneLab.Simulation
             if(dt<=0 || float.IsNaN(dt) || float.IsInfinity(dt)) throw new ArgumentOutOfRangeException(nameof(dt));
             if(allocator == null || !physicsBody.IsReady) return;
             var body=physicsBody.Body; var p=physicsBody.Parameters;
+            double densityScale=physicsBody.Air.Density/p.Density;
             if(!physicsBody.Armed)
             {
                 targetAltitude=body.position.y; ResetControl(); previousArmed=false;
@@ -131,7 +132,7 @@ namespace DroneLab.Simulation
                     Math.Max(2,climbSpeedMps),4,integrate && upright>0.35f);
                 collective=upright>0.35f ? p.Mass*(p.Gravity+accel)/upright : 0;
             }
-            else collective=p.MaxTotalThrust*input.Throttle;
+            else collective=p.MaxTotalThrust*densityScale*input.Throttle;
             // A manual zero throttle and unsafe upside-down altitude hold override transition smoothing.
             if(collective<=0)
             {
@@ -173,7 +174,7 @@ namespace DroneLab.Simulation
             Vector3 MultiplyInertia(Vector3 v) => axes*Vector3.Scale(body.inertiaTensor,Quaternion.Inverse(axes)*v);
             Vector3 torque=MultiplyInertia(acceleration)+Vector3.Cross(rate,MultiplyInertia(rate));
             RequestedTorqueLocal=torque;
-            Saturated=allocator.Allocate(collective,DronePhysicsBody.FromUnity(torque),commands);
+            Saturated=allocator.Allocate(collective/densityScale,DronePhysicsBody.FromUnity(torque)/densityScale,commands);
             for(int i=0;i<4;i++) physicsBody.SetMotorCommand(i,commands[i]);
         }
         private void OnApplicationFocus(bool focus) { if(DisarmOnFocusLoss && !focus && physicsBody != null) { physicsBody.SetArmed(false); input=default; ResetControl(); } }
@@ -188,7 +189,7 @@ namespace DroneLab.Simulation
             foreach(double omega in physicsBody.Omega)
             { double rpm=PhysicsMath.OmegaToRpm(omega); minRpm=Math.Min(minRpm,rpm); maxRpm=Math.Max(maxRpm,rpm); }
             float tilt=Mathf.Acos(Mathf.Clamp(Vector3.Dot(transform.up,Vector3.up),-1,1))*Mathf.Rad2Deg;
-            GUILayout.BeginArea(new Rect(12,12,720,700),GUI.skin.box);
+            GUILayout.BeginArea(new Rect(12,12,800,740),GUI.skin.box);
             GUILayout.Label($"DroneLab | {(physicsBody.Armed?"ARMED":"DISARMED")} | {(autoLevel?"ANGLE":"ACRO")} | Alt hold: {altitudeHold}");
             GUILayout.Label($"Input {inputDevice} | throttle {input.Throttle:P0} | torque authority {allocator?.TorqueScale ?? 0:P0}");
             GUILayout.Label("F arm | WASD tilt | Q/E yaw | Space/Ctrl lift\nZ Angle/Acro | H altitude hold | Backspace reset");
@@ -198,6 +199,8 @@ namespace DroneLab.Simulation
             GUILayout.Label($"Vertical {velocity.y:F2} m/s | World Y {transform.position.y:F2} m | From reset {Vector3.Distance(startPosition,transform.position):F2} m");
             GUILayout.Label($"Tilt {tilt:F1} deg | Yaw {rate.y:F1} / target {DesiredAngularRateLocal.y*Mathf.Rad2Deg:F1} deg/s");
             GUILayout.Label($"RPM spread {maxRpm-minRpm:F2} | Torque local [{RequestedTorqueLocal.x:F4}, {RequestedTorqueLocal.y:F4}, {RequestedTorqueLocal.z:F4}] Nm");
+            GUILayout.Label($"Environment {p.Environment.DensityMode} | altitude {physicsBody.Air.AltitudeM:F1} m | density {physicsBody.Air.Density:F4} kg/m³");
+            GUILayout.Label($"Wind {p.Environment.WindMode} | world {physicsBody.WindVelocityWorld} m/s | simulation {physicsBody.SimulationTimeS:F2} s");
             GUILayout.Label($"Profile dimensions {p.Dimensions.X:F2} x {p.Dimensions.Y:F2} x {p.Dimensions.Z:F2} m | Air velocity {physicsBody.AirVelocity}");
             GUILayout.Label($"Body {p.DragModel} | silhouette {physicsBody.ProjectedAreaM2:F4} m² | drag {physicsBody.DragForce.magnitude:F3} N | aero torque {physicsBody.DragTorque.magnitude:F4} Nm");
             if(p.RotorDrag || p.GroundEffect!=null)

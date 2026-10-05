@@ -37,6 +37,7 @@ namespace DroneLab.Physics
     public sealed class RuntimeDroneParameters
     {
         public readonly double Mass, Gravity, Density;
+        public readonly RuntimeEnvironment Environment;
         public readonly DVector3 CenterOfMass, Inertia, Dimensions, DragCd, DragArea, DragPoint, Wind;
         public readonly double RotationX, RotationY, RotationZ, RotationW;
         public readonly bool BodyDrag,RotorDrag;
@@ -52,7 +53,8 @@ namespace DroneLab.Physics
         public double ThrustToWeight => MaxTotalThrust/(Mass*Gravity);
         internal RuntimeDroneParameters(DroneProfile p, EnvironmentProfile env)
         {
-            Mass=p.massProperties.massKg; Gravity=env.gravityMps2; Density=env.airDensityKgM3;
+            Environment=new RuntimeEnvironment(env,p.physicsConfiguration.modules.windInteraction);
+            Mass=p.massProperties.massKg; Gravity=env.gravityMps2; Density=Environment.SampleAir(0).Density;
             CenterOfMass=DVector3.From(p.massProperties.centerOfMassLocalM); Dimensions=DVector3.From(p.massProperties.dimensionsM);
             var inertia=p.massProperties.inertia;
             Inertia=inertia.mode == "AutoBox" ? PhysicsMath.BoxInertia(Mass,Dimensions) : DVector3.From(inertia.principalMomentsKgM2);

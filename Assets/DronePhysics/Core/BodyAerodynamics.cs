@@ -43,33 +43,44 @@ namespace DroneLab.Physics
         {
             if(!p.BodyDrag) return default;
             DVector3 force=default,torque=default; double area=0;
-            if(p.DragModel=="Surfaces")
+            int count=p.DragModel=="Surfaces" ? p.Surfaces.Count : 1;
+            for(int i=0;i<count;i++)
             {
-                foreach(var surface in p.Surfaces)
-                {
-                    var r=surface.Position-p.CenterOfMass;
-                    var velocity=airVelocityAtCom+DVector3.Cross(angularVelocity,r);
-                    var f=SurfaceDrag(velocity,surface.Normal,p.Density,surface.Cd,surface.Area);
-                    force+=f; torque+=DVector3.Cross(r,f);
-                }
-            }
-            else
-            {
-                var r=p.DragPoint-p.CenterOfMass;
-                var velocity=airVelocityAtCom+DVector3.Cross(angularVelocity,r);
-                if(p.DragModel=="AxisApproximation") force=PhysicsMath.AxisDrag(velocity,p.Density,p.DragCd,p.DragArea);
-                else if(velocity.Length>1e-12)
-                {
-                    area=p.ProjectedAreaMode=="AxisApproximation" ?
-                        DVector3.Dot(p.ProjectedReferenceArea,new DVector3(Math.Abs(velocity.Normalized.X),
-                            Math.Abs(velocity.Normalized.Y),Math.Abs(velocity.Normalized.Z))) : LookupArea(p.AreaSamples,velocity);
-                    force=ProjectedDrag(velocity,p.Density,p.ProjectedCd,area);
-                }
-                torque=DVector3.Cross(r,force);
+                var point=p.DragModel=="Surfaces" ? p.Surfaces[i].Position : p.DragPoint;
+                var velocity=airVelocityAtCom+DVector3.Cross(angularVelocity,point-p.CenterOfMass);
+                var w=EvaluatePoint(p,velocity,p.Density,i); force+=w.Force; torque+=w.Torque; area=w.ProjectedArea;
             }
             return new AeroWrench(force,torque,area);
         }
+        // Point velocity already relative to wind at this point, in body-local axes.
+        public static AeroWrench EvaluatePoint(RuntimeDroneParameters p,DVector3 airVelocity,double density,int surfaceIndex=0)
+        {
+            if(!p.BodyDrag) return default;
+            EnvironmentMath.Finite(airVelocity); EnvironmentMath.Finite(density);
+            if(density<=0) throw new ArgumentOutOfRangeException(nameof(density));
+            DVector3 force,point; double area=0;
+            if(p.DragModel=="Surfaces")
+            {
+                var surface=p.Surfaces[surfaceIndex]; point=surface.Position;
+                force=SurfaceDrag(airVelocity,surface.Normal,density,surface.Cd,surface.Area);
+            }
+            else
+            {
+                point=p.DragPoint;
+                if(p.DragModel=="AxisApproximation") force=PhysicsMath.AxisDrag(airVelocity,density,p.DragCd,p.DragArea);
+                else if(airVelocity.Length>1e-12)
+                {
+                    area=p.ProjectedAreaMode=="AxisApproximation" ?
+                        DVector3.Dot(p.ProjectedReferenceArea,new DVector3(Math.Abs(airVelocity.Normalized.X),
+                            Math.Abs(airVelocity.Normalized.Y),Math.Abs(airVelocity.Normalized.Z))) : LookupArea(p.AreaSamples,airVelocity);
+                    force=ProjectedDrag(airVelocity,density,p.ProjectedCd,area);
+                }
+                else force=default;
+            }
+            return new AeroWrench(force,DVector3.Cross(point-p.CenterOfMass,force),area);
+        }
     }
+
     public sealed class RuntimeAreaSample
     {
         public readonly DVector3 Direction;

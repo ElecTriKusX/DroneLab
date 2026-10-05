@@ -29,7 +29,7 @@ namespace DroneLab.Physics
                     .Select(x => new ValidationIssue("environment"+x.Path.Substring(1),x.Message,x.Severity)));
                 if (result.Issues.Count != 0) return result;
                 result.Drone=drone.ToObject<DroneProfile>(); result.Environment=env.ToObject<EnvironmentProfile>();
-                CheckSemantics(result,drone);
+                CheckSemantics(result,drone,env);
                 if (result.Issues.Any(x=>x.Severity == "Error")) return result;
                 result.Parameters=new RuntimeDroneParameters(result.Drone,result.Environment);
                 if (result.Parameters.ThrustToWeight <= 1)
@@ -55,7 +55,7 @@ namespace DroneLab.Physics
                 return token;
             }
         }
-        private static void CheckSemantics(ProfileLoadResult r,JObject json)
+        private static void CheckSemantics(ProfileLoadResult r,JObject json,JObject environmentJson)
         {
             var p=r.Drone; var e=r.Environment;
             Action<string,string> error=(path,message)=>r.Issues.Add(new ValidationIssue(path,message));
@@ -179,9 +179,8 @@ namespace DroneLab.Physics
             foreach(var issue in PowerValidation.Check(p,json)) error(issue.Path,issue.Message);
             if(p.powerSystem.battery.mode!="None")
                 r.Issues.Add(new ValidationIssue("powerSystem","Quasi-steady battery model: currents are estimated, CSV current is separate, no regeneration or rotor acceleration energy. Electrical derives motor losses from Kv/R/I0; motorEfficiency is used only by Simple.","Warning"));
-            if (e.airDensityMode != "Constant") unsupported("environment.airDensityMode");
-            if (e.windMode != "None" && e.windMode != "Constant") unsupported("environment.windMode");
-            if (e.gustEnabled) unsupported("environment.gustEnabled");
+            foreach(var issue in EnvironmentValidation.Check(e,environmentJson,p)) error(issue.Path,issue.Message);
+            if(e.windMode=="CustomField") r.Issues.Add(new ValidationIssue("environment.windMode","CustomField needs an explicit IWindProvider in the Unity adapter; disabled windInteraction ignores it.","Warning"));
         }
     }
 }

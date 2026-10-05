@@ -29,3 +29,5 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
 Ground effect и rotor drag: [ROTOR_EFFECTS.md](Docs/Physics/ROTOR_EFFECTS.md).
 
 Аккумулятор, ток, напряжение и ограничения моторов: [POWER_SYSTEM.md](Docs/Physics/POWER_SYSTEM.md).
+
+Этап 7: атмосфера, порывы, турбулентность и пространственный ветер: [ENVIRONMENT.md](Docs/Physics/ENVIRONMENT.md).

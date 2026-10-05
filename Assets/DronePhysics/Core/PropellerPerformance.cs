@@ -69,11 +69,15 @@ namespace DroneLab.Physics
         }
         // Positive axial velocity = rotor motion along +thrust relative to air (advancing flow).
         // J uses actual RPM, including when the coefficient lookup is clamped.
-        public PropellerSample Evaluate(double omega,double axialVelocity=0)
+        public PropellerSample Evaluate(double omega,double axialVelocity=0,double? density=null)
         {
             Finite(omega); Finite(axialVelocity); if(omega<0) throw new ArgumentOutOfRangeException(nameof(omega));
+            double actualDensity=density ?? rho; Finite(actualDensity);
+            if(actualDensity<=0) throw new ArgumentOutOfRangeException(nameof(density));
+            if((Model=="OmegaSquared" || Model=="RpmTable") && Math.Abs(actualDensity-rho)>1e-6)
+                throw new ArgumentOutOfRangeException(nameof(density),"Measured rotor performance cannot be silently scaled with density.");
             if(omega==0) return new PropellerSample(0,0,current:current==null ? (double?)null : 0);
-            if(IsQuadratic) return new PropellerSample(kt*omega*omega,kq*omega*omega);
+            if(IsQuadratic) { double factor=Model=="CtCq" ? actualDensity/rho : 1; return new PropellerSample(kt*omega*omega*factor,kq*omega*omega*factor); }
             bool bounded=false; double actualRpm=PhysicsMath.OmegaToRpm(omega);
             double lookupRpm=Bound(actualRpm,rpm[0],rpm[rpm.Length-1],ref bounded);
             int r=Interval(rpm,lookupRpm);
@@ -84,8 +88,8 @@ namespace DroneLab.Physics
             double advance=axialVelocity/(actualRpm/60*diameter);
             double lookupJ=Bound(advance,j[0],j[j.Length-1],ref bounded);
             int s=Interval(j,lookupJ); double tj=(lookupJ-j[s])/(j[s+1]-j[s]);
-            return new PropellerSample(PhysicsMath.CtThrust(actualRpm,Grid(ct,r,s,tr,tj),rho,diameter),
-                PhysicsMath.CqTorque(actualRpm,Grid(cq,r,s,tr,tj),rho,diameter),advance,clamped:bounded);
+            return new PropellerSample(PhysicsMath.CtThrust(actualRpm,Grid(ct,r,s,tr,tj),actualDensity,diameter),
+                PhysicsMath.CqTorque(actualRpm,Grid(cq,r,s,tr,tj),actualDensity,diameter),advance,clamped:bounded);
         }
         // Static curve inversion for the test pilot. A map is evaluated at J=0 here.
         public double OmegaForStaticThrust(double requested,double maxOmega)
