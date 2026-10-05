@@ -227,3 +227,14 @@ Governor ограничивает фактические RPM, а PID учиты�
 и не меняет геометрию/моторы пользователя. JSON-контракт 1.0.0 не менялся.
 Турбулентность — bounded analytic Fourier field, не валидированная метеорологическая
 модель Dryden/CFD. Формулы и инструкция — [ENVIRONMENT.md](ENVIRONMENT.md).
+
+## Исправление импорта PlayMode этапа 7 — 2026-10-05
+
+При открытии проекта пользователь получил CS0246 для Newtonsoft и JObject в
+EnvironmentRigidbodyTests. В PlayMode asmdef отсутствовала явная ссылка на
+Newtonsoft.Json.dll, которая уже есть в Core, Editor и EditMode. Исправлено:
+overrideReferences=true, precompiledReferences=[Newtonsoft.Json.dll, nunit.framework.dll],
+по существующей настройке EditMode. Ссылки на Input System/TestFramework сохранены.
+JSON asmdef и наличие прямых Newtonsoft-ссылок во всех использующих его сборках
+проверены локально; git diff --check прошёл. Физические модели не менялись.
+Полная Unity-компиляция и PlayMode здесь не запускались; требуется повтор у пользователя.
