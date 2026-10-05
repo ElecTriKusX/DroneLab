@@ -40,8 +40,35 @@ Core-файлы и EditMode-тесты напрямую скомпилирова
 | Постоянный внешний момент, anti-windup, D kick, reset | Прошло |
 | Allocator при насыщении | Сохраняет collective и направление torque, commands в 0…1 |
 | Unity PlayMode: ещё 3 сценария пульта и 2 теста ввода | Добавлены; не запускались здесь |
-| Импорт этапа 2 и полёт у пользователя | Ожидается |
+| Импорт этапа 2 и полёт у пользователя | 2026-10-05: пользователь подтвердил |
 
 Подробности: [FLIGHT_CONTROL.md](FLIGHT_CONTROL.md). Одноосевые модели не заменяют
 проверку трёхмерной динамики и столкновений в Unity. Существующие 31 случая сохраняются
 как физическая регрессия, в том числе прежний P-пульт для сравнения с PID.
+
+## Подтверждение этапа 2 и этап 3 — 2026-10-05
+
+Пользователь подтвердил ручные сценарии, EditMode без ошибок и полный повторный
+PlayMode-прогон. На первом запуске HoverHasNoTranslationOrRotation показал 0.0969805 m/s,
+HeldYawTracksRateAndReleaseBrakes — RPM spread=0. Повторные запуски прошли.
+По исходникам вероятны лишний шаг gravity до Initialize и focus-triggered disarm;
+это гипотезы, здесь исходные сбои не воспроизведены.
+Стенды теперь работают в отдельных local physics scenes с явными шагами и теми же
+допусками. Обычный полёт сохраняет FixedUpdate и disarm при потере фокуса.
+
+| Проверка этапа 3 | Фактический результат |
+|---|---|
+| Roslyn C# 8: Core + EditMode исходники, NUnitLite 3.14, .NET 8 | 78 passed, 0 failed; 31 новый случай |
+| Box mesh silhouette по осям и диагоналям, sphere против πR² | Прошло, допуск 2.5% при raster resolution=128 |
+| Дубли/перекрытия triangle mesh, scale², translation, ±direction | Прошло |
+| LUT: положительность, диапазон, симметрия, exact samples, непрерывность | Прошло |
+| CP speed с вращением, момент r×F, энергия pressure patches | Прошло |
+| Прежний Axis drag и отключение bodyDrag | Прошло |
+| Валидация conditional fields, normals, ID и sample axis duplicates | Прошло |
+| Новые JSON presets: Projected box/LUT, Surfaces | Загрузка и семантическая валидация прошли |
+| Полный JSON Schema Draft 2020-12, jsonschema | Обе схемы и 7 профилей прошли |
+| Roslyn syntax check всех 34 C# файлов DronePhysics | 0 синтаксических ошибок; не заменяет Unity-компиляцию |
+| 15 Unity PlayMode случаев, включая 3 новых | Добавлены/обновлены; здесь не запускались |
+| Импорт новых скриптов, маркеры, mesh bake и экспорт в Unity | Ожидается у пользователя |
+
+Настройка и границы модели: [GEOMETRY_AERODYNAMICS.md](GEOMETRY_AERODYNAMICS.md).

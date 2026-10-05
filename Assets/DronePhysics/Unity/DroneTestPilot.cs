@@ -44,13 +44,18 @@ namespace DroneLab.Simulation
         private bool previousAutoLevel, previousArmed;
         private PilotDevice previousDevice;
         private int previousDeviceId;
+        public bool AutomaticControl { get; set; } = true;
+        public bool DisarmOnFocusLoss { get; set; } = true;
         private float targetAltitude;
         private bool previousAltitudeHold;
         private Vector3 startPosition;
         private Quaternion startRotation;
 
         private void Start()
+        { InitializeController(); }
+        public void InitializeController()
         {
+            if(allocator!=null) return;
             physicsBody=GetComponent<DronePhysicsBody>();
             if(!physicsBody.IsReady) { enabled=false; return; }
             try { allocator=new QuadAllocator(physicsBody.Parameters); }
@@ -61,7 +66,7 @@ namespace DroneLab.Simulation
         }
         private void Update()
         {
-            if(!readKeyboard) return;
+            if(!AutomaticControl || !readKeyboard) return;
             if(!Application.isFocused || physicsBody == null) { input=default; return; }
             if(previousDevice!=inputDevice)
             {
@@ -95,10 +100,12 @@ namespace DroneLab.Simulation
             targetAltitude=startPosition.y;
         }
         private void FixedUpdate()
+        { if(AutomaticControl) StepControl(Time.fixedDeltaTime); }
+        public void StepControl(float dt)
         {
+            if(dt<=0 || float.IsNaN(dt) || float.IsInfinity(dt)) throw new ArgumentOutOfRangeException(nameof(dt));
             if(allocator == null || !physicsBody.IsReady) return;
             var body=physicsBody.Body; var p=physicsBody.Parameters;
-            float dt=Time.fixedDeltaTime;
             if(!physicsBody.Armed)
             {
                 targetAltitude=body.position.y; ResetControl(); previousArmed=false;
@@ -169,7 +176,7 @@ namespace DroneLab.Simulation
             Saturated=allocator.Allocate(collective,DronePhysicsBody.FromUnity(torque),commands);
             for(int i=0;i<4;i++) physicsBody.SetMotorCommand(i,commands[i]);
         }
-        private void OnApplicationFocus(bool focus) { if(!focus && physicsBody != null) { physicsBody.SetArmed(false); input=default; ResetControl(); } }
+        private void OnApplicationFocus(bool focus) { if(DisarmOnFocusLoss && !focus && physicsBody != null) { physicsBody.SetArmed(false); input=default; ResetControl(); } }
         private void OnDisable() { if(physicsBody != null) { physicsBody.SetArmed(false); ResetControl(); } }
         private void OnGUI()
         {
@@ -181,7 +188,7 @@ namespace DroneLab.Simulation
             foreach(double omega in physicsBody.Omega)
             { double rpm=PhysicsMath.OmegaToRpm(omega); minRpm=Math.Min(minRpm,rpm); maxRpm=Math.Max(maxRpm,rpm); }
             float tilt=Mathf.Acos(Mathf.Clamp(Vector3.Dot(transform.up,Vector3.up),-1,1))*Mathf.Rad2Deg;
-            GUILayout.BeginArea(new Rect(12,12,570,475),GUI.skin.box);
+            GUILayout.BeginArea(new Rect(12,12,570,505),GUI.skin.box);
             GUILayout.Label($"DroneLab | {(physicsBody.Armed?"ARMED":"DISARMED")} | {(autoLevel?"ANGLE":"ACRO")} | Alt hold: {altitudeHold}");
             GUILayout.Label($"Input {inputDevice} | throttle {input.Throttle:P0} | torque authority {allocator?.TorqueScale ?? 0:P0}");
             GUILayout.Label("F arm | WASD tilt | Q/E yaw | Space/Ctrl lift\nZ Angle/Acro | H altitude hold | Backspace reset");
@@ -192,6 +199,7 @@ namespace DroneLab.Simulation
             GUILayout.Label($"Tilt {tilt:F1} deg | Yaw {rate.y:F1} / target {DesiredAngularRateLocal.y*Mathf.Rad2Deg:F1} deg/s");
             GUILayout.Label($"RPM spread {maxRpm-minRpm:F2} | Torque local [{RequestedTorqueLocal.x:F4}, {RequestedTorqueLocal.y:F4}, {RequestedTorqueLocal.z:F4}] Nm");
             GUILayout.Label($"Profile dimensions {p.Dimensions.X:F2} x {p.Dimensions.Y:F2} x {p.Dimensions.Z:F2} m | Air velocity {physicsBody.AirVelocity}");
+            GUILayout.Label($"Body {p.DragModel} | silhouette {physicsBody.ProjectedAreaM2:F4} m² | drag {physicsBody.DragForce.magnitude:F3} N | aero torque {physicsBody.DragTorque.magnitude:F4} Nm");
             for(int i=0;i<p.Rotors.Count;i++) GUILayout.Label($"{p.Rotors[i].Id}: {PhysicsMath.OmegaToRpm(physicsBody.Omega[i]):F1} RPM | {physicsBody.ThrustN[i]:F2} N | {physicsBody.ReactionTorqueNm[i]:F4} Nm");
             GUILayout.EndArea();
         }

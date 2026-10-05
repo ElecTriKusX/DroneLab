@@ -106,11 +106,48 @@ namespace DroneLab.Physics
             if (modules.bodyDrag)
             {
                 var b=p.bodyAerodynamics;
-                if (b.model != "AxisApproximation") unsupported("bodyAerodynamics.model");
-                else
+                var bj=json["bodyAerodynamics"];
+                if (b.model == "AxisApproximation")
                 {
                     PositiveVector(b.referenceAreaM2,"bodyAerodynamics.referenceAreaM2");
                     if (b.dragCd == null || b.dragCd.Any(x=>x<0)) error("bodyAerodynamics.dragCd","Nonnegative drag coefficients are required.");
+                }
+                else if(b.model=="ProjectedArea")
+                {
+                    Required(bj,"dragCoefficient","bodyAerodynamics"); Required(bj,"projectedArea","bodyAerodynamics");
+                    var area=b.projectedArea;
+                    if(area!=null && area.mode=="AxisApproximation")
+                    {
+                        if(area.referenceAreaM2==null || area.referenceAreaM2.Any(x=>x<0) || area.referenceAreaM2.Sum()<=0)
+                            error("bodyAerodynamics.projectedArea.referenceAreaM2","Nonnegative axis areas, with at least one positive area, are required.");
+                    }
+                    else if(area!=null)
+                    {
+                        if(area.samples==null || area.samples.Length==0 || area.samples.Length>256)
+                            error("bodyAerodynamics.projectedArea.samples","Require 1..256 directional samples.");
+                        else for(int i=0;i<area.samples.Length;i++)
+                        {
+                            var direction=DVector3.From(area.samples[i].directionLocal);
+                            if(Math.Abs(direction.Length-1)>1e-5) error("bodyAerodynamics.projectedArea.samples["+i+"].directionLocal","A unit direction is required.");
+                            for(int j=0;j<i;j++) if(Math.Abs(DVector3.Dot(direction,DVector3.From(area.samples[j].directionLocal)))>1-1e-10)
+                                error("bodyAerodynamics.projectedArea.samples["+i+"]","Duplicate projection axis, including opposite directions.");
+                        }
+                    }
+                }
+                else if(b.model=="Surfaces")
+                {
+                    if(b.surfaces==null || b.surfaces.Length==0 || b.surfaces.Length>256)
+                        error("bodyAerodynamics.surfaces","Require 1..256 surfaces.");
+                    else
+                    {
+                        var surfaceIds=new HashSet<string>(StringComparer.Ordinal);
+                        for(int i=0;i<b.surfaces.Length;i++)
+                        {
+                            var surface=b.surfaces[i]; string path="bodyAerodynamics.surfaces["+i+"]";
+                            if(!surfaceIds.Add(surface.surfaceId)) error(path+".surfaceId","Duplicate surface ID.");
+                            if(Math.Abs(DVector3.From(surface.normalLocal).Length-1)>1e-5) error(path+".normalLocal","A unit normal is required.");
+                        }
+                    }
                 }
             }
             if (p.powerSystem.battery.mode != "None") unsupported("powerSystem.battery.mode");

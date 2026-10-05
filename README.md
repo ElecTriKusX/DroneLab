@@ -7,6 +7,7 @@ Unity UAV simulation laboratory. Project version: Unity 6000.3.25f1, HDRP.
 
 - [Запустить тестовый дрон на Terrain](Docs/Physics/QUICKSTART.md)
 - [Этап 2: PID, Angle/Acro и геймпад](Docs/Physics/FLIGHT_CONTROL.md)
+- [Этап 3: геометрия, силуэт mesh и поверхности](Docs/Physics/GEOMETRY_AERODYNAMICS.md)
 - [Принятая физика, формулы, ограничения](Docs/Physics/SPECIFICATION.md)
 - [Полный реестр параметров JSON](Docs/Physics/PARAMETERS.md)
 - [План следующих этапов](Docs/Physics/ROADMAP.md)

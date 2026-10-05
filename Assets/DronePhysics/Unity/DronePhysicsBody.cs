@@ -21,6 +21,10 @@ namespace DroneLab.Simulation
         public double[] ReactionTorqueNm { get; private set; }
         public Vector3 AirVelocity { get; private set; }
         public Vector3 DragForce { get; private set; }
+        public Vector3 DragTorque { get; private set; }
+        public double ProjectedAreaM2 { get; private set; }
+        // Explicit stepping for isolated integration tests. Normal scenes use FixedUpdate.
+        public bool AutomaticSimulation { get; set; } = true;
         private double[] commands;
 
         private void Awake()
@@ -87,14 +91,17 @@ namespace DroneLab.Simulation
             Array.Clear(Omega,0,Omega.Length); Array.Clear(ThrustN,0,ThrustN.Length); Array.Clear(ReactionTorqueNm,0,ReactionTorqueNm.Length);
         }
         private void FixedUpdate()
+        { if(AutomaticSimulation) StepPhysics(Time.fixedDeltaTime); }
+        public void StepPhysics(float dt)
         {
+            if(dt<=0 || float.IsNaN(dt) || float.IsInfinity(dt)) throw new ArgumentOutOfRangeException(nameof(dt));
             if(!IsReady) return;
             Body.AddForce(Vector3.down*(float)(Parameters.Mass*Parameters.Gravity),ForceMode.Force);
             for(int i=0;i<Parameters.Rotors.Count;i++)
             {
                 var r=Parameters.Rotors[i];
                 double target=Armed && commands[i]>0 ? Math.Max(r.MinOmega,commands[i]*r.MaxOmega) : 0;
-                Omega[i]=PhysicsMath.MotorStep(Omega[i],target,target>Omega[i] ? r.TauUp:r.TauDown,Time.fixedDeltaTime);
+                Omega[i]=PhysicsMath.MotorStep(Omega[i],target,target>Omega[i] ? r.TauUp:r.TauDown,dt);
                 ThrustN[i]=PhysicsMath.Thrust(Omega[i],r.KT);
                 ReactionTorqueNm[i]=r.ReactionSign*PhysicsMath.Torque(Omega[i],r.KQ);
                 Vector3 axis=transform.TransformDirection(ToUnity(r.Axis));
@@ -103,9 +110,14 @@ namespace DroneLab.Simulation
             }
             Vector3 point=transform.TransformPoint(ToUnity(Parameters.DragPoint));
             AirVelocity=Body.GetPointVelocity(point)-ToUnity(Parameters.Wind);
-            var local=FromUnity(transform.InverseTransformDirection(AirVelocity));
-            DragForce=Parameters.BodyDrag ? transform.TransformDirection(ToUnity(PhysicsMath.AxisDrag(local,Parameters.Density,Parameters.DragCd,Parameters.DragArea))) : Vector3.zero;
-            Body.AddForceAtPosition(DragForce,point,ForceMode.Force);
+            var local=FromUnity(transform.InverseTransformDirection(Body.linearVelocity-ToUnity(Parameters.Wind)));
+            var angular=FromUnity(transform.InverseTransformDirection(Body.angularVelocity));
+            var wrench=BodyAerodynamics.Evaluate(Parameters,local,angular);
+            DragForce=transform.TransformDirection(ToUnity(wrench.Force));
+            DragTorque=transform.TransformDirection(ToUnity(wrench.Torque));
+            ProjectedAreaM2=wrench.ProjectedArea;
+            // Equivalent to summing forces at every CP, with moments about COM; no second r x F.
+            Body.AddForce(DragForce,ForceMode.Force); Body.AddTorque(DragTorque,ForceMode.Force);
         }
         private void OnDisable() { SetArmed(false); }
         private void OnDrawGizmos()
@@ -122,9 +134,20 @@ namespace DroneLab.Simulation
                 var r=Parameters.Rotors[i]; var pos=transform.TransformPoint(ToUnity(r.Position));
                 Gizmos.color=Color.green; Gizmos.DrawLine(pos,pos+transform.TransformDirection(ToUnity(r.Axis))*(float)ThrustN[i]*forceGizmoScale);
                 Gizmos.DrawWireSphere(pos,0.012f);
+                Gizmos.color=Color.cyan; Gizmos.DrawLine(pos,pos+transform.TransformDirection(ToUnity(r.Axis))*0.15f);
             }
             Gizmos.color=Color.blue; Gizmos.DrawLine(Body.worldCenterOfMass,Body.worldCenterOfMass+ToUnity(Parameters.Wind)*0.15f);
-            Gizmos.color=Color.red; var cp=transform.TransformPoint(ToUnity(Parameters.DragPoint)); Gizmos.DrawLine(cp,cp+DragForce*forceGizmoScale);
+            Gizmos.color=Color.red; var cp=transform.TransformPoint(ToUnity(Parameters.DragPoint));
+            if(Parameters.DragModel!="Surfaces") { Gizmos.DrawLine(cp,cp+DragForce*forceGizmoScale); Gizmos.DrawWireSphere(cp,0.02f); }
+            foreach(var surface in Parameters.Surfaces)
+            {
+                var pos=transform.TransformPoint(ToUnity(surface.Position));
+                Gizmos.color=Color.cyan; Gizmos.DrawLine(pos,pos+transform.TransformDirection(ToUnity(surface.Normal))*0.1f);
+                Gizmos.DrawWireSphere(pos,0.015f);
+                var velocity=FromUnity(transform.InverseTransformDirection(Body.GetPointVelocity(pos)-ToUnity(Parameters.Wind)));
+                var force=BodyAerodynamics.SurfaceDrag(velocity,surface.Normal,Parameters.Density,surface.Cd,surface.Area);
+                Gizmos.color=Color.red; Gizmos.DrawLine(pos,pos+transform.TransformDirection(ToUnity(force))*forceGizmoScale);
+            }
         }
         public static Vector3 ToUnity(DVector3 v) => new Vector3((float)v.X,(float)v.Y,(float)v.Z);
         public static DVector3 FromUnity(Vector3 v) => new DVector3(v.x,v.y,v.z);

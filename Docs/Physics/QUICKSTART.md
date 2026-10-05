@@ -80,8 +80,9 @@ Gizmos: зелёные силы роторов, красное сопротив�
 ## Проверка этапа
 
 В **Window → General → Test Runner** выполнить EditMode, затем PlayMode тесты.
-PlayMode тесты создают свой объект высоко над землёй, чтобы Terrain не мешал проверке.
-Нужна спокойная сцена без других скриптов, меняющих глобальные настройки или генерирующих ошибки.
+PlayMode-тесты Rigidbody и пульта работают в отдельных локальных physics scenes,
+явно шагают физику и не зависят от Terrain, timestep проекта или фокуса Game View.
+Остальные скрипты открытой сцены не должны генерировать ошибки Console.
 
 Ожидается:
 
@@ -105,3 +106,5 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
 
 Метровые ориентиры и проверка отклика: [BEHAVIOR_BASELINE.md](BEHAVIOR_BASELINE.md).
 После выделения дрона можно выполнить **DroneLab → Create Scale References (meters)**.
+
+Геометрия своей модели, площади и новый экспорт профилей: [GEOMETRY_AERODYNAMICS.md](GEOMETRY_AERODYNAMICS.md).

@@ -33,6 +33,11 @@ namespace DroneLab.Physics
         public readonly DVector3 CenterOfMass, Inertia, Dimensions, DragCd, DragArea, DragPoint, Wind;
         public readonly double RotationX, RotationY, RotationZ, RotationW;
         public readonly bool BodyDrag;
+        public readonly string DragModel,ProjectedAreaMode;
+        public readonly double ProjectedCd;
+        public readonly DVector3 ProjectedReferenceArea;
+        public readonly IReadOnlyList<RuntimeAreaSample> AreaSamples;
+        public readonly IReadOnlyList<RuntimeAeroSurface> Surfaces;
         public readonly IReadOnlyList<RuntimeRotorParameters> Rotors;
         public readonly double MaxTotalThrust;
         public double ThrustToWeight => MaxTotalThrust/(Mass*Gravity);
@@ -45,8 +50,18 @@ namespace DroneLab.Physics
             var q=inertia.mode == "AutoBox" ? new double[]{0,0,0,1} : inertia.principalAxesRotationXyzw;
             RotationX=q[0]; RotationY=q[1]; RotationZ=q[2]; RotationW=q[3];
             BodyDrag=p.physicsConfiguration.modules.bodyDrag;
-            DragCd=BodyDrag ? DVector3.From(p.bodyAerodynamics.dragCd) : default;
-            DragArea=BodyDrag ? DVector3.From(p.bodyAerodynamics.referenceAreaM2) : default;
+            var aero=p.bodyAerodynamics; DragModel=aero.model;
+            DragCd=BodyDrag && DragModel=="AxisApproximation" ? DVector3.From(aero.dragCd) : default;
+            DragArea=BodyDrag && DragModel=="AxisApproximation" ? DVector3.From(aero.referenceAreaM2) : default;
+            ProjectedCd=aero.dragCoefficient;
+            ProjectedAreaMode=aero.projectedArea?.mode;
+            ProjectedReferenceArea=BodyDrag && DragModel=="ProjectedArea" && ProjectedAreaMode=="AxisApproximation" ?
+                DVector3.From(aero.projectedArea.referenceAreaM2) : default;
+            var samples=new List<RuntimeAreaSample>(); var surfaces=new List<RuntimeAeroSurface>();
+            if(BodyDrag && DragModel=="ProjectedArea" && aero.projectedArea.samples!=null)
+                foreach(var sample in aero.projectedArea.samples) samples.Add(new RuntimeAreaSample(DVector3.From(sample.directionLocal),sample.areaM2));
+            if(BodyDrag && DragModel=="Surfaces") foreach(var surface in aero.surfaces) surfaces.Add(new RuntimeAeroSurface(surface));
+            AreaSamples=samples.AsReadOnly(); Surfaces=surfaces.AsReadOnly();
             DragPoint=p.bodyAerodynamics.dragApplicationPointLocalM == null ? CenterOfMass : DVector3.From(p.bodyAerodynamics.dragApplicationPointLocalM);
             Wind=p.physicsConfiguration.modules.windInteraction && env.windMode != "None" ? DVector3.From(env.windVelocityWorldMps) : default;
             var rotors=new List<RuntimeRotorParameters>();
