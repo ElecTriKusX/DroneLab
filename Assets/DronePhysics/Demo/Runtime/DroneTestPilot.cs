@@ -6,7 +6,7 @@ namespace DroneLab.Simulation
 {
     // Scene-compatible flight controller adapter; physics forces remain in DronePhysicsBody.
     [DefaultExecutionOrder(-100), RequireComponent(typeof(DronePhysicsBody))]
-    public sealed class DroneTestPilot : MonoBehaviour
+    public sealed class DroneTestPilot : MonoBehaviour, IFlightControlTelemetry
     {
         public bool autoLevel = true;
         public bool altitudeHold;
@@ -34,6 +34,10 @@ namespace DroneLab.Simulation
         public Vector3 DesiredAngularRateLocal { get; private set; }
         public Vector3 RequestedTorqueLocal { get; private set; }
         public FlightInput CurrentInput=>input;
+        string IFlightControlTelemetry.ControlMode=>autoLevel ? "Angle" : "Acro";
+        bool IFlightControlTelemetry.AltitudeHold=>altitudeHold;
+        DVector3 IFlightControlTelemetry.DesiredRateLocal=>DronePhysicsBody.FromUnity(DesiredAngularRateLocal);
+        string IFlightControlTelemetry.ExportSettingsJson()=>JsonUtility.ToJson(this);
         private DronePhysicsBody physicsBody;
         private QuadAllocator allocator;
         private readonly double[] commands=new double[4];

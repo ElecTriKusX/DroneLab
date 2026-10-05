@@ -1,0 +1,14 @@
+{
+  "name": "DroneLab.Editor",
+  "references": [
+    "DroneLab.Physics",
+    "DroneLab.Simulation"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "Newtonsoft.Json.dll"
+  ]
+}

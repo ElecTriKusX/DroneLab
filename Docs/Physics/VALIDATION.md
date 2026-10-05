@@ -309,3 +309,32 @@ JSON contract 1.0.0 не изменён, новых динамических с�
 Итог исследования и ТЗ, ограничения и proposal runtime-маршрута —
 [PHYSICS_AUDIT.md](PHYSICS_AUDIT.md). Воспроизводимая инструкция —
 [FINAL_ACCEPTANCE.md](FINAL_ACCEPTANCE.md).
+
+## SDK / mass properties, этап 9 — 2026-10-06
+
+Пользователь подтвердил финальные Unity-тесты предыдущего этапа.
+Ниже перечислены проверки кода SDK и синтетических inertia fixtures.
+
+| Проверка | Фактический результат |
+|---|---|
+| Core/EditMode / Roslyn C# 8 / .NET 8 / NUnitLite | **300 passed, 0 failed**; 16 новых inertia cases |
+| Random physical tensors from 20 point masses about COM | 600 матриц, 3 масштаба, реконструкция полного tensor прошла |
+| Repeated eigenvalues, symmetry, SPD, physical triangle inequality, quaternion basis | Прошло |
+| CAD import: explicit units/axes/reference, mass/COM/inertia, preserved motor/aero/power, validated output | Прошло; runtime JSON 1.0.0 не менялся |
+| Resources-based fixtures | Pure regression прошла; hardcoded Assets path удалён для установки в package |
+| Python analyzer + package checks | **8 passed, 0 failed** |
+| Package output / --check | Physics 181 files + Demo 55 files, 0.2.0; воспроизводимость/stale detection прошли |
+| Assembly dependency graph | 7 assemblies, DAG; Physics Runtime не ссылается на Input System/Demo |
+| GUID/source .meta | 257 GUID уникальны в Assets, новые .meta присутствуют; старые pilot/input/camera GUID сохранены |
+| Syntax parse | 73 C# files, 0 syntax errors; не заменяет Unity semantic compilation |
+| Новые ControlBoundaryTests | 2 scenarios добавлены: no-pilot direct motor/CSV и independent controller telemetry/manifest; здесь не запускались |
+| Actual Unity import обоих UPM packages, existing scene references, новый CAD Editor workflow / EXE | Ожидают запуска у пользователя |
+| Physically calibrated drone / precision percentage | Не получены; синтетический профиль остаётся regression fixture |
+
+Изменения сил/контроллерных gains отсутствуют. Полный tensor importer повышает точность
+введения mass properties при наличии достоверных исходных данных. Assembly relocation
+сохраняет MonoScript GUID и names/fields; проверить Missing Scripts при Unity-импорте.
+Pure PID/allocator utilities остаются core; управляющие MonoBehaviours — optional Demo.
+Recorder зависит только от IFlightControlTelemetry, не конкретного DroneTestPilot.
+UPM export создаётся Tools/build_unity_packages.py; исходные scripts — Assets/DronePhysics.
+Пользовательские FBX, scenes, профили и настройки Packages не изменялись этим этапом.

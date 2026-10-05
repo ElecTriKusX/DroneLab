@@ -71,7 +71,8 @@ PlayMode использует отдельные local PhysicsScene и ручн�
 с пометкой `Unstable due to 1252825`, не ошибка DroneLab.
 
 Здесь выполнены 284 Core/EditMode test cases в .NET/NUnitLite и 4 Python tests;
-Unity-движка здесь нет. Пять новых PlayMode scenarios ожидают вашего запуска.
+Unity-движка здесь нет. Пользователь подтвердил этот финальный прогон. Два новых boundary scenarios этапа 9
+ожидают отдельного запуска после разделения assembly.
 Точное текущее состояние проверок: [VALIDATION.md](VALIDATION.md).
 
 ## Для передачи команде

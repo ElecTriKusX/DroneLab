@@ -5,6 +5,9 @@ Unity UAV simulation laboratory. Project version: Unity 6000.3.25f1, HDRP.
 Начат модуль параметризованной физики мультироторного дрона. Чистое математическое
 ядро отделено от Unity Rigidbody, клавиатуры и редактора.
 
+- [SDK: перенос физики в другой Unity-проект](Docs/Physics/MODULE_INTEGRATION.md)
+- [Этапы улучшения физики 9–14](Docs/Physics/PHYSICS_UPGRADES.md)
+- [Импорт полного тензора инерции](Docs/Physics/INERTIA_IMPORT.md)
 - [Итог восьми этапов, сверка с исследованием и ТЗ](Docs/Physics/PHYSICS_AUDIT.md)
 - [Финальная совместная проверка всех поддерживаемых моделей](Docs/Physics/FINAL_ACCEPTANCE.md)
 - [Запустить тестовый дрон на Terrain](Docs/Physics/QUICKSTART.md)

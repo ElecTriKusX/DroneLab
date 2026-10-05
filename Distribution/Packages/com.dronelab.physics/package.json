@@ -1,0 +1,16 @@
+{
+  "name": "com.dronelab.physics",
+  "version": "0.2.0",
+  "displayName": "DroneLab Physics",
+  "description": "Parameterized multirotor physics, authoring and telemetry; no input system dependency.",
+  "unity": "6000.3",
+  "license": "GPL-3.0-only",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1",
+    "com.unity.modules.physics": "1.0.0",
+    "com.unity.modules.terrain": "1.0.0",
+    "com.unity.modules.terrainphysics": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.imgui": "1.0.0"
+  }
+}

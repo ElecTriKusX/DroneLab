@@ -1,0 +1,9 @@
+{
+  "name": "DroneLab.Physics",
+  "references": [],
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "Newtonsoft.Json.dll"
+  ],
+  "noEngineReferences": true
+}

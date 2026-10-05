@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "gravityMps2": 9.81,
+  "airDensityMode": "Constant",
+  "airDensityKgM3": 1.225,
+  "windMode": "Turbulence",
+  "windVelocityWorldMps": [
+    5,
+    0,
+    0
+  ],
+  "gustEnabled": false,
+  "gustIntensityMps": 2,
+  "gustTimeScaleS": 2,
+  "turbulenceSeed": 48271
+}
