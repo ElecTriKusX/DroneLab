@@ -307,7 +307,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9593bde5bd96537bbfecbcd9674688c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: DroneLab.Simulation::DroneLab.Simulation.DronePhysicsBody
-  droneProfile: {fileID: 4900000, guid: e241a77b7edb34642a2d67dd513ebaa9, type: 3}
+  droneProfile: {fileID: 4900000, guid: dcc6b0dd909907545bd87ca6747c7f05, type: 3}
   environmentProfile: {fileID: 4900000, guid: f999b39ff703588684877e0d9f09e05a, type: 3}
   drawForces: 1
   forceGizmoScale: 0.08

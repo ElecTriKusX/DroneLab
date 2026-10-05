@@ -1,0 +1,610 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "name": "TestQuad",
+    "manufacturer": "DroneLab",
+    "model": "Synthetic 1 kg test quad",
+    "description": "Synthetic parameters; not calibrated to a commercial drone."
+  },
+  "coordinateSystem": {
+    "convention": "UnityLeftHandedYUpZForward",
+    "lengthUnit": "m",
+    "modelScaleMetersPerUnit": 1
+  },
+  "physicsConfiguration": {
+    "fidelity": "Basic",
+    "modules": {
+      "motorResponse": true,
+      "bodyDrag": true,
+      "windInteraction": true,
+      "groundEffect": true,
+      "rotorAerodynamics": true,
+      "bladeFlapping": false,
+      "inducedDrag": false,
+      "batteryDischarge": true,
+      "batteryVoltageSag": true,
+      "motorElectrical": false,
+      "gyroscopicRotorEffects": false
+    }
+  },
+  "massProperties": {
+    "massKg": 1,
+    "centerOfMassLocalM": [
+      -0.00080013275146484375,
+      0.0,
+      0.015899658203125
+    ],
+    "dimensionsM": [
+      0.71906948089599609,
+      0.19198387861251831,
+      0.48307704925537109
+    ],
+    "inertia": {
+      "mode": "AutoBox"
+    }
+  },
+  "rotors": [
+    {
+      "rotorId": "FL",
+      "geometry": {
+        "positionLocalM": [
+          -0.23569965362548828,
+          0.0,
+          0.18719959259033203
+        ],
+        "thrustAxisLocal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35
+        }
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "RpmTable",
+        "outOfRangePolicy": "Clamp",
+        "referenceAirDensityKgM3": 1.225,
+        "rpmTable": [
+          {
+            "rpm": 0.0,
+            "thrustN": 0.0,
+            "torqueNm": 0.0,
+            "currentA": 0.0
+          },
+          {
+            "rpm": 2500.0,
+            "thrustN": 0.613125,
+            "torqueNm": 0.0122625,
+            "currentA": 1.0
+          },
+          {
+            "rpm": 5000.0,
+            "thrustN": 2.4525,
+            "torqueNm": 0.04905,
+            "currentA": 3.0
+          },
+          {
+            "rpm": 7500.0,
+            "thrustN": 5.518125,
+            "torqueNm": 0.121,
+            "currentA": 7.0
+          },
+          {
+            "rpm": 10000.0,
+            "thrustN": 9.81,
+            "torqueNm": 0.25,
+            "currentA": 12.0
+          }
+        ]
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    },
+    {
+      "rotorId": "FR",
+      "geometry": {
+        "positionLocalM": [
+          0.2061004638671875,
+          0.0,
+          0.18889999389648438
+        ],
+        "thrustAxisLocal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35
+        }
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "RpmTable",
+        "outOfRangePolicy": "Clamp",
+        "referenceAirDensityKgM3": 1.225,
+        "rpmTable": [
+          {
+            "rpm": 0.0,
+            "thrustN": 0.0,
+            "torqueNm": 0.0,
+            "currentA": 0.0
+          },
+          {
+            "rpm": 2500.0,
+            "thrustN": 0.613125,
+            "torqueNm": 0.0122625,
+            "currentA": 1.0
+          },
+          {
+            "rpm": 5000.0,
+            "thrustN": 2.4525,
+            "torqueNm": 0.04905,
+            "currentA": 3.0
+          },
+          {
+            "rpm": 7500.0,
+            "thrustN": 5.518125,
+            "torqueNm": 0.121,
+            "currentA": 7.0
+          },
+          {
+            "rpm": 10000.0,
+            "thrustN": 9.81,
+            "torqueNm": 0.25,
+            "currentA": 12.0
+          }
+        ]
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    },
+    {
+      "rotorId": "RR",
+      "geometry": {
+        "positionLocalM": [
+          0.20730018615722656,
+          0.0,
+          -0.19769954681396484
+        ],
+        "thrustAxisLocal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35
+        }
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "RpmTable",
+        "outOfRangePolicy": "Clamp",
+        "referenceAirDensityKgM3": 1.225,
+        "rpmTable": [
+          {
+            "rpm": 0.0,
+            "thrustN": 0.0,
+            "torqueNm": 0.0,
+            "currentA": 0.0
+          },
+          {
+            "rpm": 2500.0,
+            "thrustN": 0.613125,
+            "torqueNm": 0.0122625,
+            "currentA": 1.0
+          },
+          {
+            "rpm": 5000.0,
+            "thrustN": 2.4525,
+            "torqueNm": 0.04905,
+            "currentA": 3.0
+          },
+          {
+            "rpm": 7500.0,
+            "thrustN": 5.518125,
+            "torqueNm": 0.121,
+            "currentA": 7.0
+          },
+          {
+            "rpm": 10000.0,
+            "thrustN": 9.81,
+            "torqueNm": 0.25,
+            "currentA": 12.0
+          }
+        ]
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    },
+    {
+      "rotorId": "RL",
+      "geometry": {
+        "positionLocalM": [
+          -0.23639965057373047,
+          0.0,
+          -0.19480037689208984
+        ],
+        "thrustAxisLocal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35
+        }
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "RpmTable",
+        "outOfRangePolicy": "Clamp",
+        "referenceAirDensityKgM3": 1.225,
+        "rpmTable": [
+          {
+            "rpm": 0.0,
+            "thrustN": 0.0,
+            "torqueNm": 0.0,
+            "currentA": 0.0
+          },
+          {
+            "rpm": 2500.0,
+            "thrustN": 0.613125,
+            "torqueNm": 0.0122625,
+            "currentA": 1.0
+          },
+          {
+            "rpm": 5000.0,
+            "thrustN": 2.4525,
+            "torqueNm": 0.04905,
+            "currentA": 3.0
+          },
+          {
+            "rpm": 7500.0,
+            "thrustN": 5.518125,
+            "torqueNm": 0.121,
+            "currentA": 7.0
+          },
+          {
+            "rpm": 10000.0,
+            "thrustN": 9.81,
+            "torqueNm": 0.25,
+            "currentA": 12.0
+          }
+        ]
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    }
+  ],
+  "bodyAerodynamics": {
+    "model": "ProjectedArea",
+    "dragCoefficient": 1.0,
+    "projectedArea": {
+      "mode": "MeshDirectionalLUT",
+      "samples": [
+        {
+          "directionLocal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "areaM2": 0.01884065968374965
+        },
+        {
+          "directionLocal": [
+            0.0,
+            0.70710678118654746,
+            -0.70710678118654746
+          ],
+          "areaM2": 0.08350483337219694
+        },
+        {
+          "directionLocal": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "areaM2": 0.10591164807146369
+        },
+        {
+          "directionLocal": [
+            0.0,
+            0.70710678118654746,
+            0.70710678118654746
+          ],
+          "areaM2": 0.083694186735852716
+        },
+        {
+          "directionLocal": [
+            0.57735026918962584,
+            -0.57735026918962584,
+            -0.57735026918962584
+          ],
+          "areaM2": 0.078657915418046426
+        },
+        {
+          "directionLocal": [
+            0.70710678118654746,
+            -0.70710678118654746,
+            0.0
+          ],
+          "areaM2": 0.090700246154581665
+        },
+        {
+          "directionLocal": [
+            0.57735026918962584,
+            -0.57735026918962584,
+            0.57735026918962584
+          ],
+          "areaM2": 0.078391943921722218
+        },
+        {
+          "directionLocal": [
+            0.70710678118654746,
+            0.0,
+            -0.70710678118654746
+          ],
+          "areaM2": 0.030275464433717727
+        },
+        {
+          "directionLocal": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "areaM2": 0.026620865538439287
+        },
+        {
+          "directionLocal": [
+            0.70710678118654746,
+            0.0,
+            0.70710678118654746
+          ],
+          "areaM2": 0.031099754801732413
+        },
+        {
+          "directionLocal": [
+            0.57735026918962584,
+            0.57735026918962584,
+            -0.57735026918962584
+          ],
+          "areaM2": 0.077564938362677541
+        },
+        {
+          "directionLocal": [
+            0.70710678118654746,
+            0.70710678118654746,
+            0.0
+          ],
+          "areaM2": 0.089611509062166569
+        },
+        {
+          "directionLocal": [
+            0.57735026918962584,
+            0.57735026918962584,
+            0.57735026918962584
+          ],
+          "areaM2": 0.0788692719174985
+        }
+      ]
+    },
+    "dragApplicationPointLocalM": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "powerSystem": {
+    "battery": {
+      "mode": "Simple",
+      "cellCount": 4,
+      "nominalVoltageV": 14.8,
+      "capacityAh": 0.1,
+      "initialSoc": 1.0,
+      "internalResistanceOhm": 0.06,
+      "maxDischargeCurrentA": 10.0,
+      "ocvCurve": [
+        {
+          "soc": 0,
+          "voltageV": 12
+        },
+        {
+          "soc": 0.2,
+          "voltageV": 14
+        },
+        {
+          "soc": 0.8,
+          "voltageV": 15.6
+        },
+        {
+          "soc": 1,
+          "voltageV": 16.8
+        }
+      ]
+    }
+  },
+  "parameterProvenance": [
+    {
+      "path": "rotors",
+      "sourceType": "Estimated",
+      "source": "Synthetic symmetric test quad; not manufacturer data",
+      "confidence": 0.3
+    },
+    {
+      "path": "rotors.geometry",
+      "sourceType": "AutoGeometry",
+      "source": "Rotor markers in physics-root local meters; engine/propeller characteristics preserved.",
+      "confidence": 0.5
+    },
+    {
+      "path": "massProperties.centerOfMassLocalM",
+      "sourceType": "User",
+      "source": "User-placed COM marker; no mass estimation from mesh.",
+      "confidence": 0.5
+    },
+    {
+      "path": "massProperties.dimensionsM",
+      "sourceType": "AutoGeometry",
+      "source": "AABB of selected mesh subtree in physics-root meters; AutoBox inertia remains a uniform-box approximation.",
+      "confidence": 0.5
+    },
+    {
+      "path": "bodyAerodynamics.dragCoefficient",
+      "sourceType": "User",
+      "source": "User-specified Cd for projected frontal area; not inferred from geometry.",
+      "confidence": 0.5
+    },
+    {
+      "path": "rotors.geometry",
+      "sourceType": "AutoGeometry",
+      "source": "Rotor markers in physics-root local meters; engine/propeller characteristics preserved.",
+      "confidence": 0.5
+    },
+    {
+      "path": "massProperties.centerOfMassLocalM",
+      "sourceType": "User",
+      "source": "User-placed COM marker; no mass estimation from mesh.",
+      "confidence": 0.5
+    },
+    {
+      "path": "massProperties.dimensionsM",
+      "sourceType": "AutoGeometry",
+      "source": "AABB of selected mesh subtree in physics-root meters; AutoBox inertia remains a uniform-box approximation.",
+      "confidence": 0.5
+    },
+    {
+      "path": "bodyAerodynamics.projectedArea",
+      "sourceType": "AutoGeometry",
+      "source": "Union silhouette of Drone_Parent, resolution 128, 13 unsigned axes; static mesh snapshot.",
+      "confidence": 0.5
+    },
+    {
+      "path": "bodyAerodynamics.dragCoefficient",
+      "sourceType": "User",
+      "source": "User-specified Cd for projected frontal area; not inferred from geometry.",
+      "confidence": 0.5
+    },
+    {
+      "path": "rotors.performance",
+      "sourceType": "User",
+      "source": "SI CSV import: propeller_rpm_table; source/measurement quality must be verified by user.",
+      "confidence": 0.5
+    },
+    {
+      "path": "groundEffect / rotors.advancedAerodynamics",
+      "sourceType": "User",
+      "source": "Rotor effects editor: empirical coefficients entered by user; initial defaults are uncalibrated demo estimates.",
+      "confidence": 0.3
+    },
+    {
+      "path": "powerSystem / rotors.motor.electrical",
+      "sourceType": "User",
+      "source": "Battery editor: uncalibrated 4S demo OCV and motor defaults; existing motor power settings preserved.",
+      "confidence": 0.2
+    },
+    {
+      "path": "powerSystem / rotors.motor.electrical",
+      "sourceType": "User",
+      "source": "Battery editor: uncalibrated 4S demo OCV and motor defaults; existing motor power settings preserved.",
+      "confidence": 0.2
+    },
+    {
+      "path": "powerSystem / rotors.motor.electrical",
+      "sourceType": "User",
+      "source": "Battery editor: uncalibrated 4S demo OCV and motor defaults; existing motor power settings preserved.",
+      "confidence": 0.2
+    },
+    {
+      "path": "powerSystem / rotors.motor.electrical",
+      "sourceType": "User",
+      "source": "Battery editor: uncalibrated 4S demo OCV and motor defaults; existing motor power settings preserved.",
+      "confidence": 0.2
+    }
+  ],
+  "groundEffect": {
+    "coefficient": 1.0,
+    "minHeightRadiusRatio": 0.25,
+    "maxMultiplier": 1.5
+  }
+}
