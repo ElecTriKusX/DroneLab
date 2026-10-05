@@ -133,7 +133,8 @@ Load-dependent efficiencyCurve пока отклоняется. Ток CSV ос�
 не учитывается, при disarm ток=0 и используется эмпирическое затухание, пустая
 батарея обнуляет доступные обороты. RotorInertia этапа 11 учитывает spin energy и
 сохраняет пассивное вращение. Оба режима пока не моделируют индуктивность, regen,
-тепловую/химическую динамику и потребление бортовой электроники. Численные пределы
+химическую динамику и потребление бортовой электроники. Этап 12 добавляет optional
+тепловые узлы, cooling и protection limits; THERMAL_WEATHER.md. Численные пределы
 и инструкции — POWER_SYSTEM.md и COUPLED_POWER.md.
 
 Среда (этап 7): Constant или сухая тропосфера StandardAtmosphere −500…11000 m.
@@ -190,7 +191,9 @@ ManualPrincipal задаёт положительные главные моме�
 | Gyroscopic rotor effects / spin energy | Реализовано в opt-in RotorInertia этапе 11, weak-coupling envelope |
 | Battery Simple / Electrical, SOC/OCV/sag, RPM/current/power envelope | Реализовано в этапе 6; ограничения — POWER_SYSTEM.md |
 | Battery + RPM/J map | Реализовано в этапе 11: Clamp, Q>=0, monotone load envelope |
-| Efficiency curve, motor inductance / thermal | Не реализованы; efficiency curve с батареей отклоняется |
+| Efficiency curve / motor inductance | Не реализованы; efficiency curve с батареей отклоняется |
+| Thermal motor/ESC/battery, Rmotor(T), current derating | Реализовано в optional thermalEnabled этапе 12; effective single nodes, Electrical required |
+| Weather presets и precipitation metadata | Реализовано в этапе 12; VisualOnly, без water/ice forces/heat, VFX — внешняя интеграция |
 | StandardAtmosphere, Gust, seeded Turbulence, CustomField/IWindProvider | Реализовано в этапе 7; ограничения и формулы — ENVIRONMENT.md |
 | Telemetry CSV/manifest, drive-loss scenarios, VFX data API | Реализовано в этапе 8; DIAGNOSTICS.md; реальная калибровка/VFX simulation не выполнены |
 
@@ -262,3 +265,16 @@ COUPLED_POWER.md фиксирует optional dynamicsModel и Jr, midpoint force
 и gyro -omegaBody cross H. Mass inertia уже включает locked rotors, Jr повторно
 не прибавляется. Малые Jr/body rates — предположение модели; mass-matrix back-coupling
 не решается. CSV 1.2.0 различает RPM end/force и ток DC equivalent/bus/CSV measurements.
+
+## Thermal и погодные пресеты (этап 12)
+
+powerSystem.thermalEnabled по умолчанию false. Требуются Electrical battery и явные
+thermal nodes батареи/каждого motor/ESC, параметры в SI. C*dT/dt=Ploss-G(T-Ta),
+точное экспоненциальное решение для frozen step inputs; потери уже включены в power
+расчёт, повторный расход энергии запрещён. Температура меняет Rmotor и допустимые
+токи/мощность через continuous derating, не умножает произвольно thrust. Thermal
+Resolve/Commit сохраняет spin/coast и обновляет температуру/заряд один раз. CSV 1.3.0
+и API публикуют состояние/энергию; источники/envelope/проверка — THERMAL_WEATHER.md.
+Environment weather задаёт None/Rain/Snow/Hail и liquid-equivalent mm/h как VisualOnly
+metadata. Физически действуют существующие T/P/wind; water impacts/icing/hail damage
+и chemistry/cold-capacity батареи остаются не реализованными.

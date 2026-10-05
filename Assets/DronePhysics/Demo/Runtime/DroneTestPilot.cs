@@ -223,6 +223,14 @@ namespace DroneLab.Simulation
                 var power=physicsBody.Power;
                 GUILayout.Label($"Battery {p.Battery.Mode} | SOC {power.Soc:P1} | OCV {power.OpenVoltage:F2} V | bus {power.TerminalVoltage:F2} V | {power.Current:F2} A");
                 GUILayout.Label($"Power {power.ElectricalPower:F1} W | shaft {power.MechanicalPower:F1} W | used {power.ConsumedAh*1000:F1} mAh | RPM authority {power.RpmScale:P0} | power limited {power.Limited}");
+                if(power.Thermal!=null)
+                {
+                    var thermal=power.Thermal;
+                    GUILayout.Label($"Thermal | air {physicsBody.Air.TemperatureK-273.15:F1} °C | battery {thermal.Battery.TemperatureK-273.15:F1} °C | battery current cap {thermal.Battery.Authority:P0} | derated {power.ThermalDerated}");
+                    string components="";
+                    for(int i=0;i<p.Rotors.Count;i++) components+=$"{p.Rotors[i].Id} M/E {thermal.Motor(i).TemperatureK-273.15:F1}/{thermal.Esc(i).TemperatureK-273.15:F1} °C ({Math.Min(thermal.Motor(i).Authority,thermal.Esc(i).Authority):P0})  ";
+                    GUILayout.Label(components);
+                }
                 if(p.InertialRotors)
                 {
                     double spinEnergy=0; foreach(var value in power.RotorSpinEnergyJ) spinEnergy+=value;

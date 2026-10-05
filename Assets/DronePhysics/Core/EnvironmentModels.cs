@@ -56,6 +56,8 @@ namespace DroneLab.Physics
     public sealed class RuntimeEnvironment : IWindProvider
     {
         public readonly string DensityMode,WindMode;
+        public readonly string Precipitation;
+        public readonly double PrecipitationIntensityMmPerHour;
         public readonly bool WindEnabled,GustEnabled;
         public readonly DVector3 MeanWind;
         public readonly double ReferenceAltitudeM,IntensityMps,TimeScaleS,SpatialScaleM;
@@ -66,6 +68,8 @@ namespace DroneLab.Physics
         internal RuntimeEnvironment(EnvironmentProfile p,bool windEnabled)
         {
             DensityMode=p.airDensityMode; WindMode=p.windMode; WindEnabled=windEnabled;
+            Precipitation=p.weather?.precipitation ?? "None";
+            PrecipitationIntensityMmPerHour=p.weather?.intensityMmPerHour ?? 0;
             MeanWind=p.windMode=="None" ? default : DVector3.From(p.windVelocityWorldMps);
             GustEnabled=p.gustEnabled; ReferenceAltitudeM=p.altitudeM;
             density=p.airDensityKgM3; temperature=p.temperatureK; pressure=p.pressurePa;

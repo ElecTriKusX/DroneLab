@@ -192,6 +192,9 @@ namespace DroneLab.Physics
                 }
             }
             foreach(var issue in PowerValidation.Check(p,json)) error(issue.Path,issue.Message);
+            foreach(var issue in ThermalValidation.Check(p,json)) error(issue.Path,issue.Message);
+            if(p.powerSystem.thermalEnabled)
+                r.Issues.Add(new ValidationIssue("powerSystem.thermalEnabled","Effective lumped motor/ESC/battery temperatures with estimated cooling and continuous current derating. No cell chemistry/cold-capacity model, thermal runaway, internal gradients or active braking. Coefficients require sources.","Warning"));
             if(p.powerSystem.battery.mode!="None")
                 r.Issues.Add(new ValidationIssue("powerSystem","Estimated DC/BLDC equivalent currents; measured CSV current is separate. No regeneration/inductance. RotorInertia accounts spin energy with midpoint integration; legacy FirstOrder does not. Electrical derives losses from Kv/R/I0; constant efficiency is Simple only.","Warning"));
             foreach(var issue in EnvironmentValidation.Check(e,environmentJson,p)) error(issue.Path,issue.Message);

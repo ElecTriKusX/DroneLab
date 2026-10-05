@@ -19,7 +19,9 @@ def read_flight(path):
                 raise ValueError(f"Incomplete CSV row {line}")
             parsed = {}
             for key, value in row.items():
-                if key == "control_mode":
+                if key in ("control_mode", "precipitation"):
+                    if key == "precipitation" and value not in ("None", "Rain", "Snow", "Hail"):
+                        raise ValueError(f"Invalid precipitation at row {line}")
                     parsed[key] = value
                 elif value == "":
                     parsed[key] = None
@@ -51,7 +53,17 @@ def summarize(rows):
               "mean_sum_rotor_thrust_n": mean(thrust),
               "mean_weight_n": mean(r["mass_kg"] * r["gravity_mps2"] for r in rows),
               "drive_fault_samples": sum(r.get("drive_fault") == 1 for r in rows),
-              "power_limited_samples": sum(r.get("power_limited") == 1 for r in rows)}
+              "power_limited_samples": sum(r.get("power_limited") == 1 for r in rows),
+              "thermal_derated_samples": sum(r.get("thermal_derated_end") == 1 for r in rows)}
+    for suffix, label in (("_motor_temp_k_end", "motor"), ("_esc_temp_k_end", "esc")):
+        values = [r[key] for r in rows for key in r if key.startswith("rotor_") and key.endswith(suffix) and r[key] is not None]
+        if values:
+            result[f"max_{label}_temperature_k"] = max(values)
+    if all(r.get("battery_temp_k_end") is not None for r in rows):
+        result["max_battery_temperature_k"] = max(r["battery_temp_k_end"] for r in rows)
+    thermal_keys = ("thermal_generated_j_end", "thermal_rejected_j_end", "thermal_stored_j_end")
+    if all(r.get(key) is not None for r in rows for key in thermal_keys):
+        result["max_thermal_energy_balance_error_j"] = max(abs(r[thermal_keys[0]] - r[thermal_keys[1]] - r[thermal_keys[2]]) for r in rows)
     for key in ("soc_end", "consumed_ah_end", "bus_energy_j_end"):
         if all(r.get(key) is not None for r in rows):
             result[key + "_first"] = rows[0][key]

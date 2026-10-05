@@ -138,3 +138,13 @@ WindowsInput_MouseMovements_AreDetected и WindowsInput_RemoteDesktopMouseMoveme
 DC-equivalent motor current, motor/ESC losses, gyro и spin balance residual —
 COUPLED_POWER.md. Описанная выше версия 1.1.0 остаётся совместимым историческим форматом.
 shaft_power_w в RotorInertia включает spin energy rate; propeller_power_w хранит Q*omegaEval.
+
+
+## CSV 1.3.0 — этап 12
+
+Optional thermal temperatures/authority/resistance записываются как *_end (после
+Commit), ambient — local air temperature. Токи/потери шага используют температуры
+его начала. Thermal generated/rejected/stored energy — перераспределение уже
+учтённых losses, не дополнительная bus energy. Precipitation — текстовое enum поле;
+анализатор поддерживает его и старые CSV, выводит max temperatures, derated samples
+и heat-balance residual. Формулы/API/thermal acceptance menu — THERMAL_WEATHER.md.

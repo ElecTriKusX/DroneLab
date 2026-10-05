@@ -15,7 +15,7 @@
 
 Пользователь подтвердил финальную приёмку. Продолжение физики: [PHYSICS_UPGRADES.md](PHYSICS_UPGRADES.md),
 этапы 9–14. SDK/import mass properties и расширенная роторная аэродинамика реализованы в source;
-связь винта, двигателя и батареи добавлена в этапе 11; следующий — тепловая модель. Пакеты пересобираются в конце.
+связь винта, двигателя и батареи добавлена в этапе 11; тепловая модель добавлена в этапе 12; следующий — descent/wind envelope. Пакеты пересобираются в конце.
 Маршрут отложен по просьбе пользователя до принятой физической приёмки.
 Обязательные пробелы ТЗ (sensor/weather/thermal/signal) сохраняются в PHYSICS_AUDIT.md.
 Основной стенд физики готов к интеграции; реальная калибровка, VFX и optional-модели
@@ -97,3 +97,8 @@ quad_test_advanced_rotors; ROTOR_FLOW.md. Этап 14 изменён на отк
 optional RotorInertia, spin energy/gyro/acceleration reaction, токи/потери и CSV 1.2.0.
 COUPLED_POWER.md фиксирует envelope и совместимость. Новый Unity-прогон ожидается;
 UPM остаются на этапе 9 до финальной сборки.
+
+2026-10-06: пользователь подтвердил тесты этапа 11. Этап 12: motor/ESC/battery
+thermal nodes, explicit cooling, Rmotor(T), continuous current derating, CSV 1.3.0,
+weather presets и VisualOnly precipitation API; THERMAL_WEATHER.md. Осадки/VFX —
+внешняя интеграция, water/ice impacts не заявляются. UPM пересобираются в конце.

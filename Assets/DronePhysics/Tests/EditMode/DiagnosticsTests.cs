@@ -63,7 +63,7 @@ namespace DroneLab.Physics.Tests
                 var f=new FlightTelemetryFrame {TimeS=1.25,Dt=.01,Mass=1,Density=1.225,Rotors=new[]{new RotorTelemetry(0,1,0,0,0,0,null,0,null,1,0,default,default,false)}};
                 csv.Write(f); csv.Flush(); var lines=w.ToString().Split(new[]{'\r','\n'},StringSplitOptions.RemoveEmptyEntries);
                 Assert.That(lines[0],Does.Contain("\"rotor_0_FL,\"\"test\"\"_rpm\""));
-                string[] cells=lines[1].Split(','); Assert.That(cells[1],Is.EqualTo("1.25")); Assert.That(cells.Length,Is.EqualTo(88));
+                string[] cells=lines[1].Split(','); Assert.That(cells[1],Is.EqualTo("1.25")); Assert.That(cells.Length,Is.EqualTo(102));
                 Assert.That(cells[56],Is.Empty); Assert.That(cells[57],Is.EqualTo("0")); Assert.That(cells[58],Is.Empty); Assert.That(csv.Rows,Is.EqualTo(1));
             }
             finally { CultureInfo.CurrentCulture=old; }

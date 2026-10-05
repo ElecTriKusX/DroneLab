@@ -214,6 +214,56 @@
         "efficiency"
       ]
     },
+    "ThermalProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "heatCapacityJPerK": {
+          "type": "number",
+          "minimum": 1e-06,
+          "maximum": 1000000000.0
+        },
+        "heatTransferWPerK": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000.0
+        },
+        "airflowHeatTransferWPerKPerMps": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000.0
+        },
+        "maxAirSpeedMps": {
+          "type": "number",
+          "minimum": 1e-06,
+          "maximum": 200
+        },
+        "initialTemperatureK": {
+          "type": "number",
+          "minimum": 150,
+          "maximum": 500
+        },
+        "derateStartTemperatureK": {
+          "type": "number",
+          "minimum": 150,
+          "maximum": 500
+        },
+        "cutoffTemperatureK": {
+          "type": "number",
+          "minimum": 150,
+          "maximum": 500
+        }
+      },
+      "required": [
+        "heatCapacityJPerK",
+        "heatTransferWPerK",
+        "airflowHeatTransferWPerKPerMps",
+        "maxAirSpeedMps",
+        "initialTemperatureK",
+        "derateStartTemperatureK",
+        "cutoffTemperatureK"
+      ]
+    },
     "MotorElectricalProfile": {
       "type": "object",
       "additionalProperties": false,
@@ -258,6 +308,23 @@
         "escMaxCurrentA": {
           "type": "number",
           "exclusiveMinimum": 0
+        },
+        "thermal": {
+          "$ref": "#/$defs/ThermalProfile"
+        },
+        "escThermal": {
+          "$ref": "#/$defs/ThermalProfile"
+        },
+        "resistanceReferenceTemperatureK": {
+          "type": "number",
+          "minimum": 150,
+          "maximum": 500
+        },
+        "resistanceTemperatureCoefficientPerK": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.01,
+          "description": "Equivalent winding resistance R(T)=Rref*(1+alpha*(T-Tref)); only active with thermalEnabled. Not a cell chemistry model."
         }
       },
       "required": [
@@ -809,6 +876,9 @@
             "$ref": "#/$defs/OcvPoint"
           },
           "minItems": 2
+        },
+        "thermal": {
+          "$ref": "#/$defs/ThermalProfile"
         }
       },
       "required": [
@@ -821,6 +891,9 @@
       "properties": {
         "battery": {
           "$ref": "#/$defs/BatteryProfile"
+        },
+        "thermalEnabled": {
+          "type": "boolean"
         }
       },
       "required": [

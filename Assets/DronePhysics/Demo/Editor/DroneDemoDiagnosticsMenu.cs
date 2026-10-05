@@ -16,6 +16,9 @@ namespace DroneLab.Editor
         [MenuItem("DroneLab/Diagnostics/Create Coupled Power Acceptance Drone")]
         public static void CreateCoupledPowerAcceptance()
             =>CreateAcceptance("quad_test_coupled_power","DroneLab Coupled Power Acceptance");
+        [MenuItem("DroneLab/Diagnostics/Create Thermal Acceptance Drone")]
+        public static void CreateThermalAcceptance()
+            =>CreateAcceptance("quad_test_thermal","DroneLab Thermal Acceptance");
         private static void CreateAcceptance(string profile,string title)
         {
             if(EditorApplication.isPlaying) { Debug.LogError("Stop Play before creating the test drone."); return; }

@@ -132,11 +132,11 @@ VRS: возможны команды/режим PID, насыщение, аси�
 | Параметризованный профиль, загрузка через конфигурацию | JSON/schema/validator готовы; runtime file picker, безопасное применение профиля и меню — интеграция UI |
 | Real-time динамика, тяга, сопротивление, гравитация | Реализовано; численная проверка есть, аппаратная калибровка впереди |
 | Ветер и турбулентность | Реализовано; UI задаёт скорость/направление/seed |
-| Температура воздуха | Участвует в atmosphere; воздействие температуры на мотор/батарею не реализовано |
-| Дождь, снег, град | Не реализованы в физическом модуле; нужны погодные presets/VFX и явная документированная модель воздействия, если оно заявляется |
+| Температура воздуха | Atmosphere; этап 12: thermal ambient, winding R(T), motor/ESC/pack protection |
+| Дождь, снег, град | Этап 12: presets T/wind и VisualOnly metadata; VFX — внешняя команда, water/ice/hail impacts не моделируются |
 | GPS, IMU accel/gyro/magnetometer, барометр, дальномер, камера | Отдельных моделей датчиков нет. Чтение Rigidbody/physics state — идеальная телеметрия, не модель датчиков |
 | Altitude/speed/attitude/SOC | Runtime/CSV готовы для HUD |
-| Engine temperature и signal level | Отсутствуют; нельзя подставить произвольные числа и назвать физикой |
+| Engine temperature и signal level | Этап 12: effective motor/ESC/battery thermal state; signal level пока отсутствует |
 | Autopilot* | Angle/Acro + H; позиционный/маршрутный режим отсутствует |
 | Export report* | CSV+manifest, анализатор есть; пользовательский экран графиков/отчёта — интеграция |
 | Third-person/FPV/free view, карта/terrain selection, menu/HUD | Часть стенда камеры есть; полноту пользовательских экранов проверяет команда |
@@ -217,3 +217,8 @@ Manual override немедленно отменяет route; fault/low battery/s
 Обновление этапа 11: ограниченный coupled RPM/J power solver, spin energy и rotor gyro
 реализованы; COUPLED_POWER.md. Исторические таблицы этапа 8 не заменяют текущую
 спецификацию. Thermal/inductance/regen/полная wake power остаются отдельными задачами.
+
+Обновление этапа 12: THERMAL_WEATHER.md фиксирует C/G/loss model, protection policy,
+Rmotor(T), energy accounting и weather presets. Single-node temperatures реализованы,
+но не cell chemistry, spatial gradients, icing или damage. ТЗ weather VFX/sensors/radio
+ещё требует интеграции, thermal unit-tests не доказывают готовность конкурсного EXE.

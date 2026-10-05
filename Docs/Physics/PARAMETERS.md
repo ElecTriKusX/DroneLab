@@ -66,6 +66,18 @@
 | `loadFraction` | number |
 | `efficiency` | number |
 
+## ThermalProfile
+
+| Поле | Тип / ограничения |
+|---|---|
+| `heatCapacityJPerK` | number |
+| `heatTransferWPerK` | number |
+| `airflowHeatTransferWPerKPerMps` | number |
+| `maxAirSpeedMps` | number |
+| `initialTemperatureK` | number |
+| `derateStartTemperatureK` | number |
+| `cutoffTemperatureK` | number |
+
 ## MotorElectricalProfile
 
 | Поле | Тип / ограничения |
@@ -79,6 +91,10 @@
 | `efficiencyCurve?` | array |
 | `escEfficiency` | number |
 | `escMaxCurrentA` | number |
+| `thermal?` | ThermalProfile |
+| `escThermal?` | ThermalProfile |
+| `resistanceReferenceTemperatureK?` | number |
+| `resistanceTemperatureCoefficientPerK?` | number — Equivalent winding resistance R(T)=Rref*(1+alpha*(T-Tref)); only active with thermalEnabled. Not a cell chemistry model. |
 
 ## MotorProfile
 
@@ -230,12 +246,14 @@
 | `internalResistanceOhm?` | number |
 | `maxDischargeCurrentA?` | number |
 | `ocvCurve?` | array |
+| `thermal?` | ThermalProfile |
 
 ## PowerSystemProfile
 
 | Поле | Тип / ограничения |
 |---|---|
 | `battery` | BatteryProfile |
+| `thermalEnabled?` | boolean |
 
 ## DerivedProfile
 
@@ -273,6 +291,14 @@
 | `derived?` | DerivedProfile |
 | `parameterProvenance` | array |
 
+## WeatherProfile
+
+| Поле | Тип / ограничения |
+|---|---|
+| `precipitation` | ['None', 'Rain', 'Snow', 'Hail'] |
+| `intensityMmPerHour` | number — Liquid-water-equivalent precipitation rate; VFX metadata only. |
+| `model` | ['VisualOnly'] |
+
 ## EnvironmentProfile
 
 | Поле | Тип / ограничения |
@@ -290,3 +316,4 @@
 | `gustIntensityMps?` | number |
 | `gustTimeScaleS?` | number |
 | `turbulenceSeed?` | integer |
+| `weather?` | WeatherProfile |

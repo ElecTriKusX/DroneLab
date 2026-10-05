@@ -38,6 +38,21 @@ class FlightAnalysisTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.read(self.header + "0,0,.01,1,9.81,nan,0,9.81,100,1\n")
 
+    def test_weather_and_thermal_csv_keeps_bus_energy_separate(self):
+        header = self.header.rstrip("\n") + ",precipitation,precipitation_mmph,thermal_derated_end,rotor_0_FL_motor_temp_k_end,battery_temp_k_end,thermal_generated_j_end,thermal_rejected_j_end,thermal_stored_j_end\n"
+        groups = self.read(header + "0,0,.01,1,9.81,2,0,9.81,100,1,Rain,10,1,310,300,.2,.1,.1\n")
+        result = analysis.summarize(groups[0])
+        self.assertEqual(groups[0][0]["precipitation"], "Rain")
+        self.assertAlmostEqual(result["bus_energy_balance_error_j"], 0)
+        self.assertAlmostEqual(result["max_thermal_energy_balance_error_j"], 0)
+        self.assertEqual(result["max_motor_temperature_k"], 310)
+        self.assertEqual(result["thermal_derated_samples"], 1)
+
+    def test_unknown_precipitation_is_rejected(self):
+        header = self.header.rstrip("\n") + ",precipitation\n"
+        with self.assertRaises(ValueError):
+            self.read(header + "0,0,.01,1,9.81,2,0,9.81,100,1,Typo\n")
+
     def test_time_reversal_requires_new_segment(self):
         with self.assertRaises(ValueError):
             self.read(self.header + "0,.1,.01,1,9.81,2,0,9.81,100,1\n0,0,.01,1,9.81,2,0,9.81,100,2\n")

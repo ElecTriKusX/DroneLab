@@ -47,7 +47,10 @@ namespace DroneLab.Simulation
                 Parameters.InertialRotors ? Power.RotorSpinEnergyJ[index] : (double?)null,
                 Parameters.Battery?.Mode=="Electrical" ? Power.MotorCurrentA[index] : (double?)null,
                 Power==null ? (double?)null : Power.RotorMotorLossW[index],Power==null ? (double?)null : Power.RotorEscLossW[index],
-                PhysicsMath.OmegaToRpm(Parameters.InertialRotors ? gyroOmega[index] : Omega[index]));
+                PhysicsMath.OmegaToRpm(Parameters.InertialRotors ? gyroOmega[index] : Omega[index]),
+                Power?.Thermal?.Motor(index).TemperatureK,Power?.Thermal?.Esc(index).TemperatureK,
+                Power?.Thermal?.Motor(index).Authority,Power?.Thermal?.Esc(index).Authority,
+                Power?.Thermal==null ? (double?)null : Power.MotorResistanceOhm(index));
         }
         public double[] ThrustN { get; private set; }
         public double[] ReactionTorqueNm { get; private set; }
@@ -73,7 +76,7 @@ namespace DroneLab.Simulation
         public bool AutomaticSimulation { get; set; } = true;
         private IWindProvider activeWind;
         private double referenceWorldY;
-        private double[] commands,candidateOmega,axialVelocities,gyroOmega;
+        private double[] commands,candidateOmega,axialVelocities,gyroOmega,rotorAirSpeeds;
         private Vector3[] pointAirVelocities,bodyPointForces;
         private Vector3[] rotorPoints,rotorAxes,groundPoints;
         private bool[] groundHits;
@@ -129,7 +132,7 @@ namespace DroneLab.Simulation
             bodyPointForces=new Vector3[Parameters.DragModel=="Surfaces" ? Parameters.Surfaces.Count : 1];
             referenceWorldY=Body.worldCenterOfMass.y; Air=Parameters.Environment.SampleAir(0); SimulationTimeS=0; WindVelocityWorld=Vector3.zero;
             commands=new double[count]; candidateOmega=new double[count]; pointAirVelocities=new Vector3[count]; Omega=new double[count]; ThrustN=new double[count]; ReactionTorqueNm=new double[count];
-            axialVelocities=new double[count]; gyroOmega=new double[count];
+            axialVelocities=new double[count]; gyroOmega=new double[count]; rotorAirSpeeds=new double[count];
             PropellerTorqueNm=new double[count];
             AdvanceRatio=new double[count]; MeasuredCurrentA=new double?[count]; PerformanceClamped=new bool[count];
             GroundHeightM=new double[count]; GroundEffectMultiplier=new double[count]; RotorDragForceN=new Vector3[count];
@@ -195,6 +198,7 @@ namespace DroneLab.Simulation
                     var r=Parameters.Rotors[i];
                     double target=Armed && commands[i]>0 ? Math.Max(r.MinOmega,commands[i]*r.MaxOmega) : 0;
                     target=Drive.Target(i,target);
+                    if(Power!=null && !Power.IsThermalDriveAvailable(i)) target=0;
                     candidateOmega[i]=PhysicsMath.MotorStep(Omega[i],target,target>Omega[i] ? r.TauUp:r.TauDown,dt);
                     Vector3 pointWorld=transform.TransformPoint(ToUnity(r.Position));
                     Vector3 axisWorld=transform.TransformDirection(ToUnity(r.Axis));
@@ -204,7 +208,12 @@ namespace DroneLab.Simulation
                     pointAirVelocities[i]=pointAirVelocity;
                     axialVelocities[i]=Vector3.Dot(pointAirVelocity,axisWorld);
                 }
-                if(Power!=null) Power.Resolve(candidateOmega,candidateOmega,dt,Armed,Air.Density,Drive,axialVelocities,Omega);
+                if(Power!=null)
+                {
+                    if(Power.Thermal!=null) for(int i=0;i<rotorAirSpeeds.Length;i++) rotorAirSpeeds[i]=pointAirVelocities[i].magnitude;
+                    Power.Resolve(candidateOmega,candidateOmega,dt,Armed,Air.Density,Drive,axialVelocities,Omega,
+                        Air.TemperatureK,rotorAirSpeeds,(Body.linearVelocity-WindVelocityWorld).magnitude);
+                }
                 for(int i=0;i<gyroOmega.Length;i++) gyroOmega[i]=(Omega[i]+candidateOmega[i])/2;
                 RotorGyroscopicMoment=transform.TransformDirection(ToUnity(RotorDynamics.GyroscopicMoment(Parameters,gyroOmega,
                     FromUnity(transform.InverseTransformDirection(Body.angularVelocity)))));

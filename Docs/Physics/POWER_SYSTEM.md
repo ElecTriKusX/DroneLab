@@ -165,3 +165,9 @@ Core/EditMode проверяют ток, энергию, SOC/OCV, overload, rese
 с Clamp и monotone nonnegative Q. Optional RotorInertia включает spin energy, passive
 coast, current/voltage-limited acceleration и новый mount/gyro torque. Точные формулы
 и различие sampling RPM end/midpoint: COUPLED_POWER.md. Старые профили сохраняют FirstOrder.
+
+
+Этап 12 добавляет optional powerSystem.thermalEnabled для Electrical: отдельные
+thermal nodes motor/ESC/battery, потери → нагрев, cooling, Rmotor(T), thermal current
+limits. Старые модели/JSON остаются без thermal. Commit требует успешный Resolve с
+тем же dt и выполняется один раз. Formula/units/presets — THERMAL_WEATHER.md.

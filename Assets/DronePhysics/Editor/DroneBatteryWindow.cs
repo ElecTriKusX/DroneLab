@@ -54,11 +54,13 @@ namespace DroneLab.Editor
                 modules["batteryDischarge"]=true; modules["batteryVoltageSag"]=true; modules["motorElectrical"]=electrical;
                 modules["gyroscopicRotorEffects"]=inertia && gyro;
                 if(inertia) modules["motorResponse"]=true;
+                var thermal=json["powerSystem"]["battery"]["thermal"]?.DeepClone();
                 json["powerSystem"]["battery"]=new JObject {
                     ["mode"]=electrical ? "Electrical" : "Simple",["cellCount"]=4,["nominalVoltageV"]=14.8,
                     ["capacityAh"]=capacity,["initialSoc"]=soc,["internalResistanceOhm"]=resistance,["maxDischargeCurrentA"]=maxCurrent,
                     ["ocvCurve"]=new JArray(new JObject { ["soc"]=0,["voltageV"]=12 },new JObject { ["soc"]=.2,["voltageV"]=14 },
                         new JObject { ["soc"]=.8,["voltageV"]=15.6 },new JObject { ["soc"]=1,["voltageV"]=16.8 }) };
+                if(thermal!=null) json["powerSystem"]["battery"]["thermal"]=thermal;
                 foreach(var rotor in json["rotors"])
                 {
                     rotor["motor"]["dynamicsModel"]=inertia ? "RotorInertia" : "FirstOrder";

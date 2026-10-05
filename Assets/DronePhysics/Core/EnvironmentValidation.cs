@@ -7,6 +7,14 @@ namespace DroneLab.Physics
     {
         public static IEnumerable<ValidationIssue> Check(EnvironmentProfile e,JObject json,DroneProfile drone)
         {
+            if(drone.powerSystem.thermalEnabled && e.airDensityMode=="Constant" &&
+                (json["temperatureK"]==null || e.temperatureK<100 || e.temperatureK>500))
+                yield return new ValidationIssue("environment.temperatureK","Thermal mode requires explicit constant ambient temperature 100..500 K.");
+            if(e.weather!=null)
+            {
+                if((e.weather.precipitation=="None")!=(e.weather.intensityMmPerHour==0))
+                    yield return new ValidationIssue("environment.weather","None requires zero intensity; Rain/Snow/Hail require positive intensity.");
+            }
             if(e.airDensityMode=="StandardAtmosphere")
             {
                 if(e.altitudeM< -500 || e.altitudeM>11000 || (e.temperatureK!=0 && (e.temperatureK<200 || e.temperatureK>330)) ||

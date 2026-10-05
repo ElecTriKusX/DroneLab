@@ -142,3 +142,14 @@ dt convergence и altitude PID на 50/100/200 Hz. Фактические рез
 для отличия спектральной модели Dryden от реализованного демонстрационного поля.
 Высота Unity здесь используется как приближение геопотенциальной высоты; верхние слои ISA
 не реализованы.
+
+
+## Этап 12: thermal ambient и weather API
+
+Для enabled thermal нужен действительный ambient T: Constant требует явного
+temperatureK 100..500 K, StandardAtmosphere выдаёт local altitude temperature.
+Охлаждение использует actual point airspeed; environment reference temperature для
+тропосферы остаётся sea-level. Weather presets warm/snow/rain/hail и optional
+weather={precipitation,intensityMmPerHour,model:VisualOnly} доступны UI/VFX через
+RuntimeEnvironment. Осадки сами не меняют силы, плотность, humidity или нагрев;
+описание границ и интеграции — THERMAL_WEATHER.md.

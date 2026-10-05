@@ -403,3 +403,35 @@ RotorInertia — явно выбираемый режим; старые JSON с�
 обещания точности 5%. Thrust-only ground/lift/flapping corrections остаются
 эмпирическими; нет обещания полного aero power balance. Пользовательский FBX не
 включён в коммит. Следующий этап — thermal / derating.
+
+
+## Этап 12 — 2026-10-06 (Asia/Yekaterinburg)
+
+Пользователь подтвердил Unity-тесты этапа 11. Здесь проверялись source Assets,
+а не отложенные UPM snapshots. Реальный Unity Runner в окружении недоступен.
+
+| Проверка | Фактический результат |
+|---|---|
+| Core + EditMode / Roslyn C# 8 / .NET 8 / NUnitLite | **431 passed, 0 failed**; **48** новых thermal cases |
+| Independent exponential heating / adiabatic heat / cooling sign / no overshoot | Прошло; 50/100/200 Hz для constant-loss analytical response |
+| Airflow cooling/cap / winding R(T) / immutable snapshot / optional disabled mode | Прошло; прежний electrical result сохранён без thermal |
+| Motor/ESC/battery separate current limits, cutoff/coast/recovery boundary | Прошло; motor cap <= no-load current не блокирует остальные моторы |
+| Coupled governor numerical sweep, 50/100/200 Hz против dt=0.001 s | Прошло: конечные omega в пределах 5 rad/s, T в пределах 0.25 K, SOC в пределах 0.0002 после 12 s; synthetic stress fixture |
+| Heat balance и chemical/terminal/Joule loss energy, SOC/reset | Прошло; тепло не добавлено повторно к bus energy |
+| Repeated trials/Resolve, failed queries, duplicate/mismatched Commit | Прошло; thermal/SOC state меняются один раз на успешный шаг |
+| FirstOrder и RotorInertia thermal disarm/cutoff | Прошло; FirstOrder сохраняет caller coast, RotorInertia сохраняет spin energy |
+| Weather VisualOnly invariance / cold vs warm ambient | Прошло; precipitation не создаёт дополнительные силы/мощность |
+| Python flight analyzer | **7 passed, 0 failed**, включая CSV weather/heat и отсутствие double counting |
+| JSON Schema Draft 2020-12 | **2** схемы, **29** resource profiles прошли |
+| Production ProfileLoader + QuadAllocator | Thermal и thermal_stress с warm environment приняты: 4 ротора, 13 LUT axes, static T/W=3.802 |
+| Roslyn syntax | **84 C# files**, 0 syntax errors; не Unity semantic compilation |
+| Unity .meta | **137** unique GUID в DronePhysics, **277** в Assets; все .meta присутствуют |
+| git diff --check | Прошло |
+| Новые ThermalRigidbodyTests | **6** isolated scenarios добавлены; **79** PlayMode cases суммарно; здесь не запускались |
+| Unity import/HUD/thermal editor/manual combined flight | Требуется пользовательский прогон |
+| Package rebuild / measured precision / precipitation VFX | Не выполнялись; UPM deferred, коэффициенты synthetic/estimated, VFX — внешняя интеграция |
+
+Основной профиль quad_test_thermal не предназначен для немедленного перегрева в H.
+quad_test_thermal_stress имеет искусственно низкую C и пороги для быстрого наблюдения
+derating. Это не рекомендация для настоящего двигателя/аккумулятора. Формулы,
+источники, valid domain, energy semantics и инструкция — THERMAL_WEATHER.md.

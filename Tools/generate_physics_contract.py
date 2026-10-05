@@ -39,9 +39,21 @@ obj('InertiaProfile', {'mode':enum('AutoBox','ManualPrincipal'), 'principalMomen
     'principalAxesRotationXyzw':vec(4)}, ('principalMomentsKgM2','principalAxesRotationXyzw'))
 obj('MassProperties', {'massKg':P,'centerOfMassLocalM':vec(),'dimensionsM':vec(),'inertia':ref('InertiaProfile')})
 obj('EfficiencyPoint', {'loadFraction':F,'efficiency':num(0.000001,1)})
+obj('ThermalProfile', {
+    'heatCapacityJPerK':num(0.000001,1e9),
+    'heatTransferWPerK':num(0,1e6),
+    'airflowHeatTransferWPerKPerMps':num(0,1e4),
+    'maxAirSpeedMps':num(0.000001,200),
+    'initialTemperatureK':num(150,500),
+    'derateStartTemperatureK':num(150,500),
+    'cutoffTemperatureK':num(150,500)})
 obj('MotorElectricalProfile', {'motorKvRpmPerVolt':P,'motorResistanceOhm':P,'noLoadCurrentA':N,
     'maxCurrentA':P,'maxPowerW':P,'motorEfficiency':num(0.000001,1),
-    'efficiencyCurve':arr(ref('EfficiencyPoint')),'escEfficiency':num(0.000001,1),'escMaxCurrentA':P}, ('efficiencyCurve','maxPowerW'))
+    'efficiencyCurve':arr(ref('EfficiencyPoint')),'escEfficiency':num(0.000001,1),'escMaxCurrentA':P,
+    'thermal':ref('ThermalProfile'),'escThermal':ref('ThermalProfile'),
+    'resistanceReferenceTemperatureK':num(150,500),
+    'resistanceTemperatureCoefficientPerK':dict(num(0,.01),description='Equivalent winding resistance R(T)=Rref*(1+alpha*(T-Tref)); only active with thermalEnabled. Not a cell chemistry model.')},
+    ('efficiencyCurve','maxPowerW','thermal','escThermal','resistanceReferenceTemperatureK','resistanceTemperatureCoefficientPerK'))
 obj('MotorProfile', {'minRpm':N,'idleRpm':N,'maxRpm':P,'responseTimeUpS':N,'responseTimeDownS':N,
     'rotatingInertiaKgM2':dict(N,description='Spin-axis inertia of motor rotor plus propeller, kg*m^2; required positive for RotorInertia.'),
     'dynamicsModel':dict(enum('FirstOrder','RotorInertia'),description='Omitted means legacy FirstOrder. RotorInertia requires Electrical battery and finite spin inertia.'),
@@ -80,8 +92,8 @@ obj('GroundEffectProfile', {'coefficient':N,'minHeightRadiusRatio':P,'maxMultipl
 obj('OcvPoint', {'soc':F,'voltageV':P})
 obj('BatteryProfile', {'mode':enum('None','Simple','Electrical'),'cellCount':integer(1),'nominalVoltageV':P,
     'capacityAh':P,'initialSoc':F,'internalResistanceOhm':N,'maxDischargeCurrentA':P,
-    'ocvCurve':arr(ref('OcvPoint'),2)}, ('cellCount','nominalVoltageV','capacityAh','initialSoc','internalResistanceOhm','maxDischargeCurrentA','ocvCurve'))
-obj('PowerSystemProfile', {'battery':ref('BatteryProfile')})
+    'ocvCurve':arr(ref('OcvPoint'),2),'thermal':ref('ThermalProfile')}, ('cellCount','nominalVoltageV','capacityAh','initialSoc','internalResistanceOhm','maxDischargeCurrentA','ocvCurve','thermal'))
+obj('PowerSystemProfile', {'battery':ref('BatteryProfile'),'thermalEnabled':B}, ('thermalEnabled',))
 obj('DerivedProfile', {'projectedAreaLut':arr(ref('ProjectedAreaSample')),'hoverRpm':N,
     'maxTotalThrustN':N,'thrustToWeightRatio':N,'rotorDiskAreasM2':arr(P),'approximateInertiaKgM2':vec()},
     ('projectedAreaLut','hoverRpm','maxTotalThrustN','thrustToWeightRatio','rotorDiskAreasM2','approximateInertiaKgM2'))
@@ -92,11 +104,14 @@ obj('DroneProfile', {'schemaVersion':enum('1.0.0'),'metadata':ref('Metadata'),'c
     'rotors':arr(ref('RotorProfile'),1),'bodyAerodynamics':ref('BodyAerodynamicsProfile'),
     'groundEffect':ref('GroundEffectProfile'),'powerSystem':ref('PowerSystemProfile'),
     'derived':ref('DerivedProfile'),'parameterProvenance':arr(ref('ParameterProvenance'))}, ('groundEffect','derived'))
+obj('WeatherProfile', {'precipitation':enum('None','Rain','Snow','Hail'),
+    'intensityMmPerHour':dict(num(0,200),description='Liquid-water-equivalent precipitation rate; VFX metadata only.'),
+    'model':enum('VisualOnly')})
 obj('EnvironmentProfile', {'schemaVersion':enum('1.0.0'),'gravityMps2':P,'airDensityMode':enum('Constant','StandardAtmosphere'),
     'airDensityKgM3':P,'temperatureK':P,'pressurePa':P,'altitudeM':num(),
     'windMode':enum('None','Constant','Gust','Turbulence','CustomField'),'windVelocityWorldMps':vec(),
-    'gustEnabled':B,'gustIntensityMps':N,'gustTimeScaleS':P,'turbulenceSeed':integer()},
-    ('temperatureK','pressurePa','altitudeM','gustIntensityMps','gustTimeScaleS','turbulenceSeed'))
+    'gustEnabled':B,'gustIntensityMps':N,'gustTimeScaleS':P,'turbulenceSeed':integer(),'weather':ref('WeatherProfile')},
+    ('temperatureK','pressurePa','altitudeM','gustIntensityMps','gustTimeScaleS','turbulenceSeed','weather'))
 
 def write(path, text):
     p = ROOT / path

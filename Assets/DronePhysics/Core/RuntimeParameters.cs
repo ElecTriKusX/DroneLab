@@ -49,6 +49,7 @@ namespace DroneLab.Physics
         public readonly double RotationX, RotationY, RotationZ, RotationW;
         public readonly bool BodyDrag,RotorDrag;
         public readonly bool InertialRotors,GyroscopicRotors;
+        public readonly bool ThermalEnabled;
         public readonly RuntimeGroundEffect GroundEffect;
         public readonly RuntimeBattery Battery;
         public readonly string DragModel,ProjectedAreaMode;
@@ -72,6 +73,7 @@ namespace DroneLab.Physics
             RotorDrag=p.physicsConfiguration.modules.rotorAerodynamics;
             InertialRotors=p.rotors[0].motor.dynamicsModel=="RotorInertia";
             GyroscopicRotors=p.physicsConfiguration.modules.gyroscopicRotorEffects;
+            ThermalEnabled=p.powerSystem.thermalEnabled;
             GroundEffect=p.physicsConfiguration.modules.groundEffect ? new RuntimeGroundEffect(p.groundEffect) : null;
             Battery=p.powerSystem.battery.mode=="None" ? null : new RuntimeBattery(p.powerSystem.battery,p.physicsConfiguration.modules);
             var aero=p.bodyAerodynamics; DragModel=aero.model;

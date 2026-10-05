@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "gravityMps2": 9.81,
+  "airDensityMode": "StandardAtmosphere",
+  "airDensityKgM3": 1.225,
+  "windMode": "Turbulence",
+  "windVelocityWorldMps": [
+    4,
+    0,
+    1
+  ],
+  "gustEnabled": true,
+  "altitudeM": 0,
+  "temperatureK": 283.15,
+  "pressurePa": 101325,
+  "gustIntensityMps": 0.4,
+  "gustTimeScaleS": 3,
+  "turbulenceSeed": 48271,
+  "weather": {
+    "precipitation": "Hail",
+    "intensityMmPerHour": 10,
+    "model": "VisualOnly"
+  }
+}

@@ -3,6 +3,38 @@
   "$id": "urn:dronelab:environment-profile:1.0.0",
   "$ref": "#/$defs/EnvironmentProfile",
   "$defs": {
+    "WeatherProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "precipitation": {
+          "type": "string",
+          "enum": [
+            "None",
+            "Rain",
+            "Snow",
+            "Hail"
+          ]
+        },
+        "intensityMmPerHour": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200,
+          "description": "Liquid-water-equivalent precipitation rate; VFX metadata only."
+        },
+        "model": {
+          "type": "string",
+          "enum": [
+            "VisualOnly"
+          ]
+        }
+      },
+      "required": [
+        "precipitation",
+        "intensityMmPerHour",
+        "model"
+      ]
+    },
     "EnvironmentProfile": {
       "type": "object",
       "additionalProperties": false,
@@ -71,6 +103,9 @@
         "turbulenceSeed": {
           "type": "integer",
           "minimum": 0
+        },
+        "weather": {
+          "$ref": "#/$defs/WeatherProfile"
         }
       },
       "required": [
