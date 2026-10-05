@@ -222,6 +222,7 @@ GameObject:
   - component: {fileID: 12092928}
   - component: {fileID: 12092927}
   - component: {fileID: 12092926}
+  - component: {fileID: 12092930}
   m_Layer: 0
   m_Name: DroneLab TestQuad
   m_TagString: Untagged
@@ -238,10 +239,11 @@ Transform:
   m_GameObject: {fileID: 12092924}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.123, y: 0.59, z: 11.666}
+  m_LocalPosition: {x: 6.664, y: 0.59, z: 11.692}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1054266372}
   - {fileID: 483740297}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -268,6 +270,29 @@ MonoBehaviour:
   altitudeGain: 3
   verticalVelocityGain: 3
   climbSpeedMps: 1.5
+  ratePid:
+    integralGain: 2
+    derivativeGain: 0.15
+    integralLimit: 3
+    derivativeFilterSeconds: 0.04
+  attitudePid:
+    integralGain: 0.1
+    derivativeGain: 0.1
+    integralLimit: 0.3
+    derivativeFilterSeconds: 0.04
+  altitudePid:
+    integralGain: 0.1
+    derivativeGain: 0
+    integralLimit: 0.5
+    derivativeFilterSeconds: 0.04
+  verticalVelocityPid:
+    integralGain: 0.8
+    derivativeGain: 0.1
+    integralLimit: 2
+    derivativeFilterSeconds: 0.04
+  commandSmoothingSeconds: 0.12
+  modeTransitionSeconds: 0.3
+  inputDevice: 0
   showTelemetry: 1
   readKeyboard: 1
 --- !u!114 &12092927
@@ -282,7 +307,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9593bde5bd96537bbfecbcd9674688c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: DroneLab.Simulation::DroneLab.Simulation.DronePhysicsBody
-  droneProfile: {fileID: 4900000, guid: a9528dee310258c2aee613b7b7afb770, type: 3}
+  droneProfile: {fileID: 4900000, guid: e8da0960cbb01c747be46aa7844f044d, type: 3}
   environmentProfile: {fileID: 4900000, guid: f999b39ff703588684877e0d9f09e05a, type: 3}
   drawForces: 1
   forceGizmoScale: 0.08
@@ -333,7 +358,30 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 0.43, y: 0.15, z: 0.55}
-  m_Center: {x: 0, y: 0.09, z: 0}
+  m_Center: {x: 0, y: 0.04, z: 0}
+--- !u!114 &12092930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 12092924}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4da9663d57853908b57a00cf03c50aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DroneLab.Simulation::DroneLab.Simulation.DroneGeometryAuthoring
+  bodyMeshRoot: {fileID: 483740297}
+  centerOfMassMarker: {fileID: 577873902}
+  dragPointMarker: {fileID: 786596572}
+  rotors:
+  - {fileID: 1874274400}
+  - {fileID: 2103192814}
+  - {fileID: 606410583}
+  - {fileID: 881763154}
+  surfaces: []
+  projectedDragCoefficient: 1
+  silhouetteResolution: 128
 --- !u!1 &137258164
 GameObject:
   m_ObjectHideFlags: 0
@@ -1041,6 +1089,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &577873901
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 577873902}
+  m_Layer: 0
+  m_Name: COM
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &577873902
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 577873901}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1054266372}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &593081999
 GameObject:
   m_ObjectHideFlags: 0
@@ -1221,6 +1300,52 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 599383007}
   m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &606410581
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 606410582}
+  - component: {fileID: 606410583}
+  m_Layer: 0
+  m_Name: Rotor RR
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &606410582
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606410581}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.14, y: 0, z: -0.14}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1054266372}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &606410583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606410581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9c76c24f04956a1bb14f045e6056286, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DroneLab.Simulation::DroneLab.Simulation.RotorGeometryMarker
+  rotorId: RR
+  clockwise: 1
 --- !u!1 &752574065
 GameObject:
   m_ObjectHideFlags: 0
@@ -1311,6 +1436,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 752574065}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &786596571
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 786596572}
+  m_Layer: 0
+  m_Name: Drag Point
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &786596572
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786596571}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1054266372}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &798188126
 GameObject:
   m_ObjectHideFlags: 0
@@ -1401,6 +1557,89 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 798188126}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &881763152
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 881763153}
+  - component: {fileID: 881763154}
+  m_Layer: 0
+  m_Name: Rotor RL
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &881763153
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 881763152}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.14, y: 0, z: -0.14}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1054266372}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &881763154
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 881763152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9c76c24f04956a1bb14f045e6056286, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DroneLab.Simulation::DroneLab.Simulation.RotorGeometryMarker
+  rotorId: RL
+  clockwise: 0
+--- !u!1 &1054266371
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1054266372}
+  m_Layer: 0
+  m_Name: Physics Markers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1054266372
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1054266371}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 577873902}
+  - {fileID: 786596572}
+  - {fileID: 1874274399}
+  - {fileID: 2103192813}
+  - {fileID: 606410582}
+  - {fileID: 881763153}
+  m_Father: {fileID: 12092925}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1075217786
 GameObject:
   m_ObjectHideFlags: 0
@@ -1591,7 +1830,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 915c373a9dab6c94ba5890476199fad7, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -0.0799
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 915c373a9dab6c94ba5890476199fad7, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2234,6 +2473,52 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1730709360}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1874274398
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1874274399}
+  - component: {fileID: 1874274400}
+  m_Layer: 0
+  m_Name: Rotor FL
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1874274399
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1874274398}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.14, y: 0, z: 0.14}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1054266372}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1874274400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1874274398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9c76c24f04956a1bb14f045e6056286, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DroneLab.Simulation::DroneLab.Simulation.RotorGeometryMarker
+  rotorId: FL
+  clockwise: 1
 --- !u!1 &2098781217
 GameObject:
   m_ObjectHideFlags: 0
@@ -2324,6 +2609,52 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2098781217}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2103192812
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2103192813}
+  - component: {fileID: 2103192814}
+  m_Layer: 0
+  m_Name: Rotor FR
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2103192813
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2103192812}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.14, y: 0, z: 0.14}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1054266372}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2103192814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2103192812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9c76c24f04956a1bb14f045e6056286, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DroneLab.Simulation::DroneLab.Simulation.RotorGeometryMarker
+  rotorId: FR
+  clockwise: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -2331,5 +2662,5 @@ SceneRoots:
   - {fileID: 1567042768}
   - {fileID: 562655974}
   - {fileID: 12092925}
-  - {fileID: 137730283}
   - {fileID: 1075217788}
+  - {fileID: 137730283}

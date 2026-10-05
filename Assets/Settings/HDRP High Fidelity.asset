@@ -207,8 +207,10 @@ MonoBehaviour:
   m_ObsoleteDiffusionProfileSettingsList:
   - {fileID: 0}
   - {fileID: 0}
-  m_PrefilterUseLegacyLightmaps: 0
+  m_PrefilterUseLegacyLightmaps: 1
   m_PrefilterUseLightmapBicubicSampling: 0
+  m_ShouldUseConservativeEnclosingSphere: 0
+  m_NumIterationsEnclosingSphere: 64
   m_RenderPipelineSettings:
     supportShadowMask: 0
     supportSSR: 0
