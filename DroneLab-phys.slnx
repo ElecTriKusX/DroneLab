@@ -1,7 +1,7 @@
 ﻿<Solution>
   <Project Path="DroneLab.Editor.csproj" />
-  <Project Path="DroneLab.Physics.EditModeTests.csproj" />
   <Project Path="DroneLab.Simulation.csproj" />
+  <Project Path="DroneLab.Physics.EditModeTests.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="DroneLab.Physics.PlayModeTests.csproj" />
   <Project Path="DroneLab.Physics.csproj" />

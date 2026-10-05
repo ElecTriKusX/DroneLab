@@ -223,6 +223,8 @@ GameObject:
   - component: {fileID: 12092927}
   - component: {fileID: 12092926}
   - component: {fileID: 12092930}
+  - component: {fileID: 12092932}
+  - component: {fileID: 12092931}
   m_Layer: 0
   m_Name: DroneLab TestQuad
   m_TagString: Untagged
@@ -307,8 +309,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9593bde5bd96537bbfecbcd9674688c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: DroneLab.Simulation::DroneLab.Simulation.DronePhysicsBody
-  droneProfile: {fileID: 4900000, guid: dcc6b0dd909907545bd87ca6747c7f05, type: 3}
+  droneProfile: {fileID: 4900000, guid: 116c1f73b5d1a094ab0b8b6bddb02108, type: 3}
   environmentProfile: {fileID: 4900000, guid: f999b39ff703588684877e0d9f09e05a, type: 3}
+  customWindProvider: {fileID: 0}
   drawForces: 1
   forceGizmoScale: 0.08
   groundLayers:
@@ -385,6 +388,36 @@ MonoBehaviour:
   surfaces: []
   projectedDragCoefficient: 1
   silhouetteResolution: 128
+--- !u!114 &12092931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 12092924}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4c454f4cbda4feebc51184c7ab682d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DroneLab.Simulation::DroneLab.Simulation.DroneMotorFaultScenario
+  automaticFault: 1
+  rotorIndex: 0
+  secondsAfterArm: 5
+  remainingDrive: 0
+--- !u!114 &12092932
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 12092924}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ead8d19a5d2b4da09bcd6b5d11e109b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DroneLab.Simulation::DroneLab.Simulation.DroneTelemetryRecorder
+  recordOnEnable: 1
+  flushEveryRows: 100
 --- !u!1 &137258164
 GameObject:
   m_ObjectHideFlags: 0
