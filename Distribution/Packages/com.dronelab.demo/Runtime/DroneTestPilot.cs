@@ -207,15 +207,41 @@ namespace DroneLab.Simulation
             GUILayout.Label($"RPM spread {maxRpm-minRpm:F2} | Torque local [{RequestedTorqueLocal.x:F4}, {RequestedTorqueLocal.y:F4}, {RequestedTorqueLocal.z:F4}] Nm");
             GUILayout.Label($"Environment {p.Environment.DensityMode} | altitude {physicsBody.Air.AltitudeM:F1} m | density {physicsBody.Air.Density:F4} kg/m³");
             GUILayout.Label($"Wind {p.Environment.WindMode} | world {physicsBody.WindVelocityWorld} m/s | simulation {physicsBody.SimulationTimeS:F2} s");
+            if(physicsBody.WindSamplingRatio.HasValue)
+                GUILayout.Label($"Wind frequency / Nyquist {physicsBody.WindSamplingRatio:F3} | {(physicsBody.WindUnderResolved ? "UNDER-RESOLVED: reduce fixed timestep / spectral band" : "resolved")}");
+            bool envelope=false,exceeded=false,descent=false;
+            for(int i=0;i<p.Rotors.Count;i++)
+            { envelope|=p.Rotors[i].Envelope!=null; exceeded|=physicsBody.RotorEnvelopeSamples[i].Exceeded==true; descent|=physicsBody.RotorEnvelopeSamples[i].Regime==RotorFlowRegime.PositiveThrustDescent; }
+            if(envelope) GUILayout.Label($"Rotor flight envelope: {(exceeded ? "OUTSIDE declared limits" : "within declared limits")} | positive-thrust descent {descent} | report only; VRS not modelled");
             GUILayout.Label($"Profile dimensions {p.Dimensions.X:F2} x {p.Dimensions.Y:F2} x {p.Dimensions.Z:F2} m | Air velocity {physicsBody.AirVelocity}");
             GUILayout.Label($"Body {p.DragModel} | silhouette {physicsBody.ProjectedAreaM2:F4} m² | drag {physicsBody.DragForce.magnitude:F3} N | aero torque {physicsBody.DragTorque.magnitude:F4} Nm");
             if(p.RotorDrag || p.GroundEffect!=null)
                 GUILayout.Label($"Rotor drag {physicsBody.RotorDragForce.magnitude:F3} N | rotor torque {physicsBody.RotorDragTorque.magnitude:F4} Nm | ground effect {(p.GroundEffect!=null ? "ON" : "OFF")}");
+            bool flowEnabled=false; foreach(var rotor in p.Rotors) flowEnabled|=rotor.Flow!=null;
+            if(flowEnabled)
+            {
+                double correction=0; bool clipped=false;
+                for(int i=0;i<p.Rotors.Count;i++) { correction+=physicsBody.RotorThrustCorrectionN[i]; clipped|=physicsBody.RotorFlowClamped[i]; }
+                GUILayout.Label($"Rotor flow dT {correction:F3} N | flap moment {physicsBody.RotorFlappingMoment.magnitude:F4} Nm | flow limit {(clipped ? "CLAMP" : "in range")}");
+            }
             if(physicsBody.Power!=null)
             {
                 var power=physicsBody.Power;
                 GUILayout.Label($"Battery {p.Battery.Mode} | SOC {power.Soc:P1} | OCV {power.OpenVoltage:F2} V | bus {power.TerminalVoltage:F2} V | {power.Current:F2} A");
                 GUILayout.Label($"Power {power.ElectricalPower:F1} W | shaft {power.MechanicalPower:F1} W | used {power.ConsumedAh*1000:F1} mAh | RPM authority {power.RpmScale:P0} | power limited {power.Limited}");
+                if(power.Thermal!=null)
+                {
+                    var thermal=power.Thermal;
+                    GUILayout.Label($"Thermal | air {physicsBody.Air.TemperatureK-273.15:F1} °C | battery {thermal.Battery.TemperatureK-273.15:F1} °C | battery current cap {thermal.Battery.Authority:P0} | derated {power.ThermalDerated}");
+                    string components="";
+                    for(int i=0;i<p.Rotors.Count;i++) components+=$"{p.Rotors[i].Id} M/E {thermal.Motor(i).TemperatureK-273.15:F1}/{thermal.Esc(i).TemperatureK-273.15:F1} °C ({Math.Min(thermal.Motor(i).Authority,thermal.Esc(i).Authority):P0})  ";
+                    GUILayout.Label(components);
+                }
+                if(p.InertialRotors)
+                {
+                    double spinEnergy=0; foreach(var value in power.RotorSpinEnergyJ) spinEnergy+=value;
+                    GUILayout.Label($"Rotor inertia | spin {spinEnergy:F3} J | gyro {physicsBody.RotorGyroscopicMoment.magnitude:F4} Nm | motor/ESC loss {power.MotorLossPower+power.EscLossPower:F1} W");
+                }
             }
             if(p.Rotors[0].Performance.Model=="PerformanceMap") GUILayout.Label("Map: physics uses rotor-point axial flow; test pilot allocation uses static J=0 reference.");
             for(int i=0;i<p.Rotors.Count;i++)

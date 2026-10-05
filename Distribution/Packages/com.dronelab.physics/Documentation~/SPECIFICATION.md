@@ -109,8 +109,9 @@ Rotor drag (этап 5): `F = -Krd ω Vperpendicular` в точке каждог
 Скорость включает вращение и ветер; AddForceAtPosition уже создаёт r×F.
 Диссипативна в системе воздуха, без дополнительного множителя rho/тяги.
 Krd имеет единицы kg/rad (rad обычно трактуется как безразмерный).
-Blade flapping и induced drag требуют конкретной формулы и идентифицированных коэффициентов.
-Их поля резервируются; их единицы и диапазоны будут уточняться вместе с выбранной моделью.
+Этап 10 реализует bounded axial inflow, translational lift и blade flapping с явными
+коэффициентами/единицами/пределами; ROTOR_FLOW.md. Это эмпирические поправки,
+не dynamic inflow/VRS и не совместная модель энергетики.
 Не включать произвольный translational-lift множитель поверх карты, описывающей тот же эффект.
 
 Аккумулятор (этап 6): SOC, линейная OCV(SOC), `Vbus=Voc-I R`, coulomb counting
@@ -124,13 +125,17 @@ DC/BLDC steady-state: `Kt=60/(2π Kv)`, `Imotor=I0+Q/Kt`, `Vrequired=Kt ω+Imoto
 RPM ищется ограниченным числом итераций. Проверяются напряжение, токи, мощность,
 остаток заряда на шаг. Governor не создаёт новую максимальную тягу поверх профиля.
 
-Поддержаны OmegaSquared/CtCq и RpmTable с неубывающим Q; PerformanceMap с батареей и
-load-dependent efficiencyCurve пока явно отклоняются. Ток CSV остаётся отдельной
+Поддержаны OmegaSquared/CtCq и RpmTable с неубывающим Q. Этап 11 добавляет
+PerformanceMap + battery с Clamp и проверкой монотонной Q(RPM,flow).
+Load-dependent efficiencyCurve пока отклоняется. Ток CSV остаётся отдельной
 телеметрией. Параметры моторов/батареи требуют источника; дефолты демонстрационные.
-Это квазистационарная энергетика: нет индуктивности, вращательной энергии роторов,
-regen, тепловой/химической динамики и потребления бортовой электроники. При disarm
-ток=0; остаточное вращение — прежняя эмпирическая модель затухания. Пустая батарея
-обнуляет доступные обороты. Численные пределы и инструкция — POWER_SYSTEM.md.
+В legacy FirstOrder энергетика квазистационарная: вращательная энергия роторов
+не учитывается, при disarm ток=0 и используется эмпирическое затухание, пустая
+батарея обнуляет доступные обороты. RotorInertia этапа 11 учитывает spin energy и
+сохраняет пассивное вращение. Оба режима пока не моделируют индуктивность, regen,
+химическую динамику и потребление бортовой электроники. Этап 12 добавляет optional
+тепловые узлы, cooling и protection limits; THERMAL_WEATHER.md. Численные пределы
+и инструкции — POWER_SYSTEM.md и COUPLED_POWER.md.
 
 Среда (этап 7): Constant или сухая тропосфера StandardAtmosphere −500…11000 m.
 Начальная MSL-высота задаётся altitudeM, далее добавляется изменение world COM Y.
@@ -138,7 +143,7 @@ regen, тепловой/химической динамики и потребл�
 при отсутствии используются 288.15 K / 101325 Pa. airDensityKgM3 используется только
 Constant. Текущая плотность передаётся в CtCq/PerformanceMap, корпус и Qω энергетики
 однократно. OmegaSquared/RpmTable отклоняют переменную атмосферу. Пульт компенсирует
-плотность в статическом allocator; ограничения J=0 и battery+map сохраняются.
+плотность в статическом allocator; allocator использует J=0; battery+map поддержан этапом 11 с ограничениями COUPLED_POWER.md.
 
 Ветер задаётся в мировых осях: None / Constant / периодический Gust / stateless seeded
 Turbulence / CustomField. Турбулентность — ограниченное аналитическое Fourier поле,
@@ -182,9 +187,13 @@ ManualPrincipal задаёт положительные главные моме�
 | ProjectedArea: box, manual/mesh LUT; Surfaces; geometry markers/export | Реализовано в этапе 3 |
 | RpmTable, PerformanceMap, SI CSV import | Реализовано в этапе 4; пульт использует статическую J=0 кривую |
 | Ground effect, rotor drag | Реализовано в этапе 5; независимые optional-флаги |
-| Flapping, induced drag, gyroscopic effects | Контракт; включение отклоняется до принятия моделей |
+| Blade flapping, axial inflow, translational lift | Реализовано в этапе 10; ограничения и source formulas — ROTOR_FLOW.md |
+| Gyroscopic rotor effects / spin energy | Реализовано в opt-in RotorInertia этапе 11, weak-coupling envelope |
 | Battery Simple / Electrical, SOC/OCV/sag, RPM/current/power envelope | Реализовано в этапе 6; ограничения — POWER_SYSTEM.md |
-| Battery + RPM/J map, efficiency curve, motor inductance / thermal | Ожидают модели; map/efficiency curve с батареей явно отклоняются |
+| Battery + RPM/J map | Реализовано в этапе 11: Clamp, Q>=0, monotone load envelope |
+| Efficiency curve / motor inductance | Не реализованы; efficiency curve с батареей отклоняется |
+| Thermal motor/ESC/battery, Rmotor(T), current derating | Реализовано в optional thermalEnabled этапе 12; effective single nodes, Electrical required |
+| Weather presets и precipitation metadata | Реализовано в этапе 12; VisualOnly, без water/ice forces/heat, VFX — внешняя интеграция |
 | StandardAtmosphere, Gust, seeded Turbulence, CustomField/IWindProvider | Реализовано в этапе 7; ограничения и формулы — ENVIRONMENT.md |
 | Telemetry CSV/manifest, drive-loss scenarios, VFX data API | Реализовано в этапе 8; DIAGNOSTICS.md; реальная калибровка/VFX simulation не выполнены |
 
@@ -225,7 +234,8 @@ Quad allocator остаётся обычным четырёхмоторным; P
 StepPrepared публикуется после подготовки сил до интегратора Rigidbody. CSV хранит
 позу/скорость на начало шага, силы/RPM шага и энергию/заряд на его конец. Reset разделяет
 сегменты; Initialize разделяет записи. Файлы включают принятые JSON и настройки старта.
-Формат телеметрии имеет свою версию 1.0.0; профиль JSON не менялся. Данные VFX — только
+Формат телеметрии этапа 8 — 1.0.0; этап 10 добавляет столбцы в версии 1.1.0.
+Профиль JSON сохраняет 1.0.0 с документированными optional additions. Данные VFX — только
 оценка hover inflow и фактическое состояние ротора, без новых сил/CFD. DIAGNOSTICS.md.
 
 ## SDK 0.2.0 / этап 9
@@ -237,3 +247,44 @@ Recorder читает optional IFlightControlTelemetry; без controller mode=N
 Package resource paths не зависят от Assets-folder. MODULE_INTEGRATION.md описывает
 контракт и migration. Импорт полного tensor меняет mass/COM/inertia, но не силы
 нового вида или смысл JSON 1.0.0. PHYSICS_UPGRADES.md задаёт последующие этапы.
+
+## Этап 10: расширенный поток
+
+Static thrust + bounded dT и hub flapping moment: ROTOR_FLOW.md. Три новых коэффициента
+масштабируются rho/reference rho; старый H-force не изменён. Формулы используют поток
+каждой точки и arbitrary thrust axes. Negative/zero base thrust или stop запрещают
+новые поправки. Ограничения dT/T и M/(T*R) и отдельный clip flag обязательны.
+Axial/lift bundle с RPM/J map отклоняется; Q/current остаются на базовой модели.
+Новые поля optional; старые профили/force signs сохраняются. UPM snapshots пересобираются
+в конце улучшений по решению пользователя, не в каждом исходном physics commit.
+
+## Этап 11: supply/load/spin
+
+COUPLED_POWER.md фиксирует optional dynamicsModel и Jr, midpoint forces/load,
+заряд/энергию/потери, coast без active braking, mount torque без двойного Q,
+и gyro -omegaBody cross H. Mass inertia уже включает locked rotors, Jr повторно
+не прибавляется. Малые Jr/body rates — предположение модели; mass-matrix back-coupling
+не решается. CSV 1.2.0 различает RPM end/force и ток DC equivalent/bus/CSV measurements.
+
+## Thermal и погодные пресеты (этап 12)
+
+powerSystem.thermalEnabled по умолчанию false. Требуются Electrical battery и явные
+thermal nodes батареи/каждого motor/ESC, параметры в SI. C*dT/dt=Ploss-G(T-Ta),
+точное экспоненциальное решение для frozen step inputs; потери уже включены в power
+расчёт, повторный расход энергии запрещён. Температура меняет Rmotor и допустимые
+токи/мощность через continuous derating, не умножает произвольно thrust. Thermal
+Resolve/Commit сохраняет spin/coast и обновляет температуру/заряд один раз. CSV 1.3.0
+и API публикуют состояние/энергию; источники/envelope/проверка — THERMAL_WEATHER.md.
+Environment weather задаёт None/Rain/Snow/Hail и liquid-equivalent mm/h как VisualOnly
+metadata. Физически действуют существующие T/P/wind; water impacts/icing/hail damage
+и chemistry/cold-capacity батареи остаются не реализованными.
+
+## Снижение и ветер (этап 13)
+
+windMode=DrydenFrozen — optional finite-band random-phase synthesis пространственных
+Dryden PSD на одной горизонтальной frozen line; явные sigma/L/axis/speed/seed/N/band.
+Старый Turbulence остаётся bounded demo field. Rotor operatingEnvelope ReportOnly
+задаёт climb/descent/lateral limits, не меняет силы/команды. Raw point air speed,
+reference -Vaxial/vi_hover, flow regime и max sampling/Nyquist ratio — diagnostics
+в HUD/CSV 1.4.0. DESCENT_WIND.md фиксирует формулы, источники и domain. VRS forces,
+dynamic inflow и полный 3D/terrain wind не реализованы.

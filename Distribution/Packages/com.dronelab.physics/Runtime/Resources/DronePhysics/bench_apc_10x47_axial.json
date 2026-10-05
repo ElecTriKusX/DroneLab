@@ -1,0 +1,471 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "name": "UIUC APC 10x4.7 SF axial bench holder",
+    "manufacturer": "DroneLab / APC",
+    "model": "Synthetic holder, APC 10x4.7 SF",
+    "description": "Single measured 4014 RPM axial sweep; finite J range, not a multi-RPM flight map. Synthetic J=0 anchor from static interpolation; negative-thrust branch is tested, electrical/extra airflow gains disabled."
+  },
+  "coordinateSystem": {
+    "convention": "UnityLeftHandedYUpZForward",
+    "lengthUnit": "m",
+    "modelScaleMetersPerUnit": 1
+  },
+  "physicsConfiguration": {
+    "fidelity": "Basic",
+    "modules": {
+      "motorResponse": true,
+      "bodyDrag": false,
+      "windInteraction": true,
+      "groundEffect": false,
+      "rotorAerodynamics": false,
+      "bladeFlapping": false,
+      "inducedDrag": false,
+      "batteryDischarge": false,
+      "batteryVoltageSag": false,
+      "motorElectrical": false,
+      "gyroscopicRotorEffects": false
+    }
+  },
+  "massProperties": {
+    "massKg": 0.68,
+    "centerOfMassLocalM": [
+      0,
+      0,
+      0
+    ],
+    "dimensionsM": [
+      0.54,
+      0.12,
+      0.54
+    ],
+    "inertia": {
+      "mode": "ManualPrincipal",
+      "principalMomentsKgM2": [
+        0.007,
+        0.012,
+        0.007
+      ],
+      "principalAxesRotationXyzw": [
+        0,
+        0,
+        0,
+        1
+      ]
+    }
+  },
+  "rotors": [
+    {
+      "rotorId": "F",
+      "geometry": {
+        "positionLocalM": [
+          0,
+          0.01,
+          0.17
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 4014,
+        "responseTimeUpS": 0.0125,
+        "responseTimeDownS": 0.025
+      },
+      "propeller": {
+        "diameterM": 0.254,
+        "pitchM": 0.11938,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "PerformanceMap",
+        "referenceAirDensityKgM3": 1.225,
+        "outOfRangePolicy": "Clamp",
+        "performanceMap": [
+          {
+            "rpm": 4014,
+            "advanceRatio": 0,
+            "ct": 0.11571573033707865,
+            "cq": 0.007411255574719675
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.142,
+            "ct": 0.0994,
+            "cq": 0.00717788793344448
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.216,
+            "ct": 0.0885,
+            "cq": 0.006939155518806637
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.289,
+            "ct": 0.077,
+            "cq": 0.006589014644004467
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.361,
+            "ct": 0.0652,
+            "cq": 0.006238873769202297
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.438,
+            "ct": 0.0502,
+            "cq": 0.005602253996834716
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.51,
+            "ct": 0.0343,
+            "cq": 0.004901972247230377
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.577,
+            "ct": 0.0178,
+            "cq": 0.0041061975317709
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.647,
+            "ct": -0.0011,
+            "cq": 0.0031671833675287176
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.719,
+            "ct": -0.0218,
+            "cq": 0.0020690142601946394
+          }
+        ]
+      }
+    },
+    {
+      "rotorId": "R",
+      "geometry": {
+        "positionLocalM": [
+          0.17,
+          0.01,
+          0
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 4014,
+        "responseTimeUpS": 0.0125,
+        "responseTimeDownS": 0.025
+      },
+      "propeller": {
+        "diameterM": 0.254,
+        "pitchM": 0.11938,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "PerformanceMap",
+        "referenceAirDensityKgM3": 1.225,
+        "outOfRangePolicy": "Clamp",
+        "performanceMap": [
+          {
+            "rpm": 4014,
+            "advanceRatio": 0,
+            "ct": 0.11571573033707865,
+            "cq": 0.007411255574719675
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.142,
+            "ct": 0.0994,
+            "cq": 0.00717788793344448
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.216,
+            "ct": 0.0885,
+            "cq": 0.006939155518806637
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.289,
+            "ct": 0.077,
+            "cq": 0.006589014644004467
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.361,
+            "ct": 0.0652,
+            "cq": 0.006238873769202297
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.438,
+            "ct": 0.0502,
+            "cq": 0.005602253996834716
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.51,
+            "ct": 0.0343,
+            "cq": 0.004901972247230377
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.577,
+            "ct": 0.0178,
+            "cq": 0.0041061975317709
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.647,
+            "ct": -0.0011,
+            "cq": 0.0031671833675287176
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.719,
+            "ct": -0.0218,
+            "cq": 0.0020690142601946394
+          }
+        ]
+      }
+    },
+    {
+      "rotorId": "B",
+      "geometry": {
+        "positionLocalM": [
+          0,
+          0.01,
+          -0.17
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 4014,
+        "responseTimeUpS": 0.0125,
+        "responseTimeDownS": 0.025
+      },
+      "propeller": {
+        "diameterM": 0.254,
+        "pitchM": 0.11938,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "PerformanceMap",
+        "referenceAirDensityKgM3": 1.225,
+        "outOfRangePolicy": "Clamp",
+        "performanceMap": [
+          {
+            "rpm": 4014,
+            "advanceRatio": 0,
+            "ct": 0.11571573033707865,
+            "cq": 0.007411255574719675
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.142,
+            "ct": 0.0994,
+            "cq": 0.00717788793344448
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.216,
+            "ct": 0.0885,
+            "cq": 0.006939155518806637
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.289,
+            "ct": 0.077,
+            "cq": 0.006589014644004467
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.361,
+            "ct": 0.0652,
+            "cq": 0.006238873769202297
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.438,
+            "ct": 0.0502,
+            "cq": 0.005602253996834716
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.51,
+            "ct": 0.0343,
+            "cq": 0.004901972247230377
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.577,
+            "ct": 0.0178,
+            "cq": 0.0041061975317709
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.647,
+            "ct": -0.0011,
+            "cq": 0.0031671833675287176
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.719,
+            "ct": -0.0218,
+            "cq": 0.0020690142601946394
+          }
+        ]
+      }
+    },
+    {
+      "rotorId": "L",
+      "geometry": {
+        "positionLocalM": [
+          -0.17,
+          0.01,
+          0
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 4014,
+        "responseTimeUpS": 0.0125,
+        "responseTimeDownS": 0.025
+      },
+      "propeller": {
+        "diameterM": 0.254,
+        "pitchM": 0.11938,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "PerformanceMap",
+        "referenceAirDensityKgM3": 1.225,
+        "outOfRangePolicy": "Clamp",
+        "performanceMap": [
+          {
+            "rpm": 4014,
+            "advanceRatio": 0,
+            "ct": 0.11571573033707865,
+            "cq": 0.007411255574719675
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.142,
+            "ct": 0.0994,
+            "cq": 0.00717788793344448
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.216,
+            "ct": 0.0885,
+            "cq": 0.006939155518806637
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.289,
+            "ct": 0.077,
+            "cq": 0.006589014644004467
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.361,
+            "ct": 0.0652,
+            "cq": 0.006238873769202297
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.438,
+            "ct": 0.0502,
+            "cq": 0.005602253996834716
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.51,
+            "ct": 0.0343,
+            "cq": 0.004901972247230377
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.577,
+            "ct": 0.0178,
+            "cq": 0.0041061975317709
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.647,
+            "ct": -0.0011,
+            "cq": 0.0031671833675287176
+          },
+          {
+            "rpm": 4014,
+            "advanceRatio": 0.719,
+            "ct": -0.0218,
+            "cq": 0.0020690142601946394
+          }
+        ]
+      }
+    }
+  ],
+  "bodyAerodynamics": {
+    "model": "AxisApproximation",
+    "dragCd": [
+      0,
+      0,
+      0
+    ],
+    "referenceAreaM2": [
+      0.0648,
+      0.2916,
+      0.0648
+    ]
+  },
+  "powerSystem": {
+    "battery": {
+      "mode": "None"
+    }
+  },
+  "parameterProvenance": [
+    {
+      "path": "massProperties / rotors.geometry / rotors.motor / physicsConfiguration.modules",
+      "sourceType": "Estimated",
+      "source": "Synthetic holder geometry copied from Hummingbird reference; all battery/aero extras disabled. Startup join below 2377 RPM synthetic, excluded from accuracy claims.",
+      "confidence": 0.1
+    },
+    {
+      "path": "rotors.performance",
+      "sourceType": "Measured",
+      "source": "https://m-selig.ae.illinois.edu/props/volume-1/data/apcsf_10x4.7_kt0836_4014.txt ; alternating measured J holdouts. J=0 anchor calculated from static rows 3762/4029 RPM; rho assumed 1.225. One RPM only; RPM clamp does not validate other RPM.",
+      "confidence": 0.8
+    }
+  ]
+}

@@ -6,7 +6,7 @@ namespace DroneLab.Editor
 {
     public static class ScaleReferenceMenu
     {
-        [MenuItem("DroneLab/Create Scale References (meters)")]
+        [MenuItem("DroneLab/Test Bench/Scale References (meters)")]
         public static void Create()
         {
             var origin=Selection.activeTransform != null ? Selection.activeTransform.position : Vector3.zero;

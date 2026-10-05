@@ -10,7 +10,7 @@ import shutil
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 PACKAGE_ROOT = ROOT / "Distribution/Packages"
 
 
@@ -54,9 +54,9 @@ def collect(root=ROOT):
         files["README.md"] = (root / "Docs/Physics/MODULE_INTEGRATION.md").read_bytes()
         wanted={"MODULE_INTEGRATION.md", "FLIGHT_CONTROL.md", "QUICKSTART.md", "DIAGNOSTICS.md"} if demo else {"MODULE_INTEGRATION.md", "SPECIFICATION.md", "PARAMETERS.md", "INERTIA_IMPORT.md", "PHYSICS_UPGRADES.md", "cad_inertia_test.json"}
         for doc in (root / "Docs/Physics").rglob("*"):
-            if doc.is_file() and doc.name in wanted:
+            if doc.is_file() and (not demo or doc.name in wanted or doc.name in {"MENU.md", "REFERENCE_DRONES.md", "JUDGES_BRIEF.md"}):
                 files[str(Path("Documentation~") / doc.relative_to(root / "Docs/Physics"))] = doc.read_bytes()
-        files["CHANGELOG.md"] = ("# Changelog\n\n## " + VERSION + "\n\nSplit optional pilot/input assembly; CAD full-inertia import; portable test resources.\n").encode()
+        files["CHANGELOG.md"] = ("# Changelog\n\n## " + VERSION + "\n\nRotor airflow, coupled RPM/J electrical power and rotor inertia/gyro, thermal protection, finite-band Dryden and descent diagnostics. Open reference profiles, withheld measurement comparisons, organized test menus and physics/judges documentation. JSON 1.0.0 retained; CSV 1.4.0.\n").encode()
         # Deterministic metadata for generated folders; source script GUIDs stay unchanged.
         directories = set()
         for path in files:

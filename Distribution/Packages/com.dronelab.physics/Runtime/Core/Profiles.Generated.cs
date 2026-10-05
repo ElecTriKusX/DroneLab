@@ -68,6 +68,18 @@ namespace DroneLab.Physics
     }
 
     [Serializable]
+    public sealed class ThermalProfile
+    {
+        public double heatCapacityJPerK;
+        public double heatTransferWPerK;
+        public double airflowHeatTransferWPerKPerMps;
+        public double maxAirSpeedMps;
+        public double initialTemperatureK;
+        public double derateStartTemperatureK;
+        public double cutoffTemperatureK;
+    }
+
+    [Serializable]
     public sealed class MotorElectricalProfile
     {
         public double motorKvRpmPerVolt;
@@ -79,6 +91,10 @@ namespace DroneLab.Physics
         public EfficiencyPoint[] efficiencyCurve;
         public double escEfficiency;
         public double escMaxCurrentA;
+        public ThermalProfile thermal;
+        public ThermalProfile escThermal;
+        public double resistanceReferenceTemperatureK;
+        public double resistanceTemperatureCoefficientPerK;
     }
 
     [Serializable]
@@ -90,6 +106,7 @@ namespace DroneLab.Physics
         public double responseTimeUpS;
         public double responseTimeDownS;
         public double rotatingInertiaKgM2;
+        public string dynamicsModel;
         public MotorElectricalProfile electrical;
     }
 
@@ -148,6 +165,11 @@ namespace DroneLab.Physics
         public double rotorDragCoefficientKgPerRad;
         public double bladeFlappingCoefficient;
         public double inducedDragCoefficient;
+        public double translationalLiftCoefficientKgPerM;
+        public double referenceAirDensityKgM3;
+        public double maxAirSpeedMps;
+        public double maxThrustCorrectionFraction;
+        public double maxFlappingMomentRatio;
     }
 
     [Serializable]
@@ -159,6 +181,16 @@ namespace DroneLab.Physics
         public PropellerProfile propeller;
         public RotorPerformanceProfile performance;
         public RotorAerodynamicsProfile advancedAerodynamics;
+        public RotorOperatingEnvelopeProfile operatingEnvelope;
+    }
+
+    [Serializable]
+    public sealed class RotorOperatingEnvelopeProfile
+    {
+        public string model;
+        public double maxAxialClimbSpeedMps;
+        public double maxAxialDescentSpeedMps;
+        public double maxLateralSpeedMps;
     }
 
     [Serializable]
@@ -224,12 +256,14 @@ namespace DroneLab.Physics
         public double internalResistanceOhm;
         public double maxDischargeCurrentA;
         public OcvPoint[] ocvCurve;
+        public ThermalProfile thermal;
     }
 
     [Serializable]
     public sealed class PowerSystemProfile
     {
         public BatteryProfile battery;
+        public bool thermalEnabled;
     }
 
     [Serializable]
@@ -269,6 +303,26 @@ namespace DroneLab.Physics
     }
 
     [Serializable]
+    public sealed class WeatherProfile
+    {
+        public string precipitation;
+        public double intensityMmPerHour;
+        public string model;
+    }
+
+    [Serializable]
+    public sealed class DrydenProfile
+    {
+        public double[] sigmaUvwMps;
+        public double[] lengthScaleUvwM;
+        public double[] advectionDirectionWorld;
+        public double advectionSpeedMps;
+        public int modesPerComponent;
+        public double minDimensionlessWaveNumber;
+        public double maxDimensionlessWaveNumber;
+    }
+
+    [Serializable]
     public sealed class EnvironmentProfile
     {
         public string schemaVersion;
@@ -284,6 +338,8 @@ namespace DroneLab.Physics
         public double gustIntensityMps;
         public double gustTimeScaleS;
         public int turbulenceSeed;
+        public WeatherProfile weather;
+        public DrydenProfile dryden;
     }
 
 }

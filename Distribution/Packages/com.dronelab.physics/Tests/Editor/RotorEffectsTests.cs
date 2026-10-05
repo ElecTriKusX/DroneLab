@@ -32,7 +32,7 @@ namespace DroneLab.Physics.Tests
         [Test] public void NegativeRotorDragRejected()
             => Assert.That(Load(edit:p=>p["rotors"][0]["advancedAerodynamics"]["rotorDragCoefficientKgPerRad"]=-1).Success,Is.False);
         [TestCase("bladeFlapping")] [TestCase("inducedDrag")] [TestCase("gyroscopicRotorEffects")]
-        public void UnimplementedRotorEffectsRemainRejected(string module)
+        public void MissingNewSettingsOrUnimplementedGyroRemainRejected(string module)
             => Assert.That(Load(edit:p=>p["physicsConfiguration"]["modules"][module]=true).Success,Is.False);
         [TestCase(0,1.5)] [TestCase(.25,1.5)] [TestCase(.5,1.25)] [TestCase(1,1.0625)] [TestCase(2,1.015625)] [TestCase(50,1)] [TestCase(51,1)]
         public void GroundGainMatchesBoundedFormula(double heightOverRadius,double expected)

@@ -80,7 +80,7 @@ namespace DroneLab.Physics
             }
             var modules=p.physicsConfiguration.modules;
             foreach(var field in typeof(PhysicsModulesProfile).GetFields())
-                if (field.Name != "motorResponse" && field.Name != "bodyDrag" && field.Name != "windInteraction" && field.Name != "groundEffect" && field.Name != "rotorAerodynamics" && field.Name != "batteryDischarge" && field.Name != "batteryVoltageSag" && field.Name != "motorElectrical" && (bool)field.GetValue(modules))
+                if (field.Name != "motorResponse" && field.Name != "bodyDrag" && field.Name != "windInteraction" && field.Name != "groundEffect" && field.Name != "rotorAerodynamics" && field.Name != "bladeFlapping" && field.Name != "inducedDrag" && field.Name != "batteryDischarge" && field.Name != "batteryVoltageSag" && field.Name != "motorElectrical" && field.Name != "gyroscopicRotorEffects" && (bool)field.GetValue(modules))
                     unsupported("physicsConfiguration.modules."+field.Name);
             if(modules.groundEffect)
             {
@@ -94,8 +94,23 @@ namespace DroneLab.Physics
                 if (!ids.Add(rotor.rotorId)) error(path+".rotorId","Duplicate rotor ID.");
                 if (Math.Abs(DVector3.From(rotor.geometry.thrustAxisLocal).Length-1)>1e-5)
                     error(path+".geometry.thrustAxisLocal","Axis must be normalized and nonzero.");
-                if(modules.rotorAerodynamics && rotor.advancedAerodynamics==null)
-                    error(path+".advancedAerodynamics","Rotor drag coefficient is required for every rotor when rotorAerodynamics is enabled.");
+                var settings=rotor.advancedAerodynamics;
+                bool lift=modules.rotorAerodynamics && settings!=null && settings.translationalLiftCoefficientKgPerM>0;
+                if((modules.rotorAerodynamics || modules.bladeFlapping || modules.inducedDrag) && settings==null)
+                    error(path+".advancedAerodynamics","Aerodynamic settings are required for every rotor when its module is enabled.");
+                if(settings!=null && (modules.bladeFlapping || modules.inducedDrag || lift))
+                {
+                    var sj=json["rotors"][i]["advancedAerodynamics"]; var sp=path+".advancedAerodynamics";
+                    Required(sj,"referenceAirDensityKgM3",sp); Required(sj,"maxAirSpeedMps",sp);
+                    if(modules.bladeFlapping) { Required(sj,"bladeFlappingCoefficient",sp); Required(sj,"maxFlappingMomentRatio",sp); }
+                    if(modules.inducedDrag || lift) Required(sj,"maxThrustCorrectionFraction",sp);
+                    if(modules.inducedDrag) Required(sj,"inducedDragCoefficient",sp);
+                    if(rotor.performance.model=="PerformanceMap" && modules.inducedDrag)
+                        error(sp,"Axial inflow is already represented by the RPM/J map; inducedDrag must be disabled.");
+                    if(rotor.performance.model=="PerformanceMap" && lift)
+                        error(sp,"This empirical lift bundle requires static base performance; do not stack it on an RPM/J map.");
+                    r.Issues.Add(new ValidationIssue(sp,"Bounded empirical airflow corrections: coefficients require their own source and speed envelope; Q/current stay on the base performance model (not a coupled energy solver).","Warning"));
+                }
                 var m=rotor.motor;
                 if (m.minRpm>m.idleRpm || m.idleRpm>=m.maxRpm) error(path+".motor","Require 0 <= minRpm <= idleRpm < maxRpm.");
                 var perf=rotor.performance; var perfJson=json["rotors"][i]["performance"];
@@ -177,9 +192,13 @@ namespace DroneLab.Physics
                 }
             }
             foreach(var issue in PowerValidation.Check(p,json)) error(issue.Path,issue.Message);
+            foreach(var issue in ThermalValidation.Check(p,json)) error(issue.Path,issue.Message);
+            if(p.powerSystem.thermalEnabled)
+                r.Issues.Add(new ValidationIssue("powerSystem.thermalEnabled","Effective lumped motor/ESC/battery temperatures with estimated cooling and continuous current derating. No cell chemistry/cold-capacity model, thermal runaway, internal gradients or active braking. Coefficients require sources.","Warning"));
             if(p.powerSystem.battery.mode!="None")
-                r.Issues.Add(new ValidationIssue("powerSystem","Quasi-steady battery model: currents are estimated, CSV current is separate, no regeneration or rotor acceleration energy. Electrical derives motor losses from Kv/R/I0; motorEfficiency is used only by Simple.","Warning"));
+                r.Issues.Add(new ValidationIssue("powerSystem","Estimated DC/BLDC equivalent currents; measured CSV current is separate. No regeneration/inductance. RotorInertia accounts spin energy with midpoint integration; legacy FirstOrder does not. Electrical derives losses from Kv/R/I0; constant efficiency is Simple only.","Warning"));
             foreach(var issue in EnvironmentValidation.Check(e,environmentJson,p)) error(issue.Path,issue.Message);
+            if(e.windMode=="DrydenFrozen") r.Issues.Add(new ValidationIssue("environment.dryden","Finite-band frozen-line Dryden spectrum synthesis, not full 3D turbulence or MIL angular gust gradients. Check retained variance and timestep/spatial sampling; parameters require their own source.","Warning"));
             if(e.windMode=="CustomField") r.Issues.Add(new ValidationIssue("environment.windMode","CustomField needs an explicit IWindProvider in the Unity adapter; disabled windInteraction ignores it.","Warning"));
         }
     }

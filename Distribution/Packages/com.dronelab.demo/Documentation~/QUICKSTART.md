@@ -18,7 +18,7 @@ git pull --ff-only
 2. Убедиться, что Terrain имеет TerrainCollider.
 3. В **Edit → Project Settings → Time** установить **Fixed Timestep = 0.01**.
 4. Выбрать Terrain или объект около нужной точки старта.
-5. Нажать **DroneLab → Create Physics Test Drone**.
+5. Нажать **DroneLab → Test Bench → Basic Physics Drone**.
 6. Получится `DroneLab TestQuad`: Rigidbody, BoxCollider, DronePhysicsBody, DroneTestPilot
    и дочерний визуальный куб. Роторы — данные JSON; четыре отдельных GameObject не нужны.
 7. Для камеры добавить на Main Camera **DroneTestCamera**, перетащить корень дрона в `Target`.
@@ -105,7 +105,7 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
 Результаты текущей проверки и её ограничения записаны в `VALIDATION.md`.
 
 Метровые ориентиры и проверка отклика: [BEHAVIOR_BASELINE.md](BEHAVIOR_BASELINE.md).
-После выделения дрона можно выполнить **DroneLab → Create Scale References (meters)**.
+После выделения дрона можно выполнить **DroneLab → Test Bench → Scale References (meters)**.
 
 Геометрия своей модели, площади и новый экспорт профилей: [GEOMETRY_AERODYNAMICS.md](GEOMETRY_AERODYNAMICS.md).
 

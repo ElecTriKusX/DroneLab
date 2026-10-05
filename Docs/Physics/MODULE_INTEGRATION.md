@@ -1,6 +1,6 @@
 # Перенос DroneLab Physics между проектами
 
-SDK 0.2.0 предназначен для Unity 6000.3 (разработческий стенд 6000.3.25f1).
+SDK 0.3.0 предназначен для Unity 6000.3 (разработческий стенд 6000.3.25f1).
 JSON profile version остаётся 1.0.0. Проекты карты, меню и модели используют
 одну зафиксированную версию SDK, а не копируют изменённые скрипты друг у друга.
 
@@ -9,7 +9,7 @@ JSON profile version остаётся 1.0.0. Проекты карты, меню
 | Пакет | Содержимое | Зависимости |
 |---|---|---|
 | `com.dronelab.physics` | Pure C# core, Rigidbody/ветер/ground probes, profiles/schemas, markers/authoring/import, CSV/fault, EditMode tests | Newtonsoft 3.2.1, стандартные Unity physics/terrain/JSON/IMGUI modules |
-| `com.dronelab.demo` | DroneTestPilot (Angle/Acro/H), keyboard/gamepad, camera, test-drone menus, PlayMode regression | Physics 0.2.0, Input System 1.20 |
+| `com.dronelab.demo` | DroneTestPilot (Angle/Acro/H), keyboard/gamepad, camera, test-drone menus, PlayMode regression | Physics 0.3.0, Input System 1.20 |
 
 Physics не ссылается на Demo или Unity.InputSystem. Pure PID/allocator/input-value
 утилиты пока остаются в математическом core как доступные функции; сами они не
@@ -31,7 +31,7 @@ SDK сохраняет текущую лицензию репозитория (G
 4. Создать объект: Rigidbody + Collider + DronePhysicsBody, назначить drone/environment
    TextAssets. Physics root и родители scale=1. Визуальный mesh — дочерний объект.
 5. Для теста с клавиатурой добавить DroneTestPilot и камеру либо воспользоваться
-   `DroneLab → Create Physics Test Drone`. Эта команда появляется при установке Demo.
+   `DroneLab → Test Bench → Basic Physics Drone`. Эта команда появляется при установке Demo.
 6. После Play проверить физику и запись CSV. Для схемы JSON/UI использовать тот же
    профильный контракт, не строить второй расчёт тяги/заряда в меню.
 
@@ -58,7 +58,7 @@ Unity Package Manager также поддерживает Git package с `?path=
 ```
 
 Для командной сборки заменить fragment после `#` на один и тот же полный commit SHA.
-Version 0.2.0 — версия содержимого package.json, SHA однозначно фиксирует артефакт.
+Version 0.3.0 — версия содержимого package.json, SHA однозначно фиксирует артефакт.
 Не смешивать Git-installed и embedded копии. Весь Git repo содержит тяжёлые model assets;
 локальные embedded SDK-папки проще для первого переноса.
 
@@ -108,10 +108,10 @@ python -m unittest discover -s Tests/Python -v
 Новый commit SDK требует smoke test обоих пакетов. Публичный JSON/API меняется с
 документированной совместимостью; удаление поля или смена единиц требует major version.
 
-## Работа после этапа 9
+## Финальная сборка этапа 14
 
-По решению пользователя UPM snapshots 0.2.0 в Distribution сохраняются до конца
-улучшений физики. Этап 10 и следующие разрабатываются/проверяются в Assets/DronePhysics;
-SDK 0.2.0 не содержит новый RotorFlow и CSV 1.1.0. Команды rebuild/--check выше
-выполняем при финальной пересборке с новой версией и smoke test в чистом проекте.
-Текущий source commit не следует объявлять готовым updated UPM snapshot.
+Distribution/Packages обновлены до 0.3.0 и включают этапы 10–14, JSON 1.0.0,
+CSV 1.4.0, public benchmarks, новые профили, меню и итоговые документы.
+`python Tools/build_unity_packages.py --check` сверяет каждый файл с source.
+Чистый Unity import, PlayMode и EXE проверяет команда: Unity в среде сборки не установлен.
+Пошаговый smoke test и новое меню — MENU.md; измерения/модели — REFERENCE_DRONES.md.

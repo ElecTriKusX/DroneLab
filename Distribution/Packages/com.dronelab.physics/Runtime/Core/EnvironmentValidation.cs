@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
@@ -7,6 +8,14 @@ namespace DroneLab.Physics
     {
         public static IEnumerable<ValidationIssue> Check(EnvironmentProfile e,JObject json,DroneProfile drone)
         {
+            if(drone.powerSystem.thermalEnabled && e.airDensityMode=="Constant" &&
+                (json["temperatureK"]==null || e.temperatureK<100 || e.temperatureK>500))
+                yield return new ValidationIssue("environment.temperatureK","Thermal mode requires explicit constant ambient temperature 100..500 K.");
+            if(e.weather!=null)
+            {
+                if((e.weather.precipitation=="None")!=(e.weather.intensityMmPerHour==0))
+                    yield return new ValidationIssue("environment.weather","None requires zero intensity; Rain/Snow/Hail require positive intensity.");
+            }
             if(e.airDensityMode=="StandardAtmosphere")
             {
                 if(e.altitudeM< -500 || e.altitudeM>11000 || (e.temperatureK!=0 && (e.temperatureK<200 || e.temperatureK>330)) ||
@@ -20,7 +29,7 @@ namespace DroneLab.Physics
             if(e.windMode=="Gust" && !e.gustEnabled)
                 yield return new ValidationIssue("environment.gustEnabled","Gust mode requires gustEnabled=true.");
             if((e.windMode=="None" || e.windMode=="CustomField") && e.gustEnabled)
-                yield return new ValidationIssue("environment.gustEnabled","Gust overlay requires Constant, Gust or Turbulence mode; CustomField supplies its own fluctuations.");
+                yield return new ValidationIssue("environment.gustEnabled","Gust overlay requires Constant, Gust, Turbulence or DrydenFrozen mode; CustomField supplies its own fluctuations.");
             if(fluctuations)
             {
                 if(json["gustIntensityMps"]==null || json["gustTimeScaleS"]==null)
@@ -30,6 +39,19 @@ namespace DroneLab.Physics
             }
             if(e.windMode=="Turbulence" && json["turbulenceSeed"]==null)
                 yield return new ValidationIssue("environment.turbulenceSeed","Explicit seed required for reproducible turbulence.");
+            if(e.windMode=="DrydenFrozen")
+            {
+                if(e.dryden==null || json["turbulenceSeed"]==null)
+                    yield return new ValidationIssue("environment.dryden","DrydenFrozen requires explicit dryden parameters and turbulenceSeed.");
+                if(e.dryden!=null)
+                {
+                    var d=DVector3.From(e.dryden.advectionDirectionWorld);
+                    if(Math.Abs(d.Length-1)>1e-5 || Math.Abs(d.Y)>1e-8)
+                        yield return new ValidationIssue("environment.dryden.advectionDirectionWorld","Frozen line requires a unit horizontal XZ direction; u along it, w world +Y, v=up cross u.");
+                    if(e.dryden.minDimensionlessWaveNumber>=e.dryden.maxDimensionlessWaveNumber)
+                        yield return new ValidationIssue("environment.dryden","Wave-number band must have strictly increasing endpoints.");
+                }
+            }
         }
     }
 }

@@ -12,12 +12,26 @@ namespace DroneLab.Physics
         public readonly double? MeasuredCurrent,BusCurrent,GroundHeight;
         public readonly DVector3 WindWorld,DragWorld;
         public readonly bool Clamped;
+        public readonly double ThrustCorrection;
+        public readonly DVector3 FlappingMomentWorld;
+        public readonly bool FlowClamped;
+        public readonly double? PropellerTorque,AccelerationTorque,SpinEnergy,MotorCurrent,MotorLoss,EscLoss;
+        public readonly double? EvaluationRpm;
+        public readonly double? MotorTemperature,EscTemperature,MotorThermalAuthority,EscThermalAuthority,MotorResistance;
+        public readonly RotorFlightEnvelopeSample? Envelope;
         public RotorTelemetry(double command,double drive,double rpm,double thrust,double torque,double advance,
             double? measuredCurrent,double? busCurrent,double? groundHeight,double groundGain,double induced,
-            DVector3 wind,DVector3 drag,bool clamped)
+            DVector3 wind,DVector3 drag,bool clamped,double thrustCorrection=0,DVector3 flappingMoment=default,bool flowClamped=false,
+            double? propellerTorque=null,double? accelerationTorque=null,double? spinEnergy=null,double? motorCurrent=null,double? motorLoss=null,double? escLoss=null,double? evaluationRpm=null,
+            double? motorTemperature=null,double? escTemperature=null,double? motorThermalAuthority=null,double? escThermalAuthority=null,double? motorResistance=null,RotorFlightEnvelopeSample? envelope=null)
         { Command=command; DriveAuthority=drive; Rpm=rpm; Thrust=thrust; ReactionTorque=torque; AdvanceRatio=advance;
           MeasuredCurrent=measuredCurrent; BusCurrent=busCurrent; GroundHeight=groundHeight; GroundGain=groundGain;
-          InducedHoverSpeed=induced; WindWorld=wind; DragWorld=drag; Clamped=clamped; }
+          InducedHoverSpeed=induced; WindWorld=wind; DragWorld=drag; Clamped=clamped;
+          ThrustCorrection=thrustCorrection; FlappingMomentWorld=flappingMoment; FlowClamped=flowClamped;
+          PropellerTorque=propellerTorque; AccelerationTorque=accelerationTorque; SpinEnergy=spinEnergy;
+          MotorCurrent=motorCurrent; MotorLoss=motorLoss; EscLoss=escLoss; EvaluationRpm=evaluationRpm;
+          MotorTemperature=motorTemperature; EscTemperature=escTemperature; MotorThermalAuthority=motorThermalAuthority;
+          EscThermalAuthority=escThermalAuthority; MotorResistance=motorResistance; Envelope=envelope; }
     }
     public sealed class FlightTelemetryFrame
     {
@@ -31,11 +45,19 @@ namespace DroneLab.Physics
         public DVector3 PositionWorld,VelocityWorld,AngularVelocityLocal,WindWorld,BodyDragWorld,BodyTorqueWorld,DesiredRateLocal;
         public double RotationX,RotationY,RotationZ,RotationW;
         public double? Soc,Voltage,Current,ElectricalPower,MechanicalPower,ConsumedAh,EnergyJ;
+        public double? PropellerPower,SpinEnergyRate,SpinBalanceError,MotorLoss,EscLoss;
+        public DVector3 GyroscopicMomentWorld;
+        public double? AmbientTemperature,BatteryTemperature,BatteryThermalAuthority,ThermalGeneratedEnergy,ThermalRejectedEnergy,ThermalStoredEnergy;
+        public bool ThermalDerated;
+        public string Precipitation="None";
+        public double PrecipitationIntensity;
+        public double? WindSamplingRatio;
+        public bool WindUnderResolved;
         public RotorTelemetry[] Rotors;
     }
     public sealed class FlightCsvWriter
     {
-        public const string FormatVersion="1.0.0";
+        public const string FormatVersion="1.4.0";
         private readonly TextWriter writer;
         private readonly int count;
         private readonly StringBuilder row=new StringBuilder(2048);
@@ -49,8 +71,11 @@ namespace DroneLab.Physics
             string header="segment,time_s,dt_s,armed,control_mode,altitude_hold,saturated,power_limited,drive_fault,mass_kg,gravity_mps2,density_kgm3,altitude_m,position_x_m,position_y_m,position_z_m,rotation_x,rotation_y,rotation_z,rotation_w,velocity_x_mps,velocity_y_mps,velocity_z_mps,rate_x_radps,rate_y_radps,rate_z_radps,desired_rate_x_radps,desired_rate_y_radps,desired_rate_z_radps,input_roll,input_pitch,input_yaw,input_climb,input_throttle,wind_x_mps,wind_y_mps,wind_z_mps,body_drag_x_n,body_drag_y_n,body_drag_z_n,body_torque_x_nm,body_torque_y_nm,body_torque_z_nm,soc_end,voltage_v,current_a,bus_power_w,shaft_power_w,consumed_ah_end,bus_energy_j_end";
             row.Append(header);
             for(int i=0;i<count;i++)
-                foreach(string suffix in new[]{"command","drive","rpm","thrust_n","reaction_nm","advance_j","measured_current_a","bus_current_a","ground_height_m","ground_gain","induced_hover_mps","wind_x_mps","wind_y_mps","wind_z_mps","drag_x_n","drag_y_n","drag_z_n","clamped"})
+                foreach(string suffix in new[]{"command","drive","rpm","thrust_n","reaction_nm","advance_j","measured_current_a","bus_current_a","ground_height_m","ground_gain","induced_hover_mps","wind_x_mps","wind_y_mps","wind_z_mps","drag_x_n","drag_y_n","drag_z_n","clamped","thrust_correction_n","flap_x_nm","flap_y_nm","flap_z_nm","flow_clamped","propeller_q_nm","acceleration_q_nm","spin_energy_j","motor_current_a","motor_loss_w","esc_loss_w","force_rpm","motor_temp_k_end","esc_temp_k_end","motor_thermal_authority_end","esc_thermal_authority_end","motor_resistance_ohm_end","axial_air_mps","lateral_air_mps","descent_vi_ratio","flow_regime_code","envelope_exceeded"})
                     Cell("rotor_"+i+"_"+rotorIds[i]+"_"+suffix);
+            foreach(var name in new[]{"propeller_power_w","spin_energy_rate_w","spin_balance_error_w","motor_loss_w","esc_loss_w","gyro_x_nm","gyro_y_nm","gyro_z_nm"}) Cell(name);
+            foreach(var name in new[]{"ambient_temp_k","battery_temp_k_end","battery_thermal_authority_end","thermal_derated_end","thermal_generated_j_end","thermal_rejected_j_end","thermal_stored_j_end","precipitation","precipitation_mmph"}) Cell(name);
+            Cell("wind_sampling_nyquist_ratio"); Cell("wind_under_resolved");
             writer.WriteLine(row.ToString());
         }
         private void Cell(string value)
@@ -83,7 +108,18 @@ namespace DroneLab.Physics
                 Number(r.Command); Number(r.DriveAuthority); Number(r.Rpm); Number(r.Thrust); Number(r.ReactionTorque); Number(r.AdvanceRatio);
                 Optional(r.MeasuredCurrent); Optional(r.BusCurrent); Optional(r.GroundHeight); Number(r.GroundGain); Number(r.InducedHoverSpeed);
                 Vector(r.WindWorld); Vector(r.DragWorld); Flag(r.Clamped);
+                Number(r.ThrustCorrection); Vector(r.FlappingMomentWorld); Flag(r.FlowClamped);
+                Optional(r.PropellerTorque); Optional(r.AccelerationTorque); Optional(r.SpinEnergy); Optional(r.MotorCurrent); Optional(r.MotorLoss); Optional(r.EscLoss);
+                Optional(r.EvaluationRpm);
+                Optional(r.MotorTemperature); Optional(r.EscTemperature); Optional(r.MotorThermalAuthority); Optional(r.EscThermalAuthority); Optional(r.MotorResistance);
+                Optional(r.Envelope?.AxialSpeed); Optional(r.Envelope?.LateralSpeed); Optional(r.Envelope?.DescentToHoverInflowRatio);
+                Optional(r.Envelope.HasValue ? (double?)(int)r.Envelope.Value.Regime : null);
+                Optional(r.Envelope?.Exceeded.HasValue==true ? (double?)(r.Envelope.Value.Exceeded.Value ? 1:0) : null);
             }
+            Optional(f.PropellerPower); Optional(f.SpinEnergyRate); Optional(f.SpinBalanceError); Optional(f.MotorLoss); Optional(f.EscLoss); Vector(f.GyroscopicMomentWorld);
+            Optional(f.AmbientTemperature); Optional(f.BatteryTemperature); Optional(f.BatteryThermalAuthority); Flag(f.ThermalDerated);
+            Optional(f.ThermalGeneratedEnergy); Optional(f.ThermalRejectedEnergy); Optional(f.ThermalStoredEnergy); Cell(f.Precipitation); Number(f.PrecipitationIntensity);
+            Optional(f.WindSamplingRatio); Flag(f.WindUnderResolved);
             writer.WriteLine(row.ToString()); Rows++;
         }
         public void Flush()=>writer.Flush();

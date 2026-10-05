@@ -3,6 +3,101 @@
   "$id": "urn:dronelab:environment-profile:1.0.0",
   "$ref": "#/$defs/EnvironmentProfile",
   "$defs": {
+    "WeatherProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "precipitation": {
+          "type": "string",
+          "enum": [
+            "None",
+            "Rain",
+            "Snow",
+            "Hail"
+          ]
+        },
+        "intensityMmPerHour": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200,
+          "description": "Liquid-water-equivalent precipitation rate; VFX metadata only."
+        },
+        "model": {
+          "type": "string",
+          "enum": [
+            "VisualOnly"
+          ]
+        }
+      },
+      "required": [
+        "precipitation",
+        "intensityMmPerHour",
+        "model"
+      ]
+    },
+    "DrydenProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sigmaUvwMps": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "lengthScaleUvwM": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 1000000.0
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "advectionDirectionWorld": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "advectionSpeedMps": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "modesPerComponent": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 128
+        },
+        "minDimensionlessWaveNumber": {
+          "type": "number",
+          "minimum": 1e-05,
+          "maximum": 1
+        },
+        "maxDimensionlessWaveNumber": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10000.0
+        }
+      },
+      "required": [
+        "sigmaUvwMps",
+        "lengthScaleUvwM",
+        "advectionDirectionWorld",
+        "advectionSpeedMps",
+        "modesPerComponent",
+        "minDimensionlessWaveNumber",
+        "maxDimensionlessWaveNumber"
+      ]
+    },
     "EnvironmentProfile": {
       "type": "object",
       "additionalProperties": false,
@@ -46,6 +141,7 @@
             "Constant",
             "Gust",
             "Turbulence",
+            "DrydenFrozen",
             "CustomField"
           ]
         },
@@ -71,6 +167,12 @@
         "turbulenceSeed": {
           "type": "integer",
           "minimum": 0
+        },
+        "weather": {
+          "$ref": "#/$defs/WeatherProfile"
+        },
+        "dryden": {
+          "$ref": "#/$defs/DrydenProfile"
         }
       },
       "required": [

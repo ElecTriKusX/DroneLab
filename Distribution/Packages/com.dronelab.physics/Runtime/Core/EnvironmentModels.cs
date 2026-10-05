@@ -52,13 +52,16 @@ namespace DroneLab.Physics
             return mean+EnvironmentMath.Limit(x*d.X+y*d.Y+z*d.Z,maxDelta);
         }
     }
-    // Stateless bounded Fourier field for repeatable laboratory disturbances; NOT Dryden or CFD.
+    // Stateless environment: legacy bounded Fourier disturbances or optional Dryden frozen-line spectrum.
     public sealed class RuntimeEnvironment : IWindProvider
     {
         public readonly string DensityMode,WindMode;
+        public readonly string Precipitation;
+        public readonly double PrecipitationIntensityMmPerHour;
         public readonly bool WindEnabled,GustEnabled;
         public readonly DVector3 MeanWind;
         public readonly double ReferenceAltitudeM,IntensityMps,TimeScaleS,SpatialScaleM;
+        public readonly DrydenFrozenField Dryden;
         private readonly double density,temperature,pressure;
         private readonly DVector3[] waves,amplitudes;
         private readonly double[] phases;
@@ -66,10 +69,13 @@ namespace DroneLab.Physics
         internal RuntimeEnvironment(EnvironmentProfile p,bool windEnabled)
         {
             DensityMode=p.airDensityMode; WindMode=p.windMode; WindEnabled=windEnabled;
+            Precipitation=p.weather?.precipitation ?? "None";
+            PrecipitationIntensityMmPerHour=p.weather?.intensityMmPerHour ?? 0;
             MeanWind=p.windMode=="None" ? default : DVector3.From(p.windVelocityWorldMps);
             GustEnabled=p.gustEnabled; ReferenceAltitudeM=p.altitudeM;
             density=p.airDensityKgM3; temperature=p.temperatureK; pressure=p.pressurePa;
             IntensityMps=p.gustIntensityMps; TimeScaleS=p.gustTimeScaleS;
+            if(WindMode=="DrydenFrozen") Dryden=new DrydenFrozenField(p.dryden,p.turbulenceSeed,MeanWind);
             if(WindMode!="Turbulence") return;
             SpatialScaleM=Math.Max(1,MeanWind.Length)*TimeScaleS;
             advection=MeanWind.Length>=1 ? MeanWind : new DVector3(1,0,0);
@@ -88,6 +94,12 @@ namespace DroneLab.Physics
         }
         private static double Next(ref uint state)
         { unchecked { state^=state<<13; state^=state>>17; state^=state<<5; } return state/(double)uint.MaxValue; }
+        public double? WindSamplingRatio(DVector3 pointVelocity,double dt)
+        {
+            if(!WindEnabled || Dryden==null) return null;
+            double ratio=Dryden.SamplingRatio(pointVelocity,dt);
+            return GustEnabled && IntensityMps>0 ? Math.Max(ratio,2*dt/TimeScaleS) : ratio;
+        }
         public AirSample SampleAir(double heightChangeM)
         {
             EnvironmentMath.Finite(heightChangeM);
@@ -102,6 +114,7 @@ namespace DroneLab.Physics
             if(!WindEnabled || WindMode=="None") return default;
             if(WindMode=="CustomField") throw new InvalidOperationException("CustomField requires an IWindProvider supplied by the Unity adapter.");
             var wind=MeanWind;
+            if(Dryden!=null) wind=Dryden.Sample(position,time);
             if(WindMode=="Turbulence")
                 for(int i=0;i<waves.Length;i++) wind+=amplitudes[i]*Math.Sin(DVector3.Dot(waves[i],position-advection*time)+phases[i]);
             if(GustEnabled)

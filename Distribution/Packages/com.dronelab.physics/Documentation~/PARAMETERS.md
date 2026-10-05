@@ -66,6 +66,18 @@
 | `loadFraction` | number |
 | `efficiency` | number |
 
+## ThermalProfile
+
+| Поле | Тип / ограничения |
+|---|---|
+| `heatCapacityJPerK` | number |
+| `heatTransferWPerK` | number |
+| `airflowHeatTransferWPerKPerMps` | number |
+| `maxAirSpeedMps` | number |
+| `initialTemperatureK` | number |
+| `derateStartTemperatureK` | number |
+| `cutoffTemperatureK` | number |
+
 ## MotorElectricalProfile
 
 | Поле | Тип / ограничения |
@@ -79,6 +91,10 @@
 | `efficiencyCurve?` | array |
 | `escEfficiency` | number |
 | `escMaxCurrentA` | number |
+| `thermal?` | ThermalProfile |
+| `escThermal?` | ThermalProfile |
+| `resistanceReferenceTemperatureK?` | number |
+| `resistanceTemperatureCoefficientPerK?` | number — Equivalent winding resistance R(T)=Rref*(1+alpha*(T-Tref)); only active with thermalEnabled. Not a cell chemistry model. |
 
 ## MotorProfile
 
@@ -89,7 +105,8 @@
 | `maxRpm` | number |
 | `responseTimeUpS` | number |
 | `responseTimeDownS` | number |
-| `rotatingInertiaKgM2?` | number |
+| `rotatingInertiaKgM2?` | number — Spin-axis inertia of motor rotor plus propeller, kg*m^2; required positive for RotorInertia. |
+| `dynamicsModel?` | ['FirstOrder', 'RotorInertia'] — Omitted means legacy FirstOrder. RotorInertia requires Electrical battery and finite spin inertia. |
 | `electrical?` | MotorElectricalProfile |
 
 ## PropellerProfile
@@ -146,8 +163,13 @@
 | Поле | Тип / ограничения |
 |---|---|
 | `rotorDragCoefficientKgPerRad` | number |
-| `bladeFlappingCoefficient?` | number |
-| `inducedDragCoefficient?` | number |
+| `bladeFlappingCoefficient?` | number — kg*m/rad; M=-k*omega*(Vair cross axis). |
+| `inducedDragCoefficient?` | number — kg/rad; axial thrust correction -k*omega*Vaxial. |
+| `translationalLiftCoefficientKgPerM?` | number — kg/m; thrust correction k*|Vperpendicular|^2, enabled by rotorAerodynamics. |
+| `referenceAirDensityKgM3?` | number — Reference density of the three new coefficients; corrections scale by rho/reference rho; minimum 1e-6 prevents ill-conditioned scaling. |
+| `maxAirSpeedMps?` | number — Local airflow magnitude limit for new corrections; clipped direction is preserved. |
+| `maxThrustCorrectionFraction?` | number — Maximum absolute combined axial/lift correction divided by positive free-air thrust. |
+| `maxFlappingMomentRatio?` | number — Maximum flap moment magnitude divided by positive free-air thrust times rotor radius. |
 
 ## RotorProfile
 
@@ -159,6 +181,16 @@
 | `propeller` | PropellerProfile |
 | `performance` | RotorPerformanceProfile |
 | `advancedAerodynamics?` | RotorAerodynamicsProfile |
+| `operatingEnvelope?` | RotorOperatingEnvelopeProfile |
+
+## RotorOperatingEnvelopeProfile
+
+| Поле | Тип / ограничения |
+|---|---|
+| `model` | ['ReportOnly'] |
+| `maxAxialClimbSpeedMps` | number |
+| `maxAxialDescentSpeedMps` | number |
+| `maxLateralSpeedMps` | number |
 
 ## ProjectedAreaSample
 
@@ -224,12 +256,14 @@
 | `internalResistanceOhm?` | number |
 | `maxDischargeCurrentA?` | number |
 | `ocvCurve?` | array |
+| `thermal?` | ThermalProfile |
 
 ## PowerSystemProfile
 
 | Поле | Тип / ограничения |
 |---|---|
 | `battery` | BatteryProfile |
+| `thermalEnabled?` | boolean |
 
 ## DerivedProfile
 
@@ -267,6 +301,26 @@
 | `derived?` | DerivedProfile |
 | `parameterProvenance` | array |
 
+## WeatherProfile
+
+| Поле | Тип / ограничения |
+|---|---|
+| `precipitation` | ['None', 'Rain', 'Snow', 'Hail'] |
+| `intensityMmPerHour` | number — Liquid-water-equivalent precipitation rate; VFX metadata only. |
+| `model` | ['VisualOnly'] |
+
+## DrydenProfile
+
+| Поле | Тип / ограничения |
+|---|---|
+| `sigmaUvwMps` | array |
+| `lengthScaleUvwM` | array |
+| `advectionDirectionWorld` | array |
+| `advectionSpeedMps` | number |
+| `modesPerComponent` | integer |
+| `minDimensionlessWaveNumber` | number |
+| `maxDimensionlessWaveNumber` | number |
+
 ## EnvironmentProfile
 
 | Поле | Тип / ограничения |
@@ -278,9 +332,11 @@
 | `temperatureK?` | number |
 | `pressurePa?` | number |
 | `altitudeM?` | number |
-| `windMode` | ['None', 'Constant', 'Gust', 'Turbulence', 'CustomField'] |
+| `windMode` | ['None', 'Constant', 'Gust', 'Turbulence', 'DrydenFrozen', 'CustomField'] |
 | `windVelocityWorldMps` | array |
 | `gustEnabled` | boolean |
 | `gustIntensityMps?` | number |
 | `gustTimeScaleS?` | number |
 | `turbulenceSeed?` | integer |
+| `weather?` | WeatherProfile |
+| `dryden?` | DrydenProfile |

@@ -6,7 +6,7 @@ namespace DroneLab.Editor
 {
     public static class DroneTestRigMenu
     {
-        [MenuItem("DroneLab/Create Physics Test Drone")]
+        [MenuItem("DroneLab/Test Bench/Basic Physics Drone")]
         public static void Create()
         {
             var go=new GameObject("DroneLab TestQuad");

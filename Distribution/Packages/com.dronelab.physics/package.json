@@ -1,6 +1,6 @@
 {
   "name": "com.dronelab.physics",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "displayName": "DroneLab Physics",
   "description": "Parameterized multirotor physics, authoring and telemetry; no input system dependency.",
   "unity": "6000.3",
