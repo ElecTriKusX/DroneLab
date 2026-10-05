@@ -184,6 +184,7 @@ ManualPrincipal задаёт положительные главные моме�
 | Battery Simple / Electrical, SOC/OCV/sag, RPM/current/power envelope | Реализовано в этапе 6; ограничения — POWER_SYSTEM.md |
 | Battery + RPM/J map, efficiency curve, motor inductance / thermal | Ожидают модели; map/efficiency curve с батареей явно отклоняются |
 | StandardAtmosphere, Gust, seeded Turbulence, CustomField/IWindProvider | Реализовано в этапе 7; ограничения и формулы — ENVIRONMENT.md |
+| Telemetry CSV/manifest, drive-loss scenarios, VFX data API | Реализовано в этапе 8; DIAGNOSTICS.md; реальная калибровка/VFX simulation не выполнены |
 
 `fidelity` — категория интерфейса, а не переключатель неизвестных формул.
 Неиспользуемые исходные характеристики можно хранить; включённая неподдерживаемая модель
@@ -211,3 +212,16 @@ allocator сохраняет collective при ограничении torque, п
 двигателя/винта, батареи. Источники — измерения, производитель, пресет или явно указанная оценка.
 
 Настройки, пределы и проверка ground effect / rotor drag — [ROTOR_EFFECTS.md](ROTOR_EFFECTS.md).
+
+## Диагностика этапа 8
+
+Drive authority — сценарная runtime-настройка, не свойство профиля: умножает target RPM
+перед motor lag. При 0 мотор не получает battery power; остаточные RPM/T/Q затухают
+по responseTimeDownS без отдельной kinetic-energy модели. Reset восстанавливает authority=1.
+Quad allocator остаётся обычным четырёхмоторным; PID интегралы заморожены при drive fault.
+
+StepPrepared публикуется после подготовки сил до интегратора Rigidbody. CSV хранит
+позу/скорость на начало шага, силы/RPM шага и энергию/заряд на его конец. Reset разделяет
+сегменты; Initialize разделяет записи. Файлы включают принятые JSON и настройки старта.
+Формат телеметрии имеет свою версию 1.0.0; профиль JSON не менялся. Данные VFX — только
+оценка hover inflow и фактическое состояние ротора, без новых сил/CFD. DIAGNOSTICS.md.

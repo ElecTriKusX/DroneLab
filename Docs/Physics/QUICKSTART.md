@@ -116,3 +116,5 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
 Энергетика, батарея и проверка этапа 6: [POWER_SYSTEM.md](POWER_SYSTEM.md).
 
 Среда и проверка этапа 7: [ENVIRONMENT.md](ENVIRONMENT.md).
+
+Запись полёта и отказ мотора (этап 8): [DIAGNOSTICS.md](DIAGNOSTICS.md).

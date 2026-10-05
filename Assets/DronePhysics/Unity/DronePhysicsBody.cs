@@ -27,6 +27,22 @@ namespace DroneLab.Simulation
         public bool Armed { get; private set; }
         public double[] Omega { get; private set; }
         public PowerSystem Power { get; private set; }
+        public RotorDriveState Drive { get; private set; }
+        public string ActiveDroneJson { get; private set; }
+        public string ActiveEnvironmentJson { get; private set; }
+        public double EnvironmentReferenceWorldY=>referenceWorldY;
+        public event Action<DronePhysicsBody,float> StepPrepared;
+        public double GetMotorCommand(int index)=>commands[index];
+        public void SetRotorDriveAuthority(int index,double fraction)
+        { if(!IsReady) throw new InvalidOperationException("Initialize physics first."); Drive.Set(index,fraction); }
+        public void RestoreRotorDrive()=>Drive?.Reset();
+        public RotorTelemetry GetRotorTelemetry(int index)
+        {
+            var r=Parameters.Rotors[index]; double h=GroundHeightM[index];
+            return new RotorTelemetry(commands[index],Drive.Get(index),PhysicsMath.OmegaToRpm(Omega[index]),ThrustN[index],ReactionTorqueNm[index],AdvanceRatio[index],
+                MeasuredCurrentA[index],Power==null ? (double?)null : Power.RotorCurrentA[index],double.IsInfinity(h) ? (double?)null : h,GroundEffectMultiplier[index],
+                PhysicsMath.InducedHoverVelocity(ThrustN[index],Air.Density,r.Diameter),FromUnity(RotorWindVelocityWorld[index]),FromUnity(RotorDragForceN[index]),PerformanceClamped[index]);
+        }
         public double[] ThrustN { get; private set; }
         public double[] ReactionTorqueNm { get; private set; }
         public double[] AdvanceRatio { get; private set; }
@@ -61,7 +77,7 @@ namespace DroneLab.Simulation
         public bool Initialize(TextAsset drone,TextAsset environment)
         {
             if (Body == null) Body=GetComponent<Rigidbody>();
-            Parameters=null; Power=null; Armed=false;
+            Parameters=null; Power=null; Drive=null; Armed=false; ActiveDroneJson=ActiveEnvironmentJson=null;
             var ds=Resources.Load<TextAsset>("DronePhysics/drone-profile.schema");
             var es=Resources.Load<TextAsset>("DronePhysics/environment-profile.schema");
             if(drone == null || environment == null || ds == null || es == null)
@@ -79,6 +95,7 @@ namespace DroneLab.Simulation
                 if(issue.Severity == "Error") Debug.LogError(issue.ToString(),this); else Debug.LogWarning(issue.ToString(),this);
             if(!loaded.Success) { Fail("Physics profile rejected. See validation errors."); return false; }
             Parameters=loaded.Parameters;
+            ActiveDroneJson=drone.text; ActiveEnvironmentJson=environment.text;
             activeWind=Parameters.Environment;
             if(Parameters.Environment.WindEnabled && Parameters.Environment.WindMode=="CustomField")
             {
@@ -95,6 +112,7 @@ namespace DroneLab.Simulation
             Body.interpolation=RigidbodyInterpolation.Interpolate;
             Body.collisionDetectionMode=CollisionDetectionMode.ContinuousDynamic;
             int count=Parameters.Rotors.Count;
+            Drive=new RotorDriveState(count);
             RotorWindVelocityWorld=new Vector3[count];
             bodyPointForces=new Vector3[Parameters.DragModel=="Surfaces" ? Parameters.Surfaces.Count : 1];
             referenceWorldY=Body.worldCenterOfMass.y; Air=Parameters.Environment.SampleAir(0); SimulationTimeS=0; WindVelocityWorld=Vector3.zero;
@@ -131,6 +149,7 @@ namespace DroneLab.Simulation
         public void ResetMotorState()
         {
             SetArmed(false); Power?.Reset(); SimulationTimeS=0; WindVelocityWorld=Vector3.zero;
+            Drive?.Reset();
             DragForce=DragTorque=AirVelocity=Vector3.zero; ProjectedAreaM2=0;
             if(bodyPointForces!=null) Array.Clear(bodyPointForces,0,bodyPointForces.Length);
             if(Parameters!=null) Air=Parameters.Environment.SampleAir(0);
@@ -154,6 +173,7 @@ namespace DroneLab.Simulation
                 {
                     var r=Parameters.Rotors[i];
                     double target=Armed && commands[i]>0 ? Math.Max(r.MinOmega,commands[i]*r.MaxOmega) : 0;
+                    target=Drive.Target(i,target);
                     candidateOmega[i]=PhysicsMath.MotorStep(Omega[i],target,target>Omega[i] ? r.TauUp:r.TauDown,dt);
                     Vector3 pointWorld=transform.TransformPoint(ToUnity(r.Position));
                     Vector3 axisWorld=transform.TransformDirection(ToUnity(r.Axis));
@@ -162,7 +182,7 @@ namespace DroneLab.Simulation
                     var pointAirVelocity=Body.GetPointVelocity(pointWorld)-RotorWindVelocityWorld[i];
                     pointAirVelocities[i]=pointAirVelocity;
                 }
-                if(Power!=null) Power.Resolve(candidateOmega,candidateOmega,dt,Armed,Air.Density);
+                if(Power!=null) Power.Resolve(candidateOmega,candidateOmega,dt,Armed,Air.Density,Drive);
                 for(int i=0;i<Parameters.Rotors.Count;i++)
                 {
                     var r=Parameters.Rotors[i]; var pointWorld=rotorPoints[i]; var axisWorld=rotorAxes[i];
@@ -214,6 +234,7 @@ namespace DroneLab.Simulation
             }
             // Equivalent CP wrench about COM, with no second r x F.
             Body.AddForce(DragForce,ForceMode.Force); Body.AddTorque(DragTorque,ForceMode.Force);
+            StepPrepared?.Invoke(this,dt);
         }
         private Vector3 WindAt(Vector3 point)
         {

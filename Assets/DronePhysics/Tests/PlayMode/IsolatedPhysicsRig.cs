@@ -38,10 +38,10 @@ namespace DroneLab.Physics.Tests
             Go.SetActive(true); Assert.That(Physics.IsReady,Is.True);
             Physics.Body.interpolation=RigidbodyInterpolation.None; Pilot?.InitializeController();
         }
-        public void Step(int count=1)
+        public void Step(int count=1,float dt=Dt)
         {
             for(int i=0;i<count;i++)
-            { Pilot?.StepControl(Dt); Physics.StepPhysics(Dt); physicsScene.Simulate(Dt); }
+            { Pilot?.StepControl(dt); Physics.StepPhysics(dt); physicsScene.Simulate(dt); }
         }
         public IEnumerator Dispose()
         {

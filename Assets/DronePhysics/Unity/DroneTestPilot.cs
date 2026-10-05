@@ -33,6 +33,7 @@ namespace DroneLab.Simulation
         public bool Saturated { get; private set; }
         public Vector3 DesiredAngularRateLocal { get; private set; }
         public Vector3 RequestedTorqueLocal { get; private set; }
+        public FlightInput CurrentInput=>input;
         private DronePhysicsBody physicsBody;
         private QuadAllocator allocator;
         private readonly double[] commands=new double[4];
@@ -113,7 +114,7 @@ namespace DroneLab.Simulation
                 previousAltitudeHold=altitudeHold; previousAutoLevel=autoLevel; return;
             }
             if(!previousArmed) { ResetControl(); targetAltitude=body.position.y; previousArmed=true; }
-            bool integrate=!Saturated && !(physicsBody.Power?.Limited ?? false);
+            bool integrate=!Saturated && !(physicsBody.Power?.Limited ?? false) && !physicsBody.Drive.HasFault;
             if(altitudeHold!=previousAltitudeHold || autoLevel!=previousAutoLevel)
             {
                 controller.Reset(); integrate=false;
@@ -195,6 +196,7 @@ namespace DroneLab.Simulation
             GUILayout.Label("F arm | WASD tilt | Q/E yaw | Space/Ctrl lift\nZ Angle/Acro | H altitude hold | Backspace reset");
             if(inputDevice==PilotDevice.Gamepad) GUILayout.Label("Start arm | Right stick tilt | Left X yaw / Y climb | RT throttle\nX/Square mode | A/Cross altitude | Y/Triangle reset");
             GUILayout.Label($"Mass {p.Mass:F2} kg | T/W {p.ThrustToWeight:F2} | Saturation {Saturated}");
+            if(physicsBody.Drive.HasFault) GUILayout.Label("MOTOR DRIVE FAULT | test pilot cannot guarantee controlled flight");
             GUILayout.Label($"Speed {velocity.magnitude:F2} m/s = {velocity.magnitude*3.6f:F1} km/h | Horizontal {new Vector2(velocity.x,velocity.z).magnitude:F2} m/s");
             GUILayout.Label($"Vertical {velocity.y:F2} m/s | World Y {transform.position.y:F2} m | From reset {Vector3.Distance(startPosition,transform.position):F2} m");
             GUILayout.Label($"Tilt {tilt:F1} deg | Yaw {rate.y:F1} / target {DesiredAngularRateLocal.y*Mathf.Rad2Deg:F1} deg/s");
@@ -214,6 +216,7 @@ namespace DroneLab.Simulation
             if(p.Rotors[0].Performance.Model=="PerformanceMap") GUILayout.Label("Map: physics uses rotor-point axial flow; test pilot allocation uses static J=0 reference.");
             for(int i=0;i<p.Rotors.Count;i++)
             {
+                if(physicsBody.Drive.Get(i)<1) GUILayout.Label($"  {p.Rotors[i].Id} drive authority {physicsBody.Drive.Get(i):P0}");
                 GUILayout.Label($"{p.Rotors[i].Id}: {PhysicsMath.OmegaToRpm(physicsBody.Omega[i]):F1} RPM | {physicsBody.ThrustN[i]:F2} N | {physicsBody.ReactionTorqueNm[i]:F4} Nm | I {physicsBody.MeasuredCurrentA[i]?.ToString("F2") ?? "—"} A | J {physicsBody.AdvanceRatio[i]:F2} | {(physicsBody.PerformanceClamped[i] ? "CLAMP" : "in range")}");
                 if(physicsBody.Power!=null) GUILayout.Label($"  {p.Rotors[i].Id} estimated bus current {physicsBody.Power.RotorCurrentA[i]:F2} A");
                 if(p.GroundEffect!=null) GUILayout.Label($"  {p.Rotors[i].Id} ground h {(double.IsPositiveInfinity(physicsBody.GroundHeightM[i]) ? "—" : physicsBody.GroundHeightM[i].ToString("F3"))} m | GE x{physicsBody.GroundEffectMultiplier[i]:F3}");

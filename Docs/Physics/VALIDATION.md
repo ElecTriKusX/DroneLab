@@ -238,3 +238,38 @@ overrideReferences=true, precompiledReferences=[Newtonsoft.Json.dll, nunit.frame
 JSON asmdef и наличие прямых Newtonsoft-ссылок во всех использующих его сборках
 проверены локально; git diff --check прошёл. Физические модели не менялись.
 Полная Unity-компиляция и PlayMode здесь не запускались; требуется повтор у пользователя.
+
+## Подтверждение этапа 7 и этап 8 — 2026-10-05
+
+Пользователь подтвердил стабильную работу после исправления PlayMode asmdef.
+Два пропущенных WindowsInput mouse tests принадлежат Input System 1.20.0:
+в официальных IntegrationTests.cs оба явно помечены Ignore("Unstable due to 1252825").
+Это штатный пропуск тестов пакета; DroneLab/PilotInputTests менять не требуется.
+Ссылка на проверенный первичный источник — DIAGNOSTICS.md.
+
+| Проверка этапа 8 | Фактический результат |
+|---|---|
+| Roslyn C# 8 / .NET 8 / NUnitLite 3.14 | **276 passed, 0 failed**, 16 новых случаев |
+| Drive loss: экспоненциальный выбег, 50/100/200 Hz | Прошло |
+| Половина target RPM → четверть quadratic T | Прошло |
+| Simple/Electrical: failed motor bus current=0, shaft accounting, остаточная тяга | Прошло |
+| Все приводы отказали / пустая батарея | Ток/расход=0, выбег не останавливается мгновенно |
+| Invalid authority, reset | Прошло |
+| CSV ru-RU/en-US, escaping rotorId, empty vs zero, invalid/nonfinite frames | Прошло |
+| Hover induced velocity estimate | Прошло; helper не создаёт дополнительную силу |
+| Python analyzer: reset segments, energy baseline, incomplete/NaN/time reversal | **4 passed, 0 failed** |
+| Core CSV writer → файл → Python CLI | Успешно; две строки, T=mg=9.81 N, energy error=0 J |
+| Roslyn syntax всех 63 C# файлов | 0 ошибок; не заменяет Unity-компиляцию |
+| Прямые Newtonsoft references и .meta для новых ассетов | Полнота/корректность проверены; GUID уникальны |
+| 6 новых DiagnosticsRigidbodyTests (54 PlayMode случаев всего) | Добавлены; **здесь не запускались** |
+| Unity file lifecycle/manifest/segments, реакция Rigidbody и сравнение 50/100/200 Hz | Требуют запуска у пользователя |
+| Реальный профиль, калибровка по независимым измерениям, VFX Graph | Процедура/API подготовлены; реальные измерения и визуальная интеграция не выполнены |
+
+CSV публикуется до интегратора Rigidbody; SOC/charge/energy имеют суффикс _end.
+Активные JSON сохраняются из Initialize. Recorder использует buffered synchronous writer;
+ошибка записи завершает recorder, без нового расчёта сил/ветра/энергии. Reset разделяет
+сегменты, новый runtime snapshot — папки. Manifest фиксирует настройки на начало записи,
+не заменяет сцену/collider/конфигурацию внешнего программного provider.
+Drive authority — сценарная runtime-настройка; контракт JSON 1.0.0 не изменён.
+Recovery на трёх моторах, jam/broken propeller, rotational-energy dynamics и CFD
+не объявляются реализованными. Подробная инструкция — [DIAGNOSTICS.md](DIAGNOSTICS.md).

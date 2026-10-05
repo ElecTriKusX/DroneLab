@@ -41,6 +41,7 @@ namespace DroneLab.Physics
         private readonly RuntimeBattery battery;
         private readonly double[] motorPower,motorCurrent,requiredVoltage;
         private double queryDensity;
+        private RotorDriveState queryDrive;
         public double Soc { get; private set; }
         public double OpenVoltage { get; private set; }
         public double TerminalVoltage { get; private set; }
@@ -84,6 +85,8 @@ namespace DroneLab.Physics
             for(int i=0;i<requested.Length;i++)
             {
                 double omega=requested[i]*scale; var r=parameters.Rotors[i]; var m=r.Power;
+                if(queryDrive!=null && queryDrive.Get(i)==0)
+                { motorPower[i]=motorCurrent[i]=requiredVoltage[i]=0; continue; }
                 double q=r.Performance.Evaluate(omega,density:queryDensity).Torque;
                 double shaft=q*omega; mechanical+=shaft;
                 if(omega==0) { motorPower[i]=motorCurrent[i]=requiredVoltage[i]=0; continue; }
@@ -107,6 +110,7 @@ namespace DroneLab.Physics
             if(!Finite(current) || !Finite(terminal) || current>currentLimit || terminal<OpenVoltage/2) return false;
             for(int i=0;i<requested.Length;i++)
             {
+                if(queryDrive!=null && queryDrive.Get(i)==0) continue;
                 var r=parameters.Rotors[i]; var m=r.Power;
                 if(motorPower[i]>m.MaxPower) return false;
                 if(battery.Mode=="Electrical")
@@ -119,8 +123,10 @@ namespace DroneLab.Physics
             return true;
         }
         // requested/output may be the same array. Commit SOC only after the caller's force queries succeed.
-        public void Resolve(double[] requested,double[] output,double dt,bool powered,double? density=null)
+        public void Resolve(double[] requested,double[] output,double dt,bool powered,double? density=null,RotorDriveState drive=null)
         {
+            if(drive!=null && drive.Count!=parameters.Rotors.Count) throw new ArgumentException("Drive state must match rotor count.");
+            queryDrive=drive;
             queryDensity=density ?? parameters.Density;
             if(!Finite(queryDensity) || queryDensity<=0) throw new ArgumentOutOfRangeException(nameof(density));
             if(!Finite(dt) || dt<=0) throw new ArgumentOutOfRangeException(nameof(dt));
@@ -150,7 +156,8 @@ namespace DroneLab.Physics
             Current=current; TerminalVoltage=terminal; MechanicalPower=mechanical; ElectricalPower=current*terminal;
             BatteryLossPower=current*current*battery.Resistance; RpmScale=scale;
             for(int i=0;i<output.Length;i++)
-            { RotorCurrentA[i]=motorPower[i]/(parameters.Rotors[i].Power.EscEfficiency*terminal); output[i]=requested[i]*scale; }
+            { RotorCurrentA[i]=motorPower[i]/(parameters.Rotors[i].Power.EscEfficiency*terminal);
+              output[i]=queryDrive!=null && queryDrive.Get(i)==0 ? requested[i] : requested[i]*scale; }
         }
         public void Commit(double dt)
         {

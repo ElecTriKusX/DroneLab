@@ -39,6 +39,7 @@ ExportedObj/
 Tests/DotNet/bin/
 Tests/DotNet/obj/
 Tools/__pycache__/
+Tests/Python/__pycache__/
 *.unityproj
 *.sln
 *.suo
