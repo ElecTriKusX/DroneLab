@@ -338,3 +338,32 @@ Pure PID/allocator utilities остаются core; управляющие MonoB
 Recorder зависит только от IFlightControlTelemetry, не конкретного DroneTestPilot.
 UPM export создаётся Tools/build_unity_packages.py; исходные scripts — Assets/DronePhysics.
 Пользовательские FBX, scenes, профили и настройки Packages не изменялись этим этапом.
+
+## Этап 10 — 2026-10-05
+
+Пользователь подтвердил предыдущие тесты этапа 9. Новые результаты относятся к
+исходникам Assets/DronePhysics; финальную пересборку UPM откладываем по его решению.
+
+| Проверка | Фактический результат |
+|---|---|
+| Core + EditMode, Roslyn / .NET 8 / NUnitLite | **342 passed, 0 failed**, включая **42** новых случай RotorFlow |
+| Знаки осевой тяги/flapping, lateral lift, arbitrary axis, rho, stop/windmilling | Прошло |
+| Speed/thrust/moment caps, snapshot, flags, запрет axial/lift с RPM/J map | Прошло |
+| Независимая линейная осевая динамика, 50/100/200 Hz | Прошло, ошибка относительно exp(-c*t) <0.001 m/s |
+| Rate PID + local rotor forces/flapping, 50/100/200 Hz | Прошло; остаточная rate <0.025 rad/s, постоянная разница RPM для компенсации момента |
+| Height PID + motor lag + battery + ground gain + lift/inflow, 50/100/200 Hz | Прошло; ошибка высоты <0.005 m, вертикальная скорость <0.005 m/s; одноосевой математический стенд |
+| Python flight analyzer | **5 passed, 0 failed**, старые столбцы и новые dT/M/clip не дублируют thrust |
+| JSON Schema Draft 2020-12 | 2 схемы и **21** resource profile прошли |
+| Production ProfileLoader + QuadAllocator, advanced_rotors + final atmosphere/wind | Принят; 4 ротора, 13 LUT axes, static T/W=4; estimates/energy limitations явно предупреждаются |
+| Roslyn syntax | **76 C# files**, 0 syntax errors; не Unity semantic compilation |
+| Unity .meta | 121 GUID уникальны в DronePhysics, 261 во всех Assets; новые .meta присутствуют |
+| git diff --check | Прошло |
+| Новые RotorFlowRigidbodyTests | **6** isolated scenarios, **67** PlayMode cases суммарно; здесь не запускались |
+| Unity import, HUD/menu, фактический coupled flight / Rigidbody | Требуется проверка у пользователя |
+| Distribution/Packages rebuild / --check | Намеренно отложены до конца улучшений; snapshots 0.2.0 содержат этап 9 |
+| Измеренная точность всей сборки / coupled aero power | Не подтверждена; этап 14 заменён открытыми данными/численной приёмкой, load solver — этап 11 |
+
+Формулы, коэффициенты, clipping, совместимость и инструкция — ROTOR_FLOW.md.
+CSV версии 1.1.0 хранит correction до GE и pure flap moment отдельно. Q/current не
+получают выдуманную поправку из dT: батарея остаётся квазистационарной. Новые физические
+профили не подменяют сцены/профили пользователя. FBX и UPM snapshots не изменялись.

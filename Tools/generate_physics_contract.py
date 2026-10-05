@@ -53,8 +53,16 @@ obj('RotorPerformanceProfile', {'model':enum('OmegaSquared','RpmTable','CtCq','P
     'performanceMap':arr(ref('PerformanceMapPoint'),2),'outOfRangePolicy':enum('Reject','Clamp')},
     ('kThrustNPerRadPerSecSquared','kTorqueNmPerRadPerSecSquared','referenceAirDensityKgM3','ct','cq','rpmTable','performanceMap','outOfRangePolicy'))
 obj('RotorGeometry', {'positionLocalM':vec(),'thrustAxisLocal':vec(),'spinDirection':enum('CW','CCW')})
-obj('RotorAerodynamicsProfile', {'rotorDragCoefficientKgPerRad':N,'bladeFlappingCoefficient':N,
-    'inducedDragCoefficient':N}, ('bladeFlappingCoefficient','inducedDragCoefficient'))
+obj('RotorAerodynamicsProfile', {'rotorDragCoefficientKgPerRad':N,
+    'bladeFlappingCoefficient':dict(N, description='kg*m/rad; M=-k*omega*(Vair cross axis).'),
+    'inducedDragCoefficient':dict(N, description='kg/rad; axial thrust correction -k*omega*Vaxial.'),
+    'translationalLiftCoefficientKgPerM':dict(N, description='kg/m; thrust correction k*|Vperpendicular|^2, enabled by rotorAerodynamics.'),
+    'referenceAirDensityKgM3':dict(num(0.000001), description='Reference density of the three new coefficients; corrections scale by rho/reference rho; minimum 1e-6 prevents ill-conditioned scaling.'),
+    'maxAirSpeedMps':dict(num(0.000001,200), description='Local airflow magnitude limit for new corrections; clipped direction is preserved.'),
+    'maxThrustCorrectionFraction':dict(num(0,.5), description='Maximum absolute combined axial/lift correction divided by positive free-air thrust.'),
+    'maxFlappingMomentRatio':dict(num(0,1), description='Maximum flap moment magnitude divided by positive free-air thrust times rotor radius.')},
+    ('bladeFlappingCoefficient','inducedDragCoefficient','translationalLiftCoefficientKgPerM','referenceAirDensityKgM3',
+     'maxAirSpeedMps','maxThrustCorrectionFraction','maxFlappingMomentRatio'))
 obj('RotorProfile', {'rotorId':S,'geometry':ref('RotorGeometry'),'motor':ref('MotorProfile'),
     'propeller':ref('PropellerProfile'),'performance':ref('RotorPerformanceProfile'),
     'advancedAerodynamics':ref('RotorAerodynamicsProfile')}, ('advancedAerodynamics',))
@@ -125,7 +133,7 @@ for name,s in D.items():
     doc+='## '+name+'\n\n| Поле | Тип / ограничения |\n|---|---|\n'
     for key,field in s['properties'].items():
         desc=field.get('enum') or field.get('$ref',field.get('type'))
-        doc+='| `'+key+('' if key in s['required'] else '?')+'` | '+str(desc).replace('#/$defs/','')+' |\n'
+        doc+='| `'+key+('' if key in s['required'] else '?')+'` | '+str(desc).replace('#/$defs/','')+(' — '+field['description'] if 'description' in field else '')+' |\n'
     doc+='\n'
 write('Docs/Physics/PARAMETERS.md',doc.rstrip()+'\n')
 print('Generated DTOs, two schemas, parameter reference.')

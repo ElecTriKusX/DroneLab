@@ -12,12 +12,16 @@ namespace DroneLab.Physics
         public readonly double? MeasuredCurrent,BusCurrent,GroundHeight;
         public readonly DVector3 WindWorld,DragWorld;
         public readonly bool Clamped;
+        public readonly double ThrustCorrection;
+        public readonly DVector3 FlappingMomentWorld;
+        public readonly bool FlowClamped;
         public RotorTelemetry(double command,double drive,double rpm,double thrust,double torque,double advance,
             double? measuredCurrent,double? busCurrent,double? groundHeight,double groundGain,double induced,
-            DVector3 wind,DVector3 drag,bool clamped)
+            DVector3 wind,DVector3 drag,bool clamped,double thrustCorrection=0,DVector3 flappingMoment=default,bool flowClamped=false)
         { Command=command; DriveAuthority=drive; Rpm=rpm; Thrust=thrust; ReactionTorque=torque; AdvanceRatio=advance;
           MeasuredCurrent=measuredCurrent; BusCurrent=busCurrent; GroundHeight=groundHeight; GroundGain=groundGain;
-          InducedHoverSpeed=induced; WindWorld=wind; DragWorld=drag; Clamped=clamped; }
+          InducedHoverSpeed=induced; WindWorld=wind; DragWorld=drag; Clamped=clamped;
+          ThrustCorrection=thrustCorrection; FlappingMomentWorld=flappingMoment; FlowClamped=flowClamped; }
     }
     public sealed class FlightTelemetryFrame
     {
@@ -35,7 +39,7 @@ namespace DroneLab.Physics
     }
     public sealed class FlightCsvWriter
     {
-        public const string FormatVersion="1.0.0";
+        public const string FormatVersion="1.1.0";
         private readonly TextWriter writer;
         private readonly int count;
         private readonly StringBuilder row=new StringBuilder(2048);
@@ -49,7 +53,7 @@ namespace DroneLab.Physics
             string header="segment,time_s,dt_s,armed,control_mode,altitude_hold,saturated,power_limited,drive_fault,mass_kg,gravity_mps2,density_kgm3,altitude_m,position_x_m,position_y_m,position_z_m,rotation_x,rotation_y,rotation_z,rotation_w,velocity_x_mps,velocity_y_mps,velocity_z_mps,rate_x_radps,rate_y_radps,rate_z_radps,desired_rate_x_radps,desired_rate_y_radps,desired_rate_z_radps,input_roll,input_pitch,input_yaw,input_climb,input_throttle,wind_x_mps,wind_y_mps,wind_z_mps,body_drag_x_n,body_drag_y_n,body_drag_z_n,body_torque_x_nm,body_torque_y_nm,body_torque_z_nm,soc_end,voltage_v,current_a,bus_power_w,shaft_power_w,consumed_ah_end,bus_energy_j_end";
             row.Append(header);
             for(int i=0;i<count;i++)
-                foreach(string suffix in new[]{"command","drive","rpm","thrust_n","reaction_nm","advance_j","measured_current_a","bus_current_a","ground_height_m","ground_gain","induced_hover_mps","wind_x_mps","wind_y_mps","wind_z_mps","drag_x_n","drag_y_n","drag_z_n","clamped"})
+                foreach(string suffix in new[]{"command","drive","rpm","thrust_n","reaction_nm","advance_j","measured_current_a","bus_current_a","ground_height_m","ground_gain","induced_hover_mps","wind_x_mps","wind_y_mps","wind_z_mps","drag_x_n","drag_y_n","drag_z_n","clamped","thrust_correction_n","flap_x_nm","flap_y_nm","flap_z_nm","flow_clamped"})
                     Cell("rotor_"+i+"_"+rotorIds[i]+"_"+suffix);
             writer.WriteLine(row.ToString());
         }
@@ -83,6 +87,7 @@ namespace DroneLab.Physics
                 Number(r.Command); Number(r.DriveAuthority); Number(r.Rpm); Number(r.Thrust); Number(r.ReactionTorque); Number(r.AdvanceRatio);
                 Optional(r.MeasuredCurrent); Optional(r.BusCurrent); Optional(r.GroundHeight); Number(r.GroundGain); Number(r.InducedHoverSpeed);
                 Vector(r.WindWorld); Vector(r.DragWorld); Flag(r.Clamped);
+                Number(r.ThrustCorrection); Vector(r.FlappingMomentWorld); Flag(r.FlowClamped);
             }
             writer.WriteLine(row.ToString()); Rows++;
         }

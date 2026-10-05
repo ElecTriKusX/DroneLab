@@ -146,8 +146,13 @@
 | Поле | Тип / ограничения |
 |---|---|
 | `rotorDragCoefficientKgPerRad` | number |
-| `bladeFlappingCoefficient?` | number |
-| `inducedDragCoefficient?` | number |
+| `bladeFlappingCoefficient?` | number — kg*m/rad; M=-k*omega*(Vair cross axis). |
+| `inducedDragCoefficient?` | number — kg/rad; axial thrust correction -k*omega*Vaxial. |
+| `translationalLiftCoefficientKgPerM?` | number — kg/m; thrust correction k*|Vperpendicular|^2, enabled by rotorAerodynamics. |
+| `referenceAirDensityKgM3?` | number — Reference density of the three new coefficients; corrections scale by rho/reference rho; minimum 1e-6 prevents ill-conditioned scaling. |
+| `maxAirSpeedMps?` | number — Local airflow magnitude limit for new corrections; clipped direction is preserved. |
+| `maxThrustCorrectionFraction?` | number — Maximum absolute combined axial/lift correction divided by positive free-air thrust. |
+| `maxFlappingMomentRatio?` | number — Maximum flap moment magnitude divided by positive free-air thrust times rotor radius. |
 
 ## RotorProfile
 

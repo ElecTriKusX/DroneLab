@@ -148,6 +148,11 @@ namespace DroneLab.Physics
         public double rotorDragCoefficientKgPerRad;
         public double bladeFlappingCoefficient;
         public double inducedDragCoefficient;
+        public double translationalLiftCoefficientKgPerM;
+        public double referenceAirDensityKgM3;
+        public double maxAirSpeedMps;
+        public double maxThrustCorrectionFraction;
+        public double maxFlappingMomentRatio;
     }
 
     [Serializable]

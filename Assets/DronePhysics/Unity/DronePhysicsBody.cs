@@ -41,7 +41,8 @@ namespace DroneLab.Simulation
             var r=Parameters.Rotors[index]; double h=GroundHeightM[index];
             return new RotorTelemetry(commands[index],Drive.Get(index),PhysicsMath.OmegaToRpm(Omega[index]),ThrustN[index],ReactionTorqueNm[index],AdvanceRatio[index],
                 MeasuredCurrentA[index],Power==null ? (double?)null : Power.RotorCurrentA[index],double.IsInfinity(h) ? (double?)null : h,GroundEffectMultiplier[index],
-                PhysicsMath.InducedHoverVelocity(ThrustN[index],Air.Density,r.Diameter),FromUnity(RotorWindVelocityWorld[index]),FromUnity(RotorDragForceN[index]),PerformanceClamped[index]);
+                PhysicsMath.InducedHoverVelocity(ThrustN[index],Air.Density,r.Diameter),FromUnity(RotorWindVelocityWorld[index]),FromUnity(RotorDragForceN[index]),PerformanceClamped[index],
+                RotorThrustCorrectionN[index],FromUnity(RotorFlappingMomentNm[index]),RotorFlowClamped[index]);
         }
         public double[] ThrustN { get; private set; }
         public double[] ReactionTorqueNm { get; private set; }
@@ -53,6 +54,10 @@ namespace DroneLab.Simulation
         public Vector3[] RotorDragForceN { get; private set; }
         public Vector3 RotorDragForce { get; private set; }
         public Vector3 RotorDragTorque { get; private set; }
+        public double[] RotorThrustCorrectionN { get; private set; }
+        public Vector3[] RotorFlappingMomentNm { get; private set; }
+        public bool[] RotorFlowClamped { get; private set; }
+        public Vector3 RotorFlappingMoment { get; private set; }
         public Vector3 AirVelocity { get; private set; }
         public Vector3 DragForce { get; private set; }
         public Vector3 DragTorque { get; private set; }
@@ -119,6 +124,7 @@ namespace DroneLab.Simulation
             commands=new double[count]; candidateOmega=new double[count]; pointAirVelocities=new Vector3[count]; Omega=new double[count]; ThrustN=new double[count]; ReactionTorqueNm=new double[count];
             AdvanceRatio=new double[count]; MeasuredCurrentA=new double?[count]; PerformanceClamped=new bool[count];
             GroundHeightM=new double[count]; GroundEffectMultiplier=new double[count]; RotorDragForceN=new Vector3[count];
+            RotorThrustCorrectionN=new double[count]; RotorFlappingMomentNm=new Vector3[count]; RotorFlowClamped=new bool[count];
             rotorPoints=new Vector3[count]; rotorAxes=new Vector3[count]; groundPoints=new Vector3[count]; groundHits=new bool[count];
             Power=Parameters.Battery==null ? null : new PowerSystem(Parameters);
             ClearRotorEffects();
@@ -128,7 +134,10 @@ namespace DroneLab.Simulation
         }
         private void ClearRotorEffects()
         {
-            RotorDragForce=Vector3.zero; RotorDragTorque=Vector3.zero;
+            RotorDragForce=Vector3.zero; RotorDragTorque=Vector3.zero; RotorFlappingMoment=Vector3.zero;
+            if(RotorThrustCorrectionN!=null) Array.Clear(RotorThrustCorrectionN,0,RotorThrustCorrectionN.Length);
+            if(RotorFlappingMomentNm!=null) Array.Clear(RotorFlappingMomentNm,0,RotorFlappingMomentNm.Length);
+            if(RotorFlowClamped!=null) Array.Clear(RotorFlowClamped,0,RotorFlowClamped.Length);
             for(int i=0;i<GroundHeightM.Length;i++)
             { GroundHeightM[i]=double.PositiveInfinity; GroundEffectMultiplier[i]=1; RotorDragForceN[i]=Vector3.zero; groundHits[i]=false; }
         }
@@ -189,13 +198,16 @@ namespace DroneLab.Simulation
                     var pointAirVelocity=pointAirVelocities[i];
                     double axial=Vector3.Dot(pointAirVelocity,axisWorld);
                     var sample=r.Performance.Evaluate(candidateOmega[i],axial,Air.Density);
+                    var flow=RotorFlow.Evaluate(r,candidateOmega[i],sample.Thrust,FromUnity(pointAirVelocity),FromUnity(axisWorld),Air.Density);
+                    RotorThrustCorrectionN[i]=flow.ThrustCorrection;
+                    RotorFlappingMomentNm[i]=ToUnity(flow.FlappingMoment); RotorFlowClamped[i]=flow.Clamped;
                     if(Parameters.GroundEffect!=null && groundProbe.Sample(this,pointWorld,axisWorld,(float)(r.Diameter/2),groundLayers.value,out var hit))
                     {
                         groundHits[i]=true; groundPoints[i]=hit.point; GroundHeightM[i]=hit.distance;
                         GroundEffectMultiplier[i]=RotorAerodynamics.GroundMultiplier(Parameters.GroundEffect,r.Diameter/2,hit.distance,Vector3.Dot(axisWorld,hit.normal));
                     }
                     // Thrust-only model; do not invent a Q or current correction, or augment windmilling thrust.
-                    ThrustN[i]=RotorAerodynamics.ThrustWithGroundEffect(sample.Thrust,GroundEffectMultiplier[i]);
+                    ThrustN[i]=RotorAerodynamics.ThrustWithGroundEffect(sample.Thrust+flow.ThrustCorrection,GroundEffectMultiplier[i]);
                     ReactionTorqueNm[i]=r.ReactionSign*sample.Torque;
                     if(Parameters.RotorDrag)
                         RotorDragForceN[i]=ToUnity(RotorAerodynamics.Drag(FromUnity(pointAirVelocity),FromUnity(axisWorld),candidateOmega[i],r.RotorDragCoefficient));
@@ -231,6 +243,8 @@ namespace DroneLab.Simulation
                 RotorDragForce+=RotorDragForceN[i];
                 RotorDragTorque+=Vector3.Cross(rotorPoints[i]-Body.worldCenterOfMass,RotorDragForceN[i]);
                 Body.AddTorque(axis*(float)ReactionTorqueNm[i],ForceMode.Force);
+                // Hub flapping moment is separate from AddForceAtPosition's r x F.
+                Body.AddTorque(RotorFlappingMomentNm[i],ForceMode.Force); RotorFlappingMoment+=RotorFlappingMomentNm[i];
             }
             // Equivalent CP wrench about COM, with no second r x F.
             Body.AddForce(DragForce,ForceMode.Force); Body.AddTorque(DragTorque,ForceMode.Force);

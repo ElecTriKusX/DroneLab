@@ -10,9 +10,10 @@ namespace DroneLab.Physics
         // KT/KQ are meaningful only for the two constant-coefficient models.
         public readonly double ReactionSign, MaxOmega, MinOmega, IdleOmega, TauUp, TauDown, KT, KQ, Diameter, RotorDragCoefficient;
         public readonly PropellerPerformance Performance;
+        public readonly RuntimeRotorFlow Flow;
         public readonly RuntimeMotorPower Power;
         public readonly double MaxThrust;
-        internal RuntimeRotorParameters(RotorProfile p, double rho, bool response, bool rotorDrag, bool power)
+        internal RuntimeRotorParameters(RotorProfile p, double rho, PhysicsModulesProfile modules, bool power)
         {
             Id=p.rotorId; Position=DVector3.From(p.geometry.positionLocalM); Axis=DVector3.From(p.geometry.thrustAxisLocal).Normalized;
             Power=power ? new RuntimeMotorPower(p.motor.electrical) : null;
@@ -21,9 +22,11 @@ namespace DroneLab.Physics
             ReactionSign=p.geometry.spinDirection == "CW" ? -1 : 1;
             MaxOmega=PhysicsMath.RpmToOmega(p.motor.maxRpm); MinOmega=PhysicsMath.RpmToOmega(p.motor.minRpm);
             IdleOmega=PhysicsMath.RpmToOmega(p.motor.idleRpm);
-            TauUp=response ? p.motor.responseTimeUpS : 0; TauDown=response ? p.motor.responseTimeDownS : 0;
+            TauUp=modules.motorResponse ? p.motor.responseTimeUpS : 0; TauDown=modules.motorResponse ? p.motor.responseTimeDownS : 0;
             Diameter=p.propeller.diameterM;
-            RotorDragCoefficient=rotorDrag ? p.advancedAerodynamics.rotorDragCoefficientKgPerRad : 0;
+            RotorDragCoefficient=modules.rotorAerodynamics ? p.advancedAerodynamics.rotorDragCoefficientKgPerRad : 0;
+            if(modules.bladeFlapping || modules.inducedDrag || (modules.rotorAerodynamics && p.advancedAerodynamics.translationalLiftCoefficientKgPerM>0))
+                Flow=new RuntimeRotorFlow(p.advancedAerodynamics,modules);
             Performance=new PropellerPerformance(p.performance,rho,Diameter);
             if (p.performance.model == "CtCq")
             {
@@ -79,7 +82,7 @@ namespace DroneLab.Physics
             DragPoint=p.bodyAerodynamics.dragApplicationPointLocalM == null ? CenterOfMass : DVector3.From(p.bodyAerodynamics.dragApplicationPointLocalM);
             Wind=p.physicsConfiguration.modules.windInteraction && env.windMode != "None" ? DVector3.From(env.windVelocityWorldMps) : default;
             var rotors=new List<RuntimeRotorParameters>();
-            foreach(var r in p.rotors) { var runtime=new RuntimeRotorParameters(r,Density,p.physicsConfiguration.modules.motorResponse,RotorDrag,Battery!=null); rotors.Add(runtime); MaxTotalThrust+=runtime.MaxThrust; }
+            foreach(var r in p.rotors) { var runtime=new RuntimeRotorParameters(r,Density,p.physicsConfiguration.modules,Battery!=null); rotors.Add(runtime); MaxTotalThrust+=runtime.MaxThrust; }
             Rotors=rotors.AsReadOnly();
         }
     }

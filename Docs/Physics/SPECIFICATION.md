@@ -109,8 +109,9 @@ Rotor drag (этап 5): `F = -Krd ω Vperpendicular` в точке каждог
 Скорость включает вращение и ветер; AddForceAtPosition уже создаёт r×F.
 Диссипативна в системе воздуха, без дополнительного множителя rho/тяги.
 Krd имеет единицы kg/rad (rad обычно трактуется как безразмерный).
-Blade flapping и induced drag требуют конкретной формулы и идентифицированных коэффициентов.
-Их поля резервируются; их единицы и диапазоны будут уточняться вместе с выбранной моделью.
+Этап 10 реализует bounded axial inflow, translational lift и blade flapping с явными
+коэффициентами/единицами/пределами; ROTOR_FLOW.md. Это эмпирические поправки,
+не dynamic inflow/VRS и не совместная модель энергетики.
 Не включать произвольный translational-lift множитель поверх карты, описывающей тот же эффект.
 
 Аккумулятор (этап 6): SOC, линейная OCV(SOC), `Vbus=Voc-I R`, coulomb counting
@@ -182,7 +183,8 @@ ManualPrincipal задаёт положительные главные моме�
 | ProjectedArea: box, manual/mesh LUT; Surfaces; geometry markers/export | Реализовано в этапе 3 |
 | RpmTable, PerformanceMap, SI CSV import | Реализовано в этапе 4; пульт использует статическую J=0 кривую |
 | Ground effect, rotor drag | Реализовано в этапе 5; независимые optional-флаги |
-| Flapping, induced drag, gyroscopic effects | Контракт; включение отклоняется до принятия моделей |
+| Blade flapping, axial inflow, translational lift | Реализовано в этапе 10; ограничения и source formulas — ROTOR_FLOW.md |
+| Gyroscopic rotor effects | Контракт; включение отклоняется до принятия модели этапа 11 |
 | Battery Simple / Electrical, SOC/OCV/sag, RPM/current/power envelope | Реализовано в этапе 6; ограничения — POWER_SYSTEM.md |
 | Battery + RPM/J map, efficiency curve, motor inductance / thermal | Ожидают модели; map/efficiency curve с батареей явно отклоняются |
 | StandardAtmosphere, Gust, seeded Turbulence, CustomField/IWindProvider | Реализовано в этапе 7; ограничения и формулы — ENVIRONMENT.md |
@@ -225,7 +227,8 @@ Quad allocator остаётся обычным четырёхмоторным; P
 StepPrepared публикуется после подготовки сил до интегратора Rigidbody. CSV хранит
 позу/скорость на начало шага, силы/RPM шага и энергию/заряд на его конец. Reset разделяет
 сегменты; Initialize разделяет записи. Файлы включают принятые JSON и настройки старта.
-Формат телеметрии имеет свою версию 1.0.0; профиль JSON не менялся. Данные VFX — только
+Формат телеметрии этапа 8 — 1.0.0; этап 10 добавляет столбцы в версии 1.1.0.
+Профиль JSON сохраняет 1.0.0 с документированными optional additions. Данные VFX — только
 оценка hover inflow и фактическое состояние ротора, без новых сил/CFD. DIAGNOSTICS.md.
 
 ## SDK 0.2.0 / этап 9
@@ -237,3 +240,13 @@ Recorder читает optional IFlightControlTelemetry; без controller mode=N
 Package resource paths не зависят от Assets-folder. MODULE_INTEGRATION.md описывает
 контракт и migration. Импорт полного tensor меняет mass/COM/inertia, но не силы
 нового вида или смысл JSON 1.0.0. PHYSICS_UPGRADES.md задаёт последующие этапы.
+
+## Этап 10: расширенный поток
+
+Static thrust + bounded dT и hub flapping moment: ROTOR_FLOW.md. Три новых коэффициента
+масштабируются rho/reference rho; старый H-force не изменён. Формулы используют поток
+каждой точки и arbitrary thrust axes. Negative/zero base thrust или stop запрещают
+новые поправки. Ограничения dT/T и M/(T*R) и отдельный clip flag обязательны.
+Axial/lift bundle с RPM/J map отклоняется; Q/current остаются на базовой модели.
+Новые поля optional; старые профили/force signs сохраняются. UPM snapshots пересобираются
+в конце улучшений по решению пользователя, не в каждом исходном physics commit.

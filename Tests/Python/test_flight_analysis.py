@@ -28,6 +28,12 @@ class FlightAnalysisTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.read(self.header + "0,0,.01\n")
 
+    def test_rotor_flow_columns_do_not_double_count_corrected_thrust(self):
+        header = self.header.rstrip("\n") + ",rotor_0_FL_thrust_correction_n,rotor_0_FL_flap_x_nm,rotor_0_FL_flow_clamped\n"
+        groups = self.read(header + "0,0,.01,1,9.81,2,0,9.9,100,1,.09,.01,1\n")
+        self.assertAlmostEqual(analysis.summarize(groups[0])["mean_sum_rotor_thrust_n"], 9.9)
+        self.assertAlmostEqual(groups[0][0]["rotor_0_FL_thrust_correction_n"], .09)
+
     def test_nonfinite_data_is_rejected(self):
         with self.assertRaises(ValueError):
             self.read(self.header + "0,0,.01,1,9.81,nan,0,9.81,100,1\n")

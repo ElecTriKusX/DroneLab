@@ -211,6 +211,13 @@ namespace DroneLab.Simulation
             GUILayout.Label($"Body {p.DragModel} | silhouette {physicsBody.ProjectedAreaM2:F4} m² | drag {physicsBody.DragForce.magnitude:F3} N | aero torque {physicsBody.DragTorque.magnitude:F4} Nm");
             if(p.RotorDrag || p.GroundEffect!=null)
                 GUILayout.Label($"Rotor drag {physicsBody.RotorDragForce.magnitude:F3} N | rotor torque {physicsBody.RotorDragTorque.magnitude:F4} Nm | ground effect {(p.GroundEffect!=null ? "ON" : "OFF")}");
+            bool flowEnabled=false; foreach(var rotor in p.Rotors) flowEnabled|=rotor.Flow!=null;
+            if(flowEnabled)
+            {
+                double correction=0; bool clipped=false;
+                for(int i=0;i<p.Rotors.Count;i++) { correction+=physicsBody.RotorThrustCorrectionN[i]; clipped|=physicsBody.RotorFlowClamped[i]; }
+                GUILayout.Label($"Rotor flow dT {correction:F3} N | flap moment {physicsBody.RotorFlappingMoment.magnitude:F4} Nm | flow limit {(clipped ? "CLAMP" : "in range")}");
+            }
             if(physicsBody.Power!=null)
             {
                 var power=physicsBody.Power;

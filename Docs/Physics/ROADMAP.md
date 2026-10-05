@@ -11,10 +11,11 @@
 | 5. Эффекты роторов | Ground effect, rotor drag; затем flapping/induced/gyro при наличии модели | Далеко от земли → 1, clamps, диссипация, знаки момента | Ground effect/rotor drag реализованы; Пользователь подтвердил физику, EditMode и успешный повтор PlayMode; ground effect на скриншотах согласуется с формулой. Два input-теста переведены на InputTestFixture для устранения общей Input System state. Остальные эффекты ждут моделей/коэффициентов |
 | 6. Энергетика | Simple / Electrical battery, SOC/OCV/sag, КПД, ограничения токов/мощности/RPM | Энергетический баланс, I=0, SOC не растёт, перегрузка | Пользователь подтвердил все тесты, ограничение взлёта при 4 A и снижение при истощении небольшой батареи. RPM/J battery coupling и efficiency curves остаются отдельным расширением |
 | 7. Среда | Atmosphere, порывы, seeded turbulence, пространственный IWindProvider | Повторяемость seed, направление ветра, dt convergence | Пользователь подтвердил стабильную работу и тесты после исправления asmdef. Ограниченный Fourier wind field; не Dryden/CFD |
-| 8. Проверка и интеграция | Телеметрия/CSV, сценарии отказа мотора, калибровка, данные для VFX | Сравнение 50/100/200 Hz, regression suite, реальный профиль | Пользователь подтвердил Unity-тесты и ручной отказ двигателя. CSV/manifest, drive faults, анализатор и VFX API реализованы; 284 Core/EditMode + 4 Python прошли. Пользователь подтвердил финальные Unity-тесты; 2 новых boundary-сценария этапа 9 ожидают проверки; реальная калибровка и сам VFX ждут данных |
+| 8. Проверка и интеграция | Телеметрия/CSV, сценарии отказа мотора, калибровка, данные для VFX | Сравнение 50/100/200 Hz, regression suite, реальный профиль | Пользователь подтвердил Unity-тесты и ручной отказ двигателя. CSV/manifest, drive faults, анализатор и VFX API реализованы; 284 Core/EditMode + 4 Python прошли. Пользователь подтвердил финальные Unity-тесты; boundary-сценарии этапа 9 подтверждены пользователем; реальная калибровка и сам VFX ждут данных |
 
 Пользователь подтвердил финальную приёмку. Продолжение физики: [PHYSICS_UPGRADES.md](PHYSICS_UPGRADES.md),
-этапы 9–14. SDK/import mass properties реализован; следующий — расширенная роторная аэродинамика.
+этапы 9–14. SDK/import mass properties и расширенная роторная аэродинамика реализованы в source;
+следующий — связь винта, двигателя и батареи. Пакеты пересобираются в конце.
 Маршрут отложен по просьбе пользователя до принятой физической приёмки.
 Обязательные пробелы ТЗ (sensor/weather/thermal/signal) сохраняются в PHYSICS_AUDIT.md.
 Основной стенд физики готов к интеграции; реальная калибровка, VFX и optional-модели
@@ -86,3 +87,8 @@ Editor menu, 8 Core/EditMode cases и 5 isolated PlayMode scenarios. Marker-only
 UPM Physics/Demo 0.2.0, interface telemetry без зависимости от конкретного пульта,
 Resources-based package tests. GUID исходных компонентов сохранены. 300 Core/EditMode
 и 8 Python прошли; packages actual Unity import и 2 новых PlayMode ожидают пользователя.
+
+2026-10-05: пользователь подтвердил тесты этапа 9. Этап 10 добавляет bounded
+translational lift, axial inflow, blade flapping, отдельную диагностику и общий профиль
+quad_test_advanced_rotors; ROTOR_FLOW.md. Этап 14 изменён на открытую/numerical validation
+без оборудования. Snapshot UPM 0.2.0 намеренно сохранён до финальной пересборки.

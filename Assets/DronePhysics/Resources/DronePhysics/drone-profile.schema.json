@@ -492,11 +492,41 @@
         },
         "bladeFlappingCoefficient": {
           "type": "number",
-          "minimum": 0
+          "minimum": 0,
+          "description": "kg*m/rad; M=-k*omega*(Vair cross axis)."
         },
         "inducedDragCoefficient": {
           "type": "number",
-          "minimum": 0
+          "minimum": 0,
+          "description": "kg/rad; axial thrust correction -k*omega*Vaxial."
+        },
+        "translationalLiftCoefficientKgPerM": {
+          "type": "number",
+          "minimum": 0,
+          "description": "kg/m; thrust correction k*|Vperpendicular|^2, enabled by rotorAerodynamics."
+        },
+        "referenceAirDensityKgM3": {
+          "type": "number",
+          "minimum": 1e-06,
+          "description": "Reference density of the three new coefficients; corrections scale by rho/reference rho; minimum 1e-6 prevents ill-conditioned scaling."
+        },
+        "maxAirSpeedMps": {
+          "type": "number",
+          "minimum": 1e-06,
+          "maximum": 200,
+          "description": "Local airflow magnitude limit for new corrections; clipped direction is preserved."
+        },
+        "maxThrustCorrectionFraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.5,
+          "description": "Maximum absolute combined axial/lift correction divided by positive free-air thrust."
+        },
+        "maxFlappingMomentRatio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Maximum flap moment magnitude divided by positive free-air thrust times rotor radius."
         }
       },
       "required": [
