@@ -153,3 +153,9 @@ temperatureK 100..500 K, StandardAtmosphere выдаёт local altitude temperat
 weather={precipitation,intensityMmPerHour,model:VisualOnly} доступны UI/VFX через
 RuntimeEnvironment. Осадки сами не меняют силы, плотность, humidity или нагрев;
 описание границ и интеграции — THERMAL_WEATHER.md.
+
+## Спектральный режим этапа 13
+
+DrydenFrozen добавляет отдельную finite-band модель с explicit RMS sigma, length scales,
+advection, seed и spectral band. Описание старого Turbulence выше остаётся верным.
+Создание, формулы, ограничения frozen line и проверка sampling/Nyquist: DESCENT_WIND.md.

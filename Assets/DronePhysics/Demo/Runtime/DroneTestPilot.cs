@@ -207,6 +207,12 @@ namespace DroneLab.Simulation
             GUILayout.Label($"RPM spread {maxRpm-minRpm:F2} | Torque local [{RequestedTorqueLocal.x:F4}, {RequestedTorqueLocal.y:F4}, {RequestedTorqueLocal.z:F4}] Nm");
             GUILayout.Label($"Environment {p.Environment.DensityMode} | altitude {physicsBody.Air.AltitudeM:F1} m | density {physicsBody.Air.Density:F4} kg/m³");
             GUILayout.Label($"Wind {p.Environment.WindMode} | world {physicsBody.WindVelocityWorld} m/s | simulation {physicsBody.SimulationTimeS:F2} s");
+            if(physicsBody.WindSamplingRatio.HasValue)
+                GUILayout.Label($"Wind frequency / Nyquist {physicsBody.WindSamplingRatio:F3} | {(physicsBody.WindUnderResolved ? "UNDER-RESOLVED: reduce fixed timestep / spectral band" : "resolved")}");
+            bool envelope=false,exceeded=false,descent=false;
+            for(int i=0;i<p.Rotors.Count;i++)
+            { envelope|=p.Rotors[i].Envelope!=null; exceeded|=physicsBody.RotorEnvelopeSamples[i].Exceeded==true; descent|=physicsBody.RotorEnvelopeSamples[i].Regime==RotorFlowRegime.PositiveThrustDescent; }
+            if(envelope) GUILayout.Label($"Rotor flight envelope: {(exceeded ? "OUTSIDE declared limits" : "within declared limits")} | positive-thrust descent {descent} | report only; VRS not modelled");
             GUILayout.Label($"Profile dimensions {p.Dimensions.X:F2} x {p.Dimensions.Y:F2} x {p.Dimensions.Z:F2} m | Air velocity {physicsBody.AirVelocity}");
             GUILayout.Label($"Body {p.DragModel} | silhouette {physicsBody.ProjectedAreaM2:F4} m² | drag {physicsBody.DragForce.magnitude:F3} N | aero torque {physicsBody.DragTorque.magnitude:F4} Nm");
             if(p.RotorDrag || p.GroundEffect!=null)

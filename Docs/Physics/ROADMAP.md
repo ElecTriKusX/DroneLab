@@ -15,7 +15,7 @@
 
 Пользователь подтвердил финальную приёмку. Продолжение физики: [PHYSICS_UPGRADES.md](PHYSICS_UPGRADES.md),
 этапы 9–14. SDK/import mass properties и расширенная роторная аэродинамика реализованы в source;
-связь винта, двигателя и батареи добавлена в этапе 11; тепловая модель добавлена в этапе 12; следующий — descent/wind envelope. Пакеты пересобираются в конце.
+связь винта, двигателя и батареи добавлена в этапе 11; тепловая модель добавлена в этапе 12; descent/wind envelope добавлен в этапе 13; следующий — итоговая приёмка. Пакеты пересобираются в конце.
 Маршрут отложен по просьбе пользователя до принятой физической приёмки.
 Обязательные пробелы ТЗ (sensor/weather/thermal/signal) сохраняются в PHYSICS_AUDIT.md.
 Основной стенд физики готов к интеграции; реальная калибровка, VFX и optional-модели
@@ -102,3 +102,8 @@ UPM остаются на этапе 9 до финальной сборки.
 thermal nodes, explicit cooling, Rmotor(T), continuous current derating, CSV 1.3.0,
 weather presets и VisualOnly precipitation API; THERMAL_WEATHER.md. Осадки/VFX —
 внешняя интеграция, water/ice impacts не заявляются. UPM пересобираются в конце.
+
+2026-10-06: пользователь подтвердил этап 12. Этап 13: finite-band DrydenFrozen,
+rotor operatingEnvelope ReportOnly, raw-flow diagnostics и sampling/Nyquist warning,
+CSV 1.4.0; DESCENT_WIND.md. VRS/inflow solver не реализован. Следующий — этап 14,
+независимые данные/численная приёмка, затем итоговая сборка пакетов.

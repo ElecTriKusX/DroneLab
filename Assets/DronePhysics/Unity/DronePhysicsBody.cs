@@ -17,6 +17,9 @@ namespace DroneLab.Simulation
         public double SimulationTimeS { get; private set; }
         public Vector3 WindVelocityWorld { get; private set; }
         public Vector3[] RotorWindVelocityWorld { get; private set; }
+        public RotorFlightEnvelopeSample[] RotorEnvelopeSamples { get; private set; }
+        public double? WindSamplingRatio { get; private set; }
+        public bool WindUnderResolved=>WindSamplingRatio>.5;
         public bool drawForces = true;
         public float forceGizmoScale = 0.08f;
         [Tooltip("Colliders considered by rotor ground probes. Triggers and the drone hierarchy are ignored.")]
@@ -50,7 +53,7 @@ namespace DroneLab.Simulation
                 PhysicsMath.OmegaToRpm(Parameters.InertialRotors ? gyroOmega[index] : Omega[index]),
                 Power?.Thermal?.Motor(index).TemperatureK,Power?.Thermal?.Esc(index).TemperatureK,
                 Power?.Thermal?.Motor(index).Authority,Power?.Thermal?.Esc(index).Authority,
-                Power?.Thermal==null ? (double?)null : Power.MotorResistanceOhm(index));
+                Power?.Thermal==null ? (double?)null : Power.MotorResistanceOhm(index),RotorEnvelopeSamples[index]);
         }
         public double[] ThrustN { get; private set; }
         public double[] ReactionTorqueNm { get; private set; }
@@ -133,6 +136,7 @@ namespace DroneLab.Simulation
             referenceWorldY=Body.worldCenterOfMass.y; Air=Parameters.Environment.SampleAir(0); SimulationTimeS=0; WindVelocityWorld=Vector3.zero;
             commands=new double[count]; candidateOmega=new double[count]; pointAirVelocities=new Vector3[count]; Omega=new double[count]; ThrustN=new double[count]; ReactionTorqueNm=new double[count];
             axialVelocities=new double[count]; gyroOmega=new double[count]; rotorAirSpeeds=new double[count];
+            RotorEnvelopeSamples=new RotorFlightEnvelopeSample[count];
             PropellerTorqueNm=new double[count];
             AdvanceRatio=new double[count]; MeasuredCurrentA=new double?[count]; PerformanceClamped=new bool[count];
             GroundHeightM=new double[count]; GroundEffectMultiplier=new double[count]; RotorDragForceN=new Vector3[count];
@@ -177,6 +181,7 @@ namespace DroneLab.Simulation
             if(Parameters!=null) Air=Parameters.Environment.SampleAir(0);
             if(RotorWindVelocityWorld!=null) Array.Clear(RotorWindVelocityWorld,0,RotorWindVelocityWorld.Length);
             if(Omega == null) return;
+            WindSamplingRatio=null; Array.Clear(RotorEnvelopeSamples,0,RotorEnvelopeSamples.Length);
             Array.Clear(Omega,0,Omega.Length); Array.Clear(ThrustN,0,ThrustN.Length); Array.Clear(ReactionTorqueNm,0,ReactionTorqueNm.Length);
             Array.Clear(PropellerTorqueNm,0,PropellerTorqueNm.Length);
             Array.Clear(gyroOmega,0,gyroOmega.Length);
@@ -193,6 +198,7 @@ namespace DroneLab.Simulation
             {
                 Air=Parameters.Environment.SampleAir(Body.worldCenterOfMass.y-referenceWorldY);
                 WindVelocityWorld=WindAt(Body.worldCenterOfMass);
+                WindSamplingRatio=Parameters.Environment.WindSamplingRatio(FromUnity(Body.linearVelocity),dt);
                 for(int i=0;i<Parameters.Rotors.Count;i++)
                 {
                     var r=Parameters.Rotors[i];
@@ -204,9 +210,12 @@ namespace DroneLab.Simulation
                     Vector3 axisWorld=transform.TransformDirection(ToUnity(r.Axis));
                     rotorPoints[i]=pointWorld; rotorAxes[i]=axisWorld;
                     RotorWindVelocityWorld[i]=WindAt(pointWorld);
-                    var pointAirVelocity=Body.GetPointVelocity(pointWorld)-RotorWindVelocityWorld[i];
+                    var pointVelocity=Body.GetPointVelocity(pointWorld);
+                    var pointAirVelocity=pointVelocity-RotorWindVelocityWorld[i];
                     pointAirVelocities[i]=pointAirVelocity;
                     axialVelocities[i]=Vector3.Dot(pointAirVelocity,axisWorld);
+                    if(WindSamplingRatio.HasValue)
+                        WindSamplingRatio=Math.Max(WindSamplingRatio.Value,Parameters.Environment.WindSamplingRatio(FromUnity(pointVelocity),dt).Value);
                 }
                 if(Power!=null)
                 {
@@ -224,6 +233,7 @@ namespace DroneLab.Simulation
                     double axial=Vector3.Dot(pointAirVelocity,axisWorld);
                     double evaluationOmega=Parameters.InertialRotors ? gyroOmega[i] : candidateOmega[i];
                     var sample=r.Performance.Evaluate(evaluationOmega,axial,Air.Density);
+                    RotorEnvelopeSamples[i]=RotorFlightEnvelope.Evaluate(r,evaluationOmega,sample.Thrust,FromUnity(pointAirVelocity),FromUnity(axisWorld),Air.Density);
                     var flow=RotorFlow.Evaluate(r,evaluationOmega,sample.Thrust,FromUnity(pointAirVelocity),FromUnity(axisWorld),Air.Density);
                     RotorThrustCorrectionN[i]=flow.ThrustCorrection;
                     RotorFlappingMomentNm[i]=ToUnity(flow.FlappingMoment); RotorFlowClamped[i]=flow.Clamped;
@@ -248,7 +258,10 @@ namespace DroneLab.Simulation
                 {
                     var localPoint=Parameters.DragModel=="Surfaces" ? Parameters.Surfaces[i].Position : Parameters.DragPoint;
                     var worldPoint=transform.TransformPoint(ToUnity(localPoint));
-                    var flow=Body.GetPointVelocity(worldPoint)-WindAt(worldPoint);
+                    var pointVelocity=Body.GetPointVelocity(worldPoint);
+                    var flow=pointVelocity-WindAt(worldPoint);
+                    if(WindSamplingRatio.HasValue)
+                        WindSamplingRatio=Math.Max(WindSamplingRatio.Value,Parameters.Environment.WindSamplingRatio(FromUnity(pointVelocity),dt).Value);
                     var wrench=BodyAerodynamics.EvaluatePoint(Parameters,FromUnity(transform.InverseTransformDirection(flow)),Air.Density,i);
                     bodyPointForces[i]=transform.TransformDirection(ToUnity(wrench.Force));
                     localForce+=wrench.Force; localTorque+=wrench.Torque; area=wrench.ProjectedArea;

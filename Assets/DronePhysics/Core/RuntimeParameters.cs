@@ -11,6 +11,7 @@ namespace DroneLab.Physics
         public readonly double ReactionSign, MaxOmega, MinOmega, IdleOmega, TauUp, TauDown, KT, KQ, Diameter, RotorDragCoefficient;
         public readonly PropellerPerformance Performance;
         public readonly RuntimeRotorFlow Flow;
+        public readonly RuntimeRotorEnvelope Envelope;
         public readonly RuntimeMotorPower Power;
         public readonly double MaxThrust;
         public readonly double RotatingInertia;
@@ -19,6 +20,7 @@ namespace DroneLab.Physics
         {
             Id=p.rotorId; Position=DVector3.From(p.geometry.positionLocalM); Axis=DVector3.From(p.geometry.thrustAxisLocal).Normalized;
             Power=power ? new RuntimeMotorPower(p.motor.electrical) : null;
+            Envelope=p.operatingEnvelope==null ? null : new RuntimeRotorEnvelope(p.operatingEnvelope);
             // Viewed from the +thrust-axis tip towards the hub. Unity +Y rotates clockwise from above.
             // Body reaction is opposite rotor spin: CW -> -axis, CCW -> +axis.
             ReactionSign=p.geometry.spinDirection == "CW" ? -1 : 1;

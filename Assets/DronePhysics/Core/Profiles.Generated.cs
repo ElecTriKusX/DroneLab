@@ -181,6 +181,16 @@ namespace DroneLab.Physics
         public PropellerProfile propeller;
         public RotorPerformanceProfile performance;
         public RotorAerodynamicsProfile advancedAerodynamics;
+        public RotorOperatingEnvelopeProfile operatingEnvelope;
+    }
+
+    [Serializable]
+    public sealed class RotorOperatingEnvelopeProfile
+    {
+        public string model;
+        public double maxAxialClimbSpeedMps;
+        public double maxAxialDescentSpeedMps;
+        public double maxLateralSpeedMps;
     }
 
     [Serializable]
@@ -301,6 +311,18 @@ namespace DroneLab.Physics
     }
 
     [Serializable]
+    public sealed class DrydenProfile
+    {
+        public double[] sigmaUvwMps;
+        public double[] lengthScaleUvwM;
+        public double[] advectionDirectionWorld;
+        public double advectionSpeedMps;
+        public int modesPerComponent;
+        public double minDimensionlessWaveNumber;
+        public double maxDimensionlessWaveNumber;
+    }
+
+    [Serializable]
     public sealed class EnvironmentProfile
     {
         public string schemaVersion;
@@ -317,6 +339,7 @@ namespace DroneLab.Physics
         public double gustTimeScaleS;
         public int turbulenceSeed;
         public WeatherProfile weather;
+        public DrydenProfile dryden;
     }
 
 }

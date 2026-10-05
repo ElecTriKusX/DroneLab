@@ -631,6 +631,9 @@
         },
         "advancedAerodynamics": {
           "$ref": "#/$defs/RotorAerodynamicsProfile"
+        },
+        "operatingEnvelope": {
+          "$ref": "#/$defs/RotorOperatingEnvelopeProfile"
         }
       },
       "required": [
@@ -639,6 +642,39 @@
         "motor",
         "propeller",
         "performance"
+      ]
+    },
+    "RotorOperatingEnvelopeProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": [
+            "ReportOnly"
+          ]
+        },
+        "maxAxialClimbSpeedMps": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "maxAxialDescentSpeedMps": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "maxLateralSpeedMps": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200
+        }
+      },
+      "required": [
+        "model",
+        "maxAxialClimbSpeedMps",
+        "maxAxialDescentSpeedMps",
+        "maxLateralSpeedMps"
       ]
     },
     "ProjectedAreaSample": {

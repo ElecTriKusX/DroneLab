@@ -181,6 +181,16 @@
 | `propeller` | PropellerProfile |
 | `performance` | RotorPerformanceProfile |
 | `advancedAerodynamics?` | RotorAerodynamicsProfile |
+| `operatingEnvelope?` | RotorOperatingEnvelopeProfile |
+
+## RotorOperatingEnvelopeProfile
+
+| Поле | Тип / ограничения |
+|---|---|
+| `model` | ['ReportOnly'] |
+| `maxAxialClimbSpeedMps` | number |
+| `maxAxialDescentSpeedMps` | number |
+| `maxLateralSpeedMps` | number |
 
 ## ProjectedAreaSample
 
@@ -299,6 +309,18 @@
 | `intensityMmPerHour` | number — Liquid-water-equivalent precipitation rate; VFX metadata only. |
 | `model` | ['VisualOnly'] |
 
+## DrydenProfile
+
+| Поле | Тип / ограничения |
+|---|---|
+| `sigmaUvwMps` | array |
+| `lengthScaleUvwM` | array |
+| `advectionDirectionWorld` | array |
+| `advectionSpeedMps` | number |
+| `modesPerComponent` | integer |
+| `minDimensionlessWaveNumber` | number |
+| `maxDimensionlessWaveNumber` | number |
+
 ## EnvironmentProfile
 
 | Поле | Тип / ограничения |
@@ -310,10 +332,11 @@
 | `temperatureK?` | number |
 | `pressurePa?` | number |
 | `altitudeM?` | number |
-| `windMode` | ['None', 'Constant', 'Gust', 'Turbulence', 'CustomField'] |
+| `windMode` | ['None', 'Constant', 'Gust', 'Turbulence', 'DrydenFrozen', 'CustomField'] |
 | `windVelocityWorldMps` | array |
 | `gustEnabled` | boolean |
 | `gustIntensityMps?` | number |
 | `gustTimeScaleS?` | number |
 | `turbulenceSeed?` | integer |
 | `weather?` | WeatherProfile |
+| `dryden?` | DrydenProfile |

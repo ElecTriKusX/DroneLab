@@ -79,7 +79,10 @@ obj('RotorAerodynamicsProfile', {'rotorDragCoefficientKgPerRad':N,
      'maxAirSpeedMps','maxThrustCorrectionFraction','maxFlappingMomentRatio'))
 obj('RotorProfile', {'rotorId':S,'geometry':ref('RotorGeometry'),'motor':ref('MotorProfile'),
     'propeller':ref('PropellerProfile'),'performance':ref('RotorPerformanceProfile'),
-    'advancedAerodynamics':ref('RotorAerodynamicsProfile')}, ('advancedAerodynamics',))
+    'advancedAerodynamics':ref('RotorAerodynamicsProfile'),
+    'operatingEnvelope':ref('RotorOperatingEnvelopeProfile')}, ('advancedAerodynamics','operatingEnvelope'))
+obj('RotorOperatingEnvelopeProfile', {'model':enum('ReportOnly'),
+    'maxAxialClimbSpeedMps':num(0,200),'maxAxialDescentSpeedMps':num(0,200),'maxLateralSpeedMps':num(0,200)})
 obj('ProjectedAreaSample', {'directionLocal':vec(),'areaM2':P})
 obj('ProjectedAreaProfile', {'mode':enum('MeshDirectionalLUT','ManualDirectionalLUT','AxisApproximation'),
     'samples':arr(ref('ProjectedAreaSample'),1),'referenceAreaM2':vec()}, ('samples','referenceAreaM2'))
@@ -107,11 +110,16 @@ obj('DroneProfile', {'schemaVersion':enum('1.0.0'),'metadata':ref('Metadata'),'c
 obj('WeatherProfile', {'precipitation':enum('None','Rain','Snow','Hail'),
     'intensityMmPerHour':dict(num(0,200),description='Liquid-water-equivalent precipitation rate; VFX metadata only.'),
     'model':enum('VisualOnly')})
+obj('DrydenProfile', {'sigmaUvwMps':dict(vec(),items=num(0,30)),
+    'lengthScaleUvwM':dict(vec(),items=num(.1,1e6)),
+    'advectionDirectionWorld':vec(),'advectionSpeedMps':num(0,100),
+    'modesPerComponent':dict(integer(8),maximum=128),
+    'minDimensionlessWaveNumber':num(.00001,1),'maxDimensionlessWaveNumber':num(1,1e4)})
 obj('EnvironmentProfile', {'schemaVersion':enum('1.0.0'),'gravityMps2':P,'airDensityMode':enum('Constant','StandardAtmosphere'),
     'airDensityKgM3':P,'temperatureK':P,'pressurePa':P,'altitudeM':num(),
-    'windMode':enum('None','Constant','Gust','Turbulence','CustomField'),'windVelocityWorldMps':vec(),
-    'gustEnabled':B,'gustIntensityMps':N,'gustTimeScaleS':P,'turbulenceSeed':integer(),'weather':ref('WeatherProfile')},
-    ('temperatureK','pressurePa','altitudeM','gustIntensityMps','gustTimeScaleS','turbulenceSeed','weather'))
+    'windMode':enum('None','Constant','Gust','Turbulence','DrydenFrozen','CustomField'),'windVelocityWorldMps':vec(),
+    'gustEnabled':B,'gustIntensityMps':N,'gustTimeScaleS':P,'turbulenceSeed':integer(),'weather':ref('WeatherProfile'),'dryden':ref('DrydenProfile')},
+    ('temperatureK','pressurePa','altitudeM','gustIntensityMps','gustTimeScaleS','turbulenceSeed','weather','dryden'))
 
 def write(path, text):
     p = ROOT / path

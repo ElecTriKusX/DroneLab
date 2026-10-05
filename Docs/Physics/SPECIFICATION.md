@@ -278,3 +278,13 @@ Resolve/Commit сохраняет spin/coast и обновляет темпер�
 Environment weather задаёт None/Rain/Snow/Hail и liquid-equivalent mm/h как VisualOnly
 metadata. Физически действуют существующие T/P/wind; water impacts/icing/hail damage
 и chemistry/cold-capacity батареи остаются не реализованными.
+
+## Снижение и ветер (этап 13)
+
+windMode=DrydenFrozen — optional finite-band random-phase synthesis пространственных
+Dryden PSD на одной горизонтальной frozen line; явные sigma/L/axis/speed/seed/N/band.
+Старый Turbulence остаётся bounded demo field. Rotor operatingEnvelope ReportOnly
+задаёт climb/descent/lateral limits, не меняет силы/команды. Raw point air speed,
+reference -Vaxial/vi_hover, flow regime и max sampling/Nyquist ratio — diagnostics
+в HUD/CSV 1.4.0. DESCENT_WIND.md фиксирует формулы, источники и domain. VRS forces,
+dynamic inflow и полный 3D/terrain wind не реализованы.

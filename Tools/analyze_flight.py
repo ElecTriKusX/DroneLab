@@ -55,6 +55,12 @@ def summarize(rows):
               "drive_fault_samples": sum(r.get("drive_fault") == 1 for r in rows),
               "power_limited_samples": sum(r.get("power_limited") == 1 for r in rows),
               "thermal_derated_samples": sum(r.get("thermal_derated_end") == 1 for r in rows)}
+    result["wind_under_resolved_samples"] = sum(r.get("wind_under_resolved") == 1 for r in rows)
+    result["rotor_envelope_exceeded_samples"] = sum(any(r[key] == 1 for key in r if key.startswith("rotor_") and key.endswith("_envelope_exceeded")) for r in rows)
+    result["positive_thrust_descent_samples"] = sum(any(r[key] == 3 for key in r if key.startswith("rotor_") and key.endswith("_flow_regime_code")) for r in rows)
+    ratios = [r["wind_sampling_nyquist_ratio"] for r in rows if r.get("wind_sampling_nyquist_ratio") is not None]
+    if ratios:
+        result["max_wind_sampling_nyquist_ratio"] = max(ratios)
     for suffix, label in (("_motor_temp_k_end", "motor"), ("_esc_temp_k_end", "esc")):
         values = [r[key] for r in rows for key in r if key.startswith("rotor_") and key.endswith(suffix) and r[key] is not None]
         if values:

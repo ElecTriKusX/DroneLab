@@ -435,3 +435,35 @@ RotorInertia — явно выбираемый режим; старые JSON с�
 quad_test_thermal_stress имеет искусственно низкую C и пороги для быстрого наблюдения
 derating. Это не рекомендация для настоящего двигателя/аккумулятора. Формулы,
 источники, valid domain, energy semantics и инструкция — THERMAL_WEATHER.md.
+
+## Этап 13 — 2026-10-06 (Asia/Yekaterinburg)
+
+Пользователь подтвердил тесты и общий профиль этапа 12. Этап 13 добавляет
+DrydenFrozen и report-only rotor descent/envelope; VRS force остаётся не реализованной.
+Источник PSD — primary NASA Madden 2019; scope/формулы/ограничения — DESCENT_WIND.md.
+
+| Проверка | Фактический результат здесь |
+|---|---|
+| Core + EditMode / Roslyn C# 8 / .NET 8 / NUnitLite | **468 passed, 0 failed**, **37** новых cases |
+| One-sided PSD / independent Simpson quadrature / band energy | Прошло для u/v/w и 8/32/128 modes; missing tails не перенормируются |
+| 2048-seed mean/variance/covariance | u variance 0.15731 vs 0.15287, v 0.14774 vs 0.15135, w 0.05906 vs 0.05912 (m/s)²; mean -0.01288 / -0.00094 / -0.00721 m/s; lag-2 s covariance в пределах 9% retained variance от независимого PSD integral |
+| Frozen advection/query order/time schedule/zero spectrum/disabled wind | Прошло; transverse coherence намеренно infinite, tested как ограничение |
+| Envelope signs/inclusive limits/stopped/nonpositive thrust/missing limits | Прошло; report-only metadata не меняет base thrust |
+| Passive descent analytical solution, 50/100/200 Hz | Через 5 s v=-9.1329702/-9.1329700/-9.1329692 m/s против -9.1329703 m/s analytic; midpoint RK2 + production drag, не PhysX |
+| Wind-driven translation / relative-air drag passivity | 3 s: position error 0.003071/0.006912/0.014602 m для 200/100/50 Hz против 1000 Hz; synthetic drag-only fixture |
+| JSON Schema Draft 2020-12 | **2** схемы, **31** resource profiles прошли |
+| Production loader + QuadAllocator | quad_test_descent_wind + environment_dryden_frozen принят: 4 ротора, 13 LUT axes, static T/W=4; estimate warnings сохранены |
+| Whole DronePhysics syntax parser | **88** C# files, 0 syntax errors; не Unity semantic compilation |
+| Unity .meta | **143** unique DronePhysics GUID / **283** Assets GUID; все .meta присутствуют |
+| Python CSV analysis | **8 passed**, новые counters не повторно суммируют тягу |
+| C# CSV 1.4.0 → Python analyzer | Два synthetic rows, unknown diagnostics сохранены пустыми; bus energy balance проверен |
+| Новые DescentWindRigidbodyTests | **6** isolated scenarios добавлены, **85** PlayMode cases всего; **здесь не запускались** |
+| Unity import/editor/HUD/combined flight | Требуется пользовательский прогон нового этапа |
+
+Проверки ансамбля используют фиксированные seed, local scene integration не зависит
+от Terrain/active scene/focus. Тесты спектра проверяют конечнополосную аппроксимацию,
+а не её тождество continuous Dryden filters/full 3D turbulence. Ветряной sampling flag
+advisory; при чрезмерном dt силы не меняются молча. Частоты выше Nyquist требуют
+изменения dt/band/length scales. Данные synthetic: абсолютная точность реального FPV
+или VRS не заявляется. Distribution/Packages остаются stage-9 snapshot до конца,
+FBX пользователя не включён. Следующий этап — итоговые independent checks и сборка.

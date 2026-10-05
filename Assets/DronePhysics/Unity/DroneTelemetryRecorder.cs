@@ -110,6 +110,7 @@ namespace DroneLab.Simulation
                 ThermalDerated=power?.ThermalDerated ?? false,ThermalGeneratedEnergy=power?.Thermal?.GeneratedEnergyJ,
                 ThermalRejectedEnergy=power?.Thermal?.RejectedEnergyJ,ThermalStoredEnergy=power?.Thermal?.StoredEnergyJ,
                 Precipitation=parameters.Environment.Precipitation,PrecipitationIntensity=parameters.Environment.PrecipitationIntensityMmPerHour,
+                WindSamplingRatio=b.WindSamplingRatio,WindUnderResolved=b.WindUnderResolved,
                 Rotors=new RotorTelemetry[parameters.Rotors.Count] };
             for(int i=0;i<f.Rotors.Length;i++) f.Rotors[i]=b.GetRotorTelemetry(i);
             return f;

@@ -198,6 +198,7 @@ namespace DroneLab.Physics
             if(p.powerSystem.battery.mode!="None")
                 r.Issues.Add(new ValidationIssue("powerSystem","Estimated DC/BLDC equivalent currents; measured CSV current is separate. No regeneration/inductance. RotorInertia accounts spin energy with midpoint integration; legacy FirstOrder does not. Electrical derives losses from Kv/R/I0; constant efficiency is Simple only.","Warning"));
             foreach(var issue in EnvironmentValidation.Check(e,environmentJson,p)) error(issue.Path,issue.Message);
+            if(e.windMode=="DrydenFrozen") r.Issues.Add(new ValidationIssue("environment.dryden","Finite-band frozen-line Dryden spectrum synthesis, not full 3D turbulence or MIL angular gust gradients. Check retained variance and timestep/spatial sampling; parameters require their own source.","Warning"));
             if(e.windMode=="CustomField") r.Issues.Add(new ValidationIssue("environment.windMode","CustomField needs an explicit IWindProvider in the Unity adapter; disabled windInteraction ignores it.","Warning"));
         }
     }

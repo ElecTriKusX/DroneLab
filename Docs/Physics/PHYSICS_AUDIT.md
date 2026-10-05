@@ -222,3 +222,9 @@ Manual override немедленно отменяет route; fault/low battery/s
 Rmotor(T), energy accounting и weather presets. Single-node temperatures реализованы,
 но не cell chemistry, spatial gradients, icing или damage. ТЗ weather VFX/sensors/radio
 ещё требует интеграции, thermal unit-tests не доказывают готовность конкурсного EXE.
+
+2026-10-06, дополнение этапа 13: optional DrydenFrozen приближает пространственные
+спектры конечным набором гармоник; это не full 3D/MIL gust gradients. ReportOnly
+rotor envelope и descent/vi diagnostics не являются VRS. VRS forces/dynamic inflow
+остаются пробелом; первичные источники и независимые проверки в DESCENT_WIND.md.
+Этап 12 thermal и VisualOnly precipitation принят пользователем.
