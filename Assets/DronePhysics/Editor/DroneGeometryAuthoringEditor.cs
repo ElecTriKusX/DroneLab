@@ -13,6 +13,7 @@ namespace DroneLab.Editor
             EditorGUILayout.HelpBox("Move markers, then export a new profile. Marker edits have no effect until export. +Y is thrust/patch normal. Cd, COM and mass distribution require user data.",MessageType.Info);
             using(new EditorGUI.DisabledScope(EditorApplication.isPlaying))
             {
+                if(GUILayout.Button("Export Marker Geometry Only (preserve aero/power)")) { Selection.activeGameObject=((DroneGeometryAuthoring)target).gameObject; DroneGeometryMenu.ExportMarkers(); }
                 if(GUILayout.Button("Export Box Drag Profile")) { Selection.activeGameObject=((DroneGeometryAuthoring)target).gameObject; DroneGeometryMenu.ExportBox(); }
                 if(GUILayout.Button("Export Mesh Silhouette Profile")) { Selection.activeGameObject=((DroneGeometryAuthoring)target).gameObject; DroneGeometryMenu.ExportMesh(); }
                 if(GUILayout.Button("Export Surfaces Profile")) { Selection.activeGameObject=((DroneGeometryAuthoring)target).gameObject; DroneGeometryMenu.ExportSurfaces(); }

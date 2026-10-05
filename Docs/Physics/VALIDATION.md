@@ -273,3 +273,39 @@ CSV публикуется до интегратора Rigidbody; SOC/charge/ene
 Drive authority — сценарная runtime-настройка; контракт JSON 1.0.0 не изменён.
 Recovery на трёх моторах, jam/broken propeller, rotational-energy dynamics и CFD
 не объявляются реализованными. Подробная инструкция — [DIAGNOSTICS.md](DIAGNOSTICS.md).
+
+## Финальный аудит и сквозная регрессия — 2026-10-05
+
+Пользователь подтвердил все тесты этапа 8 и ручное поведение drive fault во всех
+режимах. Наблюдение наклона при снижении с исправными моторами не интерпретируется
+как валидация VRS: этой модели нет. В сохранённой PhysTest из пользовательского
+коммита 2d5d96d включён automaticFault через 5 s; для baseline его нужно отключить.
+Коммит пользователя получен fast-forward, его сцена/профили сохранены.
+
+| Проверка | Фактический результат |
+|---|---|
+| Core + EditMode, Roslyn C# 8 / .NET 8 / NUnitLite | **284 passed, 0 failed**, 8 новых случаев |
+| Combined CtCq/GE/atmosphere/Electrical/lag budget, 50/100/200 Hz | Qω и terminal/loss balance, charge integral и steady hover thrust прошли |
+| Drag dissipation, failed motor current/coast в общем профиле | Прошло |
+| Surfaces alternative + Electrical; RpmTable/PerformanceMap/Simple branches | Прошло |
+| Python flight analyzer regression | **4 passed, 0 failed** |
+| JSON Schema Draft 2020-12 | Обе схемы и **29** профилей прошли, включая новый пользовательский environment_test |
+| Production ProfileLoader + QuadAllocator | **29** допустимых профиль/среда комбинаций приняты |
+| Roslyn syntax всех **65** C# файлов | 0 ошибок; не заменяет Unity-компиляцию |
+| Unity metadata | Новые .meta присутствуют, 244 GUID уникальны |
+| git diff --check | Прошло |
+| Новые FinalAcceptanceRigidbodyTests | **5** сценариев добавлены; 59 PlayMode случаев суммарно; **здесь не запускались** |
+| Unity compilation / final coupled hover / inertia pulse / marker + inverted axes | Нужен запуск у пользователя; предыдущая suite подтверждена пользователем |
+| Real-world accuracy / calibration | Не измерена, проценты точности не заявляются |
+
+Основной fixture: quad_test_final_acceptance + environment_final_acceptance.
+Включены только совместимые реализованные модели; unsupported module flags остаются false.
+Остальные альтернативы проверяются отдельно, не суммируются для double counting.
+Новое Editor menu создаёт общий стенд, recorder и manual fault. Marker-only export
+сохраняет выбранную аэродинамику, батарею и enable flags; пересчитывает rotor/COM/CP
+authoring geometry, удаляет stale derived cache. Для mesh/surfaces нужен соответствующий export.
+JSON contract 1.0.0 не изменён, новых динамических сил не добавлено.
+
+Итог исследования и ТЗ, ограничения и proposal runtime-маршрута —
+[PHYSICS_AUDIT.md](PHYSICS_AUDIT.md). Воспроизводимая инструкция —
+[FINAL_ACCEPTANCE.md](FINAL_ACCEPTANCE.md).

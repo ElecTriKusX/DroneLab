@@ -6,6 +6,7 @@ using DroneLab.Physics;
 using DroneLab.Simulation;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace DroneLab.Editor
@@ -67,10 +68,12 @@ namespace DroneLab.Editor
                 }
                 author.surfaces=surfaces.ToArray();
                 if(profile.bodyAerodynamics.model=="ProjectedArea") author.projectedDragCoefficient=(float)profile.bodyAerodynamics.dragCoefficient;
-                EditorUtility.SetDirty(author); Selection.activeGameObject=body.gameObject;
+                EditorUtility.SetDirty(author); EditorSceneManager.MarkSceneDirty(body.gameObject.scene); Selection.activeGameObject=body.gameObject;
             }
             catch(Exception ex) { Debug.LogError("DroneLab geometry: "+ex.Message); }
         }
+        [MenuItem("DroneLab/Geometry/Export Profile with Marker Geometry Only")]
+        public static void ExportMarkers() => Export("Markers");
         [MenuItem("DroneLab/Geometry/Export Profile with Box Drag")]
         public static void ExportBox() => Export("Box");
         [MenuItem("DroneLab/Geometry/Export Profile with Mesh Silhouette")]
@@ -114,7 +117,12 @@ namespace DroneLab.Editor
                 Provenance(json,"rotors.geometry","Rotor markers in physics-root local meters; engine/propeller characteristics preserved.");
                 Provenance(json,"massProperties.centerOfMassLocalM","User-placed COM marker; no mass estimation from mesh.","User");
                 JObject aero;
-                if(mode=="Surfaces")
+                if(mode=="Markers")
+                {
+                    // Keep the selected aerodynamic model, tables, battery and enable flags.
+                    aero=(JObject)json["bodyAerodynamics"].DeepClone();
+                }
+                else if(mode=="Surfaces")
                 {
                     if(author.surfaces==null || author.surfaces.Length==0) throw new ArgumentException("Assign at least one AeroSurfaceMarker in Surfaces.");
                     var surfaces=new JArray();
@@ -158,7 +166,8 @@ namespace DroneLab.Editor
                     Provenance(json,"bodyAerodynamics.dragCoefficient","User-specified Cd for projected frontal area; not inferred from geometry.","User");
                 }
                 aero["dragApplicationPointLocalM"]=Vector(root.InverseTransformPoint(author.dragPointMarker.position));
-                json["bodyAerodynamics"]=aero; json["physicsConfiguration"]["modules"]["bodyDrag"]=true;
+                json["bodyAerodynamics"]=aero;
+                if(mode!="Markers") json["physicsConfiguration"]["modules"]["bodyDrag"]=true;
                 json.Remove("derived"); // Do not retain stale geometry/inertia caches.
                 var validated=Validate(body,json.ToString());
                 try { new QuadAllocator(validated.Parameters); }
@@ -167,7 +176,7 @@ namespace DroneLab.Editor
                 if(string.IsNullOrEmpty(path)) return;
                 File.WriteAllText(path,json.ToString()+"\n"); AssetDatabase.ImportAsset(path);
                 Undo.RecordObject(body,"Assign geometry profile"); body.droneProfile=AssetDatabase.LoadAssetAtPath<TextAsset>(path);
-                EditorUtility.SetDirty(body); Debug.Log("DroneLab: saved and assigned "+path+". Save the scene, then enter Play.",body);
+                EditorUtility.SetDirty(body); EditorSceneManager.MarkSceneDirty(body.gameObject.scene); Debug.Log("DroneLab: saved and assigned "+path+". Save the scene, then enter Play.",body);
             }
             catch(OperationCanceledException) { }
             catch(Exception ex) { Debug.LogError("DroneLab geometry: "+ex.Message); }

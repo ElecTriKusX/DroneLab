@@ -5,6 +5,7 @@ namespace DroneLab.Simulation
     // Authoring marker only; local +Y is the rotor thrust axis. No runtime forces.
     public sealed class RotorGeometryMarker : MonoBehaviour
     {
+        [Tooltip("Authoring only. Stop Play and export Marker Geometry Only to apply position, +Y thrust axis and spin to the selected JSON profile.")]
         public string rotorId;
         public bool clockwise=true;
         private void OnDrawGizmos()
