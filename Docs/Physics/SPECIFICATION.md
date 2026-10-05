@@ -65,12 +65,15 @@ OmegaSquared: `T=kT ω²`, `Q=kQ ω²`.
 kT/kQ относятся к заданной `referenceAirDensityKgM3`; при другой плотности профиль
 отклоняется. Автоматическое масштабирование измеренных коэффициентов не подразумевается.
 CtCq: `T=Ct ρ n² D⁴`, `Q=Cq ρ n² D⁵`, `n=RPM/60=ω/(2π)`.
-В первом runtime реализованы постоянные Ct/Cq. Диаметр непосредственно влияет на расчёт,
+Реализованы постоянные Ct/Cq и карты RPM/J. Диаметр непосредственно влияет на расчёт,
 шаг и число лопастей сохраняются как характеристики винта, но сами не определяют Ct/Cq.
 
-RpmTable сохраняет RPM → thrust/torque/current. PerformanceMap сохраняет RPM/J/Ct/Cq
-и опциональный Reynolds. Интерполяция, валидный диапазон и обработка границ будут отдельным
-модулем; до реализации эти режимы отклоняются. `Cp` нельзя подставлять вместо `Cq`:
+RpmTable сохраняет RPM → thrust/torque/current; силы интерполируются линейно,
+плотность должна совпадать с referenceAirDensityKgM3. PerformanceMap сохраняет RPM/J/Ct/Cq
+и опциональный Reynolds; реализована билинейная интерполяция по полной прямоугольной сетке.
+J=dot(VrotorPoint-Vwind,axis)/(n D); коэффициенты масштабируются текущими rho/n/D.
+Clamp и Reject задаются явно; остановка даёт нулевые силы до вычисления J.
+Границы, CSV, статическая инверсия для пульта и ограничения — PROPELLER_PERFORMANCE.md. `Cp` нельзя подставлять вместо `Cq`:
 при одинаковых соглашениях `Cp=2π Cq`.
 Advance ratio описывает осевое обтекание. Он не заменяет модель бокового обтекания,
 blade flapping и vortex ring state. Эти режимы нельзя объявлять точными без данных.
@@ -143,7 +146,7 @@ ManualPrincipal задаёт положительные главные моме�
 | Constant density, None / Constant wind, Axis drag, CP | Реализовано |
 | Quad X / + тестовый allocator | Реализовано для 4 роторов +Y с полной управляемостью |
 | ProjectedArea: box, manual/mesh LUT; Surfaces; geometry markers/export | Реализовано в этапе 3 |
-| RpmTable, PerformanceMap | Контракт; runtime отклоняет |
+| RpmTable, PerformanceMap, SI CSV import | Реализовано в этапе 4; пульт использует статическую J=0 кривую |
 | Ground effect, rotor drag, flapping, induced drag, gyroscopic effects | Контракт; включение отклоняется |
 | Battery, electrical motor, atmosphere, gust/turbulence | Контракт; включение отклоняется |
 

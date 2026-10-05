@@ -101,6 +101,25 @@ namespace DroneLab.Physics
                         error(path+".performance.referenceAirDensityKgM3","Measured kT/kQ require their reference density. Use CtCq for density scaling.");
                 }
                 else if (perf.model == "CtCq") { Required(perfJson,"ct",path+".performance"); Required(perfJson,"cq",path+".performance"); }
+                else if(perf.model=="RpmTable" || perf.model=="PerformanceMap")
+                {
+                    Required(perfJson,perf.model=="RpmTable" ? "rpmTable" : "performanceMap",path+".performance");
+                    foreach(var issue in PerformanceValidation.Check(perf)) error(path+".performance",issue);
+                    if(perf.model=="RpmTable")
+                    {
+                        Required(perfJson,"referenceAirDensityKgM3",path+".performance");
+                        if(Math.Abs(perf.referenceAirDensityKgM3-e.airDensityKgM3)>1e-6)
+                            error(path+".performance.referenceAirDensityKgM3","Measured thrust/torque/current tables require their reference density; no implicit scaling.");
+                        if(perf.rpmTable!=null && perf.outOfRangePolicy=="Reject" && perf.rpmTable.Max(x=>x.rpm)<m.maxRpm-1e-6)
+                            error(path+".performance.rpmTable","Reject table must cover motor maxRpm.");
+                    }
+                    else if(perf.performanceMap!=null && perf.outOfRangePolicy=="Reject")
+                    {
+                        if(m.maxRpm<perf.performanceMap.Min(x=>x.rpm)-1e-6 || m.maxRpm>perf.performanceMap.Max(x=>x.rpm)+1e-6)
+                            error(path+".performance.performanceMap","Reject map must cover motor maxRpm.");
+                        r.Issues.Add(new ValidationIssue(path+".performance","Reject map cannot cover RPM=0 startup: any positive RPM below the first row rejects the simulation step. Clamp is recommended for motor response.","Warning"));
+                    }
+                }
                 else unsupported(path+".performance.model");
             }
             if (modules.bodyDrag)

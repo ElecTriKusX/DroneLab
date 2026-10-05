@@ -23,3 +23,5 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
 
 Первый стенд использует синтетический TestQuad 1 kg. Расширенные эффекты сохранены
 в контракте и roadmap; включение ещё не реализованных моделей явно отклоняется.
+
+Характеристики винтов и CSV-импорт: [PROPELLER_PERFORMANCE.md](Docs/Physics/PROPELLER_PERFORMANCE.md).

@@ -19,6 +19,9 @@ namespace DroneLab.Simulation
         public double[] Omega { get; private set; }
         public double[] ThrustN { get; private set; }
         public double[] ReactionTorqueNm { get; private set; }
+        public double[] AdvanceRatio { get; private set; }
+        public double?[] MeasuredCurrentA { get; private set; }
+        public bool[] PerformanceClamped { get; private set; }
         public Vector3 AirVelocity { get; private set; }
         public Vector3 DragForce { get; private set; }
         public Vector3 DragTorque { get; private set; }
@@ -66,6 +69,7 @@ namespace DroneLab.Simulation
             Body.collisionDetectionMode=CollisionDetectionMode.ContinuousDynamic;
             int count=Parameters.Rotors.Count;
             commands=new double[count]; Omega=new double[count]; ThrustN=new double[count]; ReactionTorqueNm=new double[count];
+            AdvanceRatio=new double[count]; MeasuredCurrentA=new double?[count]; PerformanceClamped=new bool[count];
             if(Mathf.Abs(Time.fixedDeltaTime-0.01f)>1e-6f) Debug.LogWarning("DroneLab recommends Fixed Timestep = 0.01 s. No global setting was changed.",this);
             enabled=true;
             return true;
@@ -89,21 +93,37 @@ namespace DroneLab.Simulation
             SetArmed(false);
             if(Omega == null) return;
             Array.Clear(Omega,0,Omega.Length); Array.Clear(ThrustN,0,ThrustN.Length); Array.Clear(ReactionTorqueNm,0,ReactionTorqueNm.Length);
+            Array.Clear(AdvanceRatio,0,AdvanceRatio.Length); Array.Clear(MeasuredCurrentA,0,MeasuredCurrentA.Length); Array.Clear(PerformanceClamped,0,PerformanceClamped.Length);
         }
         private void FixedUpdate()
         { if(AutomaticSimulation) StepPhysics(Time.fixedDeltaTime); }
         public void StepPhysics(float dt)
         {
             if(dt<=0 || float.IsNaN(dt) || float.IsInfinity(dt)) throw new ArgumentOutOfRangeException(nameof(dt));
-            if(!IsReady) return;
+            if(!IsReady || !enabled) return;
+            try
+            {
+                for(int i=0;i<Parameters.Rotors.Count;i++)
+                {
+                    var r=Parameters.Rotors[i];
+                    double target=Armed && commands[i]>0 ? Math.Max(r.MinOmega,commands[i]*r.MaxOmega) : 0;
+                    Omega[i]=PhysicsMath.MotorStep(Omega[i],target,target>Omega[i] ? r.TauUp:r.TauDown,dt);
+                    Vector3 pointWorld=transform.TransformPoint(ToUnity(r.Position));
+                    Vector3 axisWorld=transform.TransformDirection(ToUnity(r.Axis));
+                    double axial=Vector3.Dot(Body.GetPointVelocity(pointWorld)-ToUnity(Parameters.Wind),axisWorld);
+                    var sample=r.Performance.Evaluate(Omega[i],axial);
+                    ThrustN[i]=sample.Thrust; ReactionTorqueNm[i]=r.ReactionSign*sample.Torque;
+                    AdvanceRatio[i]=sample.AdvanceRatio; MeasuredCurrentA[i]=sample.Current; PerformanceClamped[i]=sample.Clamped;
+                }
+            }
+            catch(ArgumentOutOfRangeException ex)
+            {
+                Parameters=null; ResetMotorState(); Fail("Propeller range rejected simulation step: "+ex.Message); return;
+            }
             Body.AddForce(Vector3.down*(float)(Parameters.Mass*Parameters.Gravity),ForceMode.Force);
             for(int i=0;i<Parameters.Rotors.Count;i++)
             {
                 var r=Parameters.Rotors[i];
-                double target=Armed && commands[i]>0 ? Math.Max(r.MinOmega,commands[i]*r.MaxOmega) : 0;
-                Omega[i]=PhysicsMath.MotorStep(Omega[i],target,target>Omega[i] ? r.TauUp:r.TauDown,dt);
-                ThrustN[i]=PhysicsMath.Thrust(Omega[i],r.KT);
-                ReactionTorqueNm[i]=r.ReactionSign*PhysicsMath.Torque(Omega[i],r.KQ);
                 Vector3 axis=transform.TransformDirection(ToUnity(r.Axis));
                 Body.AddForceAtPosition(axis*(float)ThrustN[i],transform.TransformPoint(ToUnity(r.Position)),ForceMode.Force);
                 Body.AddTorque(axis*(float)ReactionTorqueNm[i],ForceMode.Force);

@@ -72,3 +72,30 @@ HeldYawTracksRateAndReleaseBrakes — RPM spread=0. Повторные запу�
 | Импорт новых скриптов, маркеры, mesh bake и экспорт в Unity | Ожидается у пользователя |
 
 Настройка и границы модели: [GEOMETRY_AERODYNAMICS.md](GEOMETRY_AERODYNAMICS.md).
+
+## Этап 4 — 2026-10-05
+
+Пользователь подтвердил Box/Mesh export и работу физики этапа 3. Присланный
+`drone_geometry_mesh.json` дополнительно проверен текущим loader и QuadAllocator:
+принят, 4 ротора, 13 LUT образцов, статический T/W=4. Полный новый Unity Test Runner
+прогон этапа 3 не заявлен.
+
+| Проверка этапа 4 | Фактический результат |
+|---|---|
+| Roslyn C# 8: Core + EditMode, .NET 8, NUnitLite 3.14, Newtonsoft 13.0.2 | 118 passed, 0 failed; 40 новых случаев |
+| RPM knots, линейные силы/момент/ток, явный нулевой узел | Прошло |
+| Map knots, bilinear RPM/J, singleton RPM, signed Ct/Cq | Прошло |
+| Density scaling только Ct/Cq, table reference density | Прошло |
+| Clamp/Reject, motor max coverage, отсутствие extrapolation | Прошло |
+| Immutable snapshot, валидация сеток/дублей/optional current | Прошло |
+| SI CSV: сортировка, ru-RU locale, неверные заголовки/NaN/пропуски | Прошло |
+| Нелинейный allocator: T/Q, saturation, unequal rotors, COM offset | Прошло |
+| RPM-table rate PID + motor lag: 50/100/200 Hz, yaw и торможение | Прошло |
+| Full JSON Schema Draft 2020-12 | Обе схемы и 10 профилей, включая присланный mesh JSON, прошли |
+| Roslyn syntax всех 40 C# DronePhysics файлов | 0 syntax errors; не заменяет Unity-компиляцию |
+| 5 новых Unity PlayMode тестов (20 всего) | Добавлены; здесь не запускались |
+| Unity импорт/CSV окно/полёт с таблицами и картами | Ожидается у пользователя |
+
+JSON-контракт остаётся 1.0.0. Генератор DTO обновлён: optional currentA теперь double?,
+чтобы отсутствие измерения отличалось от 0 A; JSON-поля, schema и единицы не изменены.
+Ограничения физики и пульта: [PROPELLER_PERFORMANCE.md](PROPELLER_PERFORMANCE.md).

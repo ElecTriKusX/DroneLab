@@ -107,7 +107,7 @@ namespace DroneLab.Physics
         public double rpm;
         public double thrustN;
         public double torqueNm;
-        public double currentA;
+        public double? currentA;
     }
 
     [Serializable]

@@ -7,8 +7,10 @@ namespace DroneLab.Physics
     {
         public readonly string Id;
         public readonly DVector3 Position, Axis;
+        // KT/KQ are meaningful only for the two constant-coefficient models.
         public readonly double ReactionSign, MaxOmega, MinOmega, IdleOmega, TauUp, TauDown, KT, KQ, Diameter;
-        public double MaxThrust => PhysicsMath.Thrust(MaxOmega, KT);
+        public readonly PropellerPerformance Performance;
+        public readonly double MaxThrust;
         internal RuntimeRotorParameters(RotorProfile p, double rho, bool response)
         {
             Id=p.rotorId; Position=DVector3.From(p.geometry.positionLocalM); Axis=DVector3.From(p.geometry.thrustAxisLocal).Normalized;
@@ -19,12 +21,14 @@ namespace DroneLab.Physics
             IdleOmega=PhysicsMath.RpmToOmega(p.motor.idleRpm);
             TauUp=response ? p.motor.responseTimeUpS : 0; TauDown=response ? p.motor.responseTimeDownS : 0;
             Diameter=p.propeller.diameterM;
+            Performance=new PropellerPerformance(p.performance,rho,Diameter);
             if (p.performance.model == "CtCq")
             {
                 KT=p.performance.ct*rho*Math.Pow(Diameter,4)/(4*Math.PI*Math.PI);
                 KQ=p.performance.cq*rho*Math.Pow(Diameter,5)/(4*Math.PI*Math.PI);
             }
             else { KT=p.performance.kThrustNPerRadPerSecSquared; KQ=p.performance.kTorqueNmPerRadPerSecSquared; }
+            MaxThrust=Performance.StaticPeakThrust(MaxOmega);
         }
     }
     public sealed class RuntimeDroneParameters
