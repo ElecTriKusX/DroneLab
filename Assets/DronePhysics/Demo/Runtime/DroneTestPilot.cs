@@ -223,6 +223,11 @@ namespace DroneLab.Simulation
                 var power=physicsBody.Power;
                 GUILayout.Label($"Battery {p.Battery.Mode} | SOC {power.Soc:P1} | OCV {power.OpenVoltage:F2} V | bus {power.TerminalVoltage:F2} V | {power.Current:F2} A");
                 GUILayout.Label($"Power {power.ElectricalPower:F1} W | shaft {power.MechanicalPower:F1} W | used {power.ConsumedAh*1000:F1} mAh | RPM authority {power.RpmScale:P0} | power limited {power.Limited}");
+                if(p.InertialRotors)
+                {
+                    double spinEnergy=0; foreach(var value in power.RotorSpinEnergyJ) spinEnergy+=value;
+                    GUILayout.Label($"Rotor inertia | spin {spinEnergy:F3} J | gyro {physicsBody.RotorGyroscopicMoment.magnitude:F4} Nm | motor/ESC loss {power.MotorLossPower+power.EscLossPower:F1} W");
+                }
             }
             if(p.Rotors[0].Performance.Model=="PerformanceMap") GUILayout.Label("Map: physics uses rotor-point axial flow; test pilot allocation uses static J=0 reference.");
             for(int i=0;i<p.Rotors.Count;i++)

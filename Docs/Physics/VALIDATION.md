@@ -367,3 +367,39 @@ UPM export создаётся Tools/build_unity_packages.py; исходные sc
 CSV версии 1.1.0 хранит correction до GE и pure flap moment отдельно. Q/current не
 получают выдуманную поправку из dT: батарея остаётся квазистационарной. Новые физические
 профили не подменяют сцены/профили пользователя. FBX и UPM snapshots не изменялись.
+
+
+## Этап 11 — 2026-10-05
+
+Пользователь подтвердил Unity-тесты этапа 10. Проверки ниже относятся к исходникам
+Assets/DronePhysics. Пересборка UPM остаётся отложенной до конца улучшений.
+
+| Проверка | Фактический результат |
+|---|---|
+| Core + EditMode / Roslyn / .NET 8 / NUnitLite | **383 passed, 0 failed**; **41** новый случай CoupledPower |
+| RPM/J load, Clamp, монотонность Q, maps + Simple/Electrical battery | Прошло; отрицательные/неподдержанные нагрузки отклоняются |
+| Midpoint spin dynamics, acceleration reaction, motor/ESC losses, SOC, reset, alias safety | Прошло; shaft = propeller work + spin energy rate, потери отдельно |
+| Disarm / failed motor / empty SOC / limits | Прошло; нет мгновенного удаления RPM, рекуперации или активного торможения |
+| Независимый аналитический quadratic coast, 50/100/200 Hz | Прошло; ошибка конечной скорости <0.05 rad/s за 1 s |
+| Rate PID + allocator + lag + motor inertia + rotor drag, 50/100/200 Hz | Прошло; слежение 70°/s, остаточная rate после release <0.03 rad/s |
+| Gyroscopic signs / CW-CCW cancellation / moment power orthogonality | Прошло |
+| CSV 1.2.0 | Новые shaft/spin/loss/gyro поля и отдельный force_rpm прошли; FirstOrder сохраняет семантику |
+| Python flight analyzer | **5 passed, 0 failed** |
+| JSON Schema Draft 2020-12 | **2** схемы, **23** resource profiles прошли |
+| Production ProfileLoader + QuadAllocator | Оба новых coupled_power / coupled_power_map с final atmosphere/wind приняты: 4 ротора, 13 LUT axes, static T/W=4 |
+| Roslyn syntax | **79 C# files**, 0 syntax errors; не заменяет Unity semantic compilation |
+| Unity .meta | **126** уникальных GUID в DronePhysics, **266** во всех Assets; все .meta присутствуют |
+| git diff --check | Прошло |
+| Новые CoupledPowerRigidbodyTests | **6** isolated scenarios добавлены, **73** PlayMode cases суммарно; здесь не запускались |
+| Actual Unity import / Rigidbody / menu / combined flight | Требуется запуск у пользователя |
+| UPM snapshots | Не пересобирались по решению пользователя, версия 0.2.0 содержит этап 9 |
+| Измеренная точность / полная энергетика аэродинамики | Не подтверждены; fixtures синтетические, limitations зафиксированы в COUPLED_POWER.md |
+
+RotorInertia — явно выбираемый режим; старые JSON сохраняют FirstOrder. Силы,
+карта Q, flow и spin momentum в инерционном режиме используют середину шага; CSV rpm
+сохраняет конечную скорость, force_rpm — скорость оценки сил. Spin balance относится
+к вращению относительно корпуса, а не всему аппарату. Weak-coupling guard sum(Jr)
+≤5% минимальной locked-body inertia ограничивает применимость упрощения, не даёт
+обещания точности 5%. Thrust-only ground/lift/flapping corrections остаются
+эмпирическими; нет обещания полного aero power balance. Пользовательский FBX не
+включён в коммит. Следующий этап — thermal / derating.

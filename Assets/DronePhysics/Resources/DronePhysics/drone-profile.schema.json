@@ -296,7 +296,16 @@
         },
         "rotatingInertiaKgM2": {
           "type": "number",
-          "minimum": 0
+          "minimum": 0,
+          "description": "Spin-axis inertia of motor rotor plus propeller, kg*m^2; required positive for RotorInertia."
+        },
+        "dynamicsModel": {
+          "type": "string",
+          "enum": [
+            "FirstOrder",
+            "RotorInertia"
+          ],
+          "description": "Omitted means legacy FirstOrder. RotorInertia requires Electrical battery and finite spin inertia."
         },
         "electrical": {
           "$ref": "#/$defs/MotorElectricalProfile"

@@ -89,7 +89,8 @@
 | `maxRpm` | number |
 | `responseTimeUpS` | number |
 | `responseTimeDownS` | number |
-| `rotatingInertiaKgM2?` | number |
+| `rotatingInertiaKgM2?` | number — Spin-axis inertia of motor rotor plus propeller, kg*m^2; required positive for RotorInertia. |
+| `dynamicsModel?` | ['FirstOrder', 'RotorInertia'] — Omitted means legacy FirstOrder. RotorInertia requires Electrical battery and finite spin inertia. |
 | `electrical?` | MotorElectricalProfile |
 
 ## PropellerProfile

@@ -13,6 +13,8 @@ namespace DroneLab.Physics
         public readonly RuntimeRotorFlow Flow;
         public readonly RuntimeMotorPower Power;
         public readonly double MaxThrust;
+        public readonly double RotatingInertia;
+        public readonly bool Inertial;
         internal RuntimeRotorParameters(RotorProfile p, double rho, PhysicsModulesProfile modules, bool power)
         {
             Id=p.rotorId; Position=DVector3.From(p.geometry.positionLocalM); Axis=DVector3.From(p.geometry.thrustAxisLocal).Normalized;
@@ -24,6 +26,8 @@ namespace DroneLab.Physics
             IdleOmega=PhysicsMath.RpmToOmega(p.motor.idleRpm);
             TauUp=modules.motorResponse ? p.motor.responseTimeUpS : 0; TauDown=modules.motorResponse ? p.motor.responseTimeDownS : 0;
             Diameter=p.propeller.diameterM;
+            Inertial=p.motor.dynamicsModel=="RotorInertia";
+            RotatingInertia=Inertial ? p.motor.rotatingInertiaKgM2 : 0;
             RotorDragCoefficient=modules.rotorAerodynamics ? p.advancedAerodynamics.rotorDragCoefficientKgPerRad : 0;
             if(modules.bladeFlapping || modules.inducedDrag || (modules.rotorAerodynamics && p.advancedAerodynamics.translationalLiftCoefficientKgPerM>0))
                 Flow=new RuntimeRotorFlow(p.advancedAerodynamics,modules);
@@ -44,6 +48,7 @@ namespace DroneLab.Physics
         public readonly DVector3 CenterOfMass, Inertia, Dimensions, DragCd, DragArea, DragPoint, Wind;
         public readonly double RotationX, RotationY, RotationZ, RotationW;
         public readonly bool BodyDrag,RotorDrag;
+        public readonly bool InertialRotors,GyroscopicRotors;
         public readonly RuntimeGroundEffect GroundEffect;
         public readonly RuntimeBattery Battery;
         public readonly string DragModel,ProjectedAreaMode;
@@ -65,6 +70,8 @@ namespace DroneLab.Physics
             RotationX=q[0]; RotationY=q[1]; RotationZ=q[2]; RotationW=q[3];
             BodyDrag=p.physicsConfiguration.modules.bodyDrag;
             RotorDrag=p.physicsConfiguration.modules.rotorAerodynamics;
+            InertialRotors=p.rotors[0].motor.dynamicsModel=="RotorInertia";
+            GyroscopicRotors=p.physicsConfiguration.modules.gyroscopicRotorEffects;
             GroundEffect=p.physicsConfiguration.modules.groundEffect ? new RuntimeGroundEffect(p.groundEffect) : null;
             Battery=p.powerSystem.battery.mode=="None" ? null : new RuntimeBattery(p.powerSystem.battery,p.physicsConfiguration.modules);
             var aero=p.bodyAerodynamics; DragModel=aero.model;

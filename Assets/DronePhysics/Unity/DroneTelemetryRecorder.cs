@@ -102,6 +102,9 @@ namespace DroneLab.Simulation
                 Input=p?.CurrentInput ?? default,DesiredRateLocal=p?.DesiredRateLocal ?? default,
                 PowerLimited=power?.Limited ?? false,HasDriveFault=b.Drive.HasFault,Soc=power?.Soc,Voltage=power?.TerminalVoltage,Current=power?.Current,
                 ElectricalPower=power?.ElectricalPower,MechanicalPower=power?.MechanicalPower,ConsumedAh=power?.ConsumedAh,EnergyJ=power?.TerminalEnergyJ,
+                PropellerPower=power?.PropellerPower,SpinEnergyRate=parameters.InertialRotors ? power?.SpinEnergyChangePower : null,
+                SpinBalanceError=parameters.InertialRotors ? power?.SpinBalanceErrorPower : null,
+                MotorLoss=power?.MotorLossPower,EscLoss=power?.EscLossPower,GyroscopicMomentWorld=DronePhysicsBody.FromUnity(b.RotorGyroscopicMoment),
                 Rotors=new RotorTelemetry[parameters.Rotors.Count] };
             for(int i=0;i<f.Rotors.Length;i++) f.Rotors[i]=b.GetRotorTelemetry(i);
             return f;

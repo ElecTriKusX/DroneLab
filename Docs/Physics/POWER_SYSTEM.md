@@ -158,3 +158,10 @@ InputTestFixture: отдельный Input System, ручной update, восс
 Core/EditMode проверяют ток, энергию, SOC/OCV, overload, reset, несовместимые
 настройки, таблицы/CtCq, snapshot, 500 случайных команд на каждый режим и сходимость
 50/100/200 Hz. Результаты запуска — VALIDATION.md; Unity здесь не запускалась.
+
+## Расширение этапа 11
+
+Ограничения выше описывают исходный FirstOrder governor. RPM/J maps теперь допускаются
+с Clamp и monotone nonnegative Q. Optional RotorInertia включает spin energy, passive
+coast, current/voltage-limited acceleration и новый mount/gyro torque. Точные формулы
+и различие sampling RPM end/midpoint: COUPLED_POWER.md. Старые профили сохраняют FirstOrder.

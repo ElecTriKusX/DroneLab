@@ -131,3 +131,10 @@ WindowsInput_MouseMovements_AreDetected и WindowsInput_RemoteDesktopMouseMoveme
 принадлежат пакету Unity Input System, а не DroneLab. В [исходниках Input System 1.20.0](https://github.com/Unity-Technologies/InputSystem/blob/1.20.0/Packages/com.unity.inputsystem/Tests/IntegrationTests/IntegrationTests.cs)
 оба имеют Ignore("Unstable due to 1252825"): пропуск намеренный, менять пакет не требуется.
 Фактические результаты и ограничения запуска закреплены в VALIDATION.md.
+
+## CSV 1.2.0 — этап 11
+
+Новые поля end/force RPM, spin energy, aerodynamic/acceleration/mount torque,
+DC-equivalent motor current, motor/ESC losses, gyro и spin balance residual —
+COUPLED_POWER.md. Описанная выше версия 1.1.0 остаётся совместимым историческим форматом.
+shaft_power_w в RotorInertia включает spin energy rate; propeller_power_w хранит Q*omegaEval.

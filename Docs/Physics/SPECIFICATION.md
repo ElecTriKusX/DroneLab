@@ -125,13 +125,16 @@ DC/BLDC steady-state: `Kt=60/(2π Kv)`, `Imotor=I0+Q/Kt`, `Vrequired=Kt ω+Imoto
 RPM ищется ограниченным числом итераций. Проверяются напряжение, токи, мощность,
 остаток заряда на шаг. Governor не создаёт новую максимальную тягу поверх профиля.
 
-Поддержаны OmegaSquared/CtCq и RpmTable с неубывающим Q; PerformanceMap с батареей и
-load-dependent efficiencyCurve пока явно отклоняются. Ток CSV остаётся отдельной
+Поддержаны OmegaSquared/CtCq и RpmTable с неубывающим Q. Этап 11 добавляет
+PerformanceMap + battery с Clamp и проверкой монотонной Q(RPM,flow).
+Load-dependent efficiencyCurve пока отклоняется. Ток CSV остаётся отдельной
 телеметрией. Параметры моторов/батареи требуют источника; дефолты демонстрационные.
-Это квазистационарная энергетика: нет индуктивности, вращательной энергии роторов,
-regen, тепловой/химической динамики и потребления бортовой электроники. При disarm
-ток=0; остаточное вращение — прежняя эмпирическая модель затухания. Пустая батарея
-обнуляет доступные обороты. Численные пределы и инструкция — POWER_SYSTEM.md.
+В legacy FirstOrder энергетика квазистационарная: вращательная энергия роторов
+не учитывается, при disarm ток=0 и используется эмпирическое затухание, пустая
+батарея обнуляет доступные обороты. RotorInertia этапа 11 учитывает spin energy и
+сохраняет пассивное вращение. Оба режима пока не моделируют индуктивность, regen,
+тепловую/химическую динамику и потребление бортовой электроники. Численные пределы
+и инструкции — POWER_SYSTEM.md и COUPLED_POWER.md.
 
 Среда (этап 7): Constant или сухая тропосфера StandardAtmosphere −500…11000 m.
 Начальная MSL-высота задаётся altitudeM, далее добавляется изменение world COM Y.
@@ -139,7 +142,7 @@ regen, тепловой/химической динамики и потребл�
 при отсутствии используются 288.15 K / 101325 Pa. airDensityKgM3 используется только
 Constant. Текущая плотность передаётся в CtCq/PerformanceMap, корпус и Qω энергетики
 однократно. OmegaSquared/RpmTable отклоняют переменную атмосферу. Пульт компенсирует
-плотность в статическом allocator; ограничения J=0 и battery+map сохраняются.
+плотность в статическом allocator; allocator использует J=0; battery+map поддержан этапом 11 с ограничениями COUPLED_POWER.md.
 
 Ветер задаётся в мировых осях: None / Constant / периодический Gust / stateless seeded
 Turbulence / CustomField. Турбулентность — ограниченное аналитическое Fourier поле,
@@ -184,9 +187,10 @@ ManualPrincipal задаёт положительные главные моме�
 | RpmTable, PerformanceMap, SI CSV import | Реализовано в этапе 4; пульт использует статическую J=0 кривую |
 | Ground effect, rotor drag | Реализовано в этапе 5; независимые optional-флаги |
 | Blade flapping, axial inflow, translational lift | Реализовано в этапе 10; ограничения и source formulas — ROTOR_FLOW.md |
-| Gyroscopic rotor effects | Контракт; включение отклоняется до принятия модели этапа 11 |
+| Gyroscopic rotor effects / spin energy | Реализовано в opt-in RotorInertia этапе 11, weak-coupling envelope |
 | Battery Simple / Electrical, SOC/OCV/sag, RPM/current/power envelope | Реализовано в этапе 6; ограничения — POWER_SYSTEM.md |
-| Battery + RPM/J map, efficiency curve, motor inductance / thermal | Ожидают модели; map/efficiency curve с батареей явно отклоняются |
+| Battery + RPM/J map | Реализовано в этапе 11: Clamp, Q>=0, monotone load envelope |
+| Efficiency curve, motor inductance / thermal | Не реализованы; efficiency curve с батареей отклоняется |
 | StandardAtmosphere, Gust, seeded Turbulence, CustomField/IWindProvider | Реализовано в этапе 7; ограничения и формулы — ENVIRONMENT.md |
 | Telemetry CSV/manifest, drive-loss scenarios, VFX data API | Реализовано в этапе 8; DIAGNOSTICS.md; реальная калибровка/VFX simulation не выполнены |
 
@@ -250,3 +254,11 @@ Static thrust + bounded dT и hub flapping moment: ROTOR_FLOW.md. Три нов�
 Axial/lift bundle с RPM/J map отклоняется; Q/current остаются на базовой модели.
 Новые поля optional; старые профили/force signs сохраняются. UPM snapshots пересобираются
 в конце улучшений по решению пользователя, не в каждом исходном physics commit.
+
+## Этап 11: supply/load/spin
+
+COUPLED_POWER.md фиксирует optional dynamicsModel и Jr, midpoint forces/load,
+заряд/энергию/потери, coast без active braking, mount torque без двойного Q,
+и gyro -omegaBody cross H. Mass inertia уже включает locked rotors, Jr повторно
+не прибавляется. Малые Jr/body rates — предположение модели; mass-matrix back-coupling
+не решается. CSV 1.2.0 различает RPM end/force и ток DC equivalent/bus/CSV measurements.

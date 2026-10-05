@@ -15,7 +15,7 @@
 
 Пользователь подтвердил финальную приёмку. Продолжение физики: [PHYSICS_UPGRADES.md](PHYSICS_UPGRADES.md),
 этапы 9–14. SDK/import mass properties и расширенная роторная аэродинамика реализованы в source;
-следующий — связь винта, двигателя и батареи. Пакеты пересобираются в конце.
+связь винта, двигателя и батареи добавлена в этапе 11; следующий — тепловая модель. Пакеты пересобираются в конце.
 Маршрут отложен по просьбе пользователя до принятой физической приёмки.
 Обязательные пробелы ТЗ (sensor/weather/thermal/signal) сохраняются в PHYSICS_AUDIT.md.
 Основной стенд физики готов к интеграции; реальная калибровка, VFX и optional-модели
@@ -92,3 +92,8 @@ Resources-based package tests. GUID исходных компонентов со
 translational lift, axial inflow, blade flapping, отдельную диагностику и общий профиль
 quad_test_advanced_rotors; ROTOR_FLOW.md. Этап 14 изменён на открытую/numerical validation
 без оборудования. Snapshot UPM 0.2.0 намеренно сохранён до финальной пересборки.
+
+2026-10-06: пользователь подтвердил этап 10. Этап 11 добавляет coupled RPM/J load,
+optional RotorInertia, spin energy/gyro/acceleration reaction, токи/потери и CSV 1.2.0.
+COUPLED_POWER.md фиксирует envelope и совместимость. Новый Unity-прогон ожидается;
+UPM остаются на этапе 9 до финальной сборки.

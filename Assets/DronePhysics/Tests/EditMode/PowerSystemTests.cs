@@ -150,10 +150,10 @@ namespace DroneLab.Physics.Tests
             Assert.That(Load(edit:j=>j["powerSystem"]["battery"]["ocvCurve"][1]["voltageV"]=11).Success,Is.False);
             Assert.That(Load(edit:j=>j["powerSystem"]["battery"]["mode"]="None").Success,Is.False);
         }
-        [Test] public void UnsupportedPowerMapAndEfficiencyCurveAreExplicitlyRejected()
+        [Test] public void ValidPowerMapIsAcceptedButEfficiencyCurveRemainsRejected()
         {
             Assert.That(Load(edit:j=>j["rotors"][0]["motor"]["electrical"]["efficiencyCurve"]=new JArray(new JObject { ["loadFraction"]=0,["efficiency"]=.8 })).Success,Is.False);
-            Assert.That(Load(edit:j=>j["rotors"][0]["performance"]=JObject.Parse(Read("quad_test_performance_map"))["rotors"][0]["performance"]).Success,Is.False);
+            Assert.That(Load(edit:j=>j["rotors"][0]["performance"]=JObject.Parse(Read("quad_test_performance_map"))["rotors"][0]["performance"]).Success,Is.True);
         }
         [TestCase("simple")] [TestCase("electrical")]
         public void RpmTablePowerUsesTorqueAndKeepsCsvCurrentSeparate(string mode)

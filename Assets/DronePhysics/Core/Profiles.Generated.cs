@@ -90,6 +90,7 @@ namespace DroneLab.Physics
         public double responseTimeUpS;
         public double responseTimeDownS;
         public double rotatingInertiaKgM2;
+        public string dynamicsModel;
         public MotorElectricalProfile electrical;
     }
 

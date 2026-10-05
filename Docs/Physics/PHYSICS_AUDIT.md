@@ -213,3 +213,7 @@ Manual override немедленно отменяет route; fault/low battery/s
 
 - `deep-research-report (2).md`: SHA-256 `88650df62c4285b5b63f87c47b66bd941a90b98d0a6f032f41c168a5739b5538`.
 - `TZ_Infotekh (2)(2).pdf`: SHA-256 `bd5296ed6992878f4510b014cdeedfc4a2832567abb4ef5f0f05c66b766a131f`.
+
+Обновление этапа 11: ограниченный coupled RPM/J power solver, spin energy и rotor gyro
+реализованы; COUPLED_POWER.md. Исторические таблицы этапа 8 не заменяют текущую
+спецификацию. Thermal/inductance/regen/полная wake power остаются отдельными задачами.

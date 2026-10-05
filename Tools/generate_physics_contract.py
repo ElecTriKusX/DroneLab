@@ -43,7 +43,9 @@ obj('MotorElectricalProfile', {'motorKvRpmPerVolt':P,'motorResistanceOhm':P,'noL
     'maxCurrentA':P,'maxPowerW':P,'motorEfficiency':num(0.000001,1),
     'efficiencyCurve':arr(ref('EfficiencyPoint')),'escEfficiency':num(0.000001,1),'escMaxCurrentA':P}, ('efficiencyCurve','maxPowerW'))
 obj('MotorProfile', {'minRpm':N,'idleRpm':N,'maxRpm':P,'responseTimeUpS':N,'responseTimeDownS':N,
-    'rotatingInertiaKgM2':N,'electrical':ref('MotorElectricalProfile')}, ('rotatingInertiaKgM2','electrical'))
+    'rotatingInertiaKgM2':dict(N,description='Spin-axis inertia of motor rotor plus propeller, kg*m^2; required positive for RotorInertia.'),
+    'dynamicsModel':dict(enum('FirstOrder','RotorInertia'),description='Omitted means legacy FirstOrder. RotorInertia requires Electrical battery and finite spin inertia.'),
+    'electrical':ref('MotorElectricalProfile')}, ('rotatingInertiaKgM2','dynamicsModel','electrical'))
 obj('PropellerProfile', {'diameterM':P,'pitchM':N,'bladeCount':integer(1)})
 obj('RpmPerformancePoint', {'rpm':N,'thrustN':N,'torqueNm':N,'currentA':N}, ('currentA',))
 obj('PerformanceMapPoint', {'rpm':P,'advanceRatio':num(),'ct':num(),'cq':num(),'reynolds':P}, ('reynolds',))

@@ -13,6 +13,9 @@ namespace DroneLab.Editor
         [MenuItem("DroneLab/Diagnostics/Create Advanced Rotor Acceptance Drone")]
         public static void CreateAdvancedRotorAcceptance()
             =>CreateAcceptance("quad_test_advanced_rotors","DroneLab Advanced Rotor Acceptance");
+        [MenuItem("DroneLab/Diagnostics/Create Coupled Power Acceptance Drone")]
+        public static void CreateCoupledPowerAcceptance()
+            =>CreateAcceptance("quad_test_coupled_power","DroneLab Coupled Power Acceptance");
         private static void CreateAcceptance(string profile,string title)
         {
             if(EditorApplication.isPlaying) { Debug.LogError("Stop Play before creating the test drone."); return; }

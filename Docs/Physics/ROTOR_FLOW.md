@@ -112,3 +112,7 @@ lift/flapping, осевой знак, применение hub/lever момен�
 
 UPM snapshots в Distribution пока остаются на этапе 9/0.2.0: по решению пользователя
 пакеты пересобираем после завершения улучшений. Сейчас тестировать Assets/DronePhysics.
+
+Этап 11: COUPLED_POWER.md расширяет нагрузку и spin dynamics. При RotorInertia
+поправки этого документа используют midpoint RPM, как остальные силы/нагрузка.
+Ограничения thrust-only aero energy и несовместимость axial/lift + RPM/J map сохраняются.

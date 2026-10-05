@@ -80,7 +80,7 @@ namespace DroneLab.Physics
             }
             var modules=p.physicsConfiguration.modules;
             foreach(var field in typeof(PhysicsModulesProfile).GetFields())
-                if (field.Name != "motorResponse" && field.Name != "bodyDrag" && field.Name != "windInteraction" && field.Name != "groundEffect" && field.Name != "rotorAerodynamics" && field.Name != "bladeFlapping" && field.Name != "inducedDrag" && field.Name != "batteryDischarge" && field.Name != "batteryVoltageSag" && field.Name != "motorElectrical" && (bool)field.GetValue(modules))
+                if (field.Name != "motorResponse" && field.Name != "bodyDrag" && field.Name != "windInteraction" && field.Name != "groundEffect" && field.Name != "rotorAerodynamics" && field.Name != "bladeFlapping" && field.Name != "inducedDrag" && field.Name != "batteryDischarge" && field.Name != "batteryVoltageSag" && field.Name != "motorElectrical" && field.Name != "gyroscopicRotorEffects" && (bool)field.GetValue(modules))
                     unsupported("physicsConfiguration.modules."+field.Name);
             if(modules.groundEffect)
             {
@@ -193,7 +193,7 @@ namespace DroneLab.Physics
             }
             foreach(var issue in PowerValidation.Check(p,json)) error(issue.Path,issue.Message);
             if(p.powerSystem.battery.mode!="None")
-                r.Issues.Add(new ValidationIssue("powerSystem","Quasi-steady battery model: currents are estimated, CSV current is separate, no regeneration or rotor acceleration energy. Electrical derives motor losses from Kv/R/I0; motorEfficiency is used only by Simple.","Warning"));
+                r.Issues.Add(new ValidationIssue("powerSystem","Estimated DC/BLDC equivalent currents; measured CSV current is separate. No regeneration/inductance. RotorInertia accounts spin energy with midpoint integration; legacy FirstOrder does not. Electrical derives losses from Kv/R/I0; constant efficiency is Simple only.","Warning"));
             foreach(var issue in EnvironmentValidation.Check(e,environmentJson,p)) error(issue.Path,issue.Message);
             if(e.windMode=="CustomField") r.Issues.Add(new ValidationIssue("environment.windMode","CustomField needs an explicit IWindProvider in the Unity adapter; disabled windInteraction ignores it.","Warning"));
         }
