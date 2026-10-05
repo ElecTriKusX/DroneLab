@@ -1,0 +1,164 @@
+fileFormatVersion: 2
+guid: 1c7c68c6ddb11f646aef48769e84fee4
+timeCreated: 1478816397
+licenseType: Store
+ModelImporter:
+  serializedVersion: 19
+  fileIDToRecycleName:
+    100000: Box002
+    100002: cryAnimationExportNode
+    100004: cryExporterSettingsNode
+    100006: Cylinder015
+    100008: Cylinder043
+    100010: Cylinder046
+    100012: Cylinder052
+    100014: Cylinder054
+    100016: Cylinder057
+    100018: Cylinder059
+    100020: Cylinder062
+    100022: Cylinder064
+    100024: Line001
+    100026: //RootNode
+    100028: Rectangle014
+    100030: Rectangle026
+    100032: Rectangle032
+    100034: Rectangle033
+    100036: Rectangle034
+    400000: Box002
+    400002: cryAnimationExportNode
+    400004: cryExporterSettingsNode
+    400006: Cylinder015
+    400008: Cylinder043
+    400010: Cylinder046
+    400012: Cylinder052
+    400014: Cylinder054
+    400016: Cylinder057
+    400018: Cylinder059
+    400020: Cylinder062
+    400022: Cylinder064
+    400024: Line001
+    400026: //RootNode
+    400028: Rectangle014
+    400030: Rectangle026
+    400032: Rectangle032
+    400034: Rectangle033
+    400036: Rectangle034
+    2300000: Box002
+    2300002: Cylinder015
+    2300004: Cylinder043
+    2300006: Cylinder046
+    2300008: Cylinder052
+    2300010: Cylinder054
+    2300012: Cylinder057
+    2300014: Cylinder059
+    2300016: Cylinder062
+    2300018: Cylinder064
+    2300020: Line001
+    2300022: Rectangle014
+    2300024: Rectangle026
+    2300026: Rectangle032
+    2300028: Rectangle033
+    2300030: Rectangle034
+    3300000: Box002
+    3300002: Cylinder015
+    3300004: Cylinder043
+    3300006: Cylinder046
+    3300008: Cylinder052
+    3300010: Cylinder054
+    3300012: Cylinder057
+    3300014: Cylinder059
+    3300016: Cylinder062
+    3300018: Cylinder064
+    3300020: Line001
+    3300022: Rectangle014
+    3300024: Rectangle026
+    3300026: Rectangle032
+    3300028: Rectangle033
+    3300030: Rectangle034
+    4300000: Line001
+    4300002: Cylinder015
+    4300004: Cylinder046
+    4300006: Cylinder052
+    4300008: Cylinder054
+    4300010: Cylinder062
+    4300012: Cylinder064
+    4300014: Cylinder057
+    4300016: Cylinder059
+    4300018: Rectangle032
+    4300020: Rectangle033
+    4300022: Rectangle034
+    4300024: Rectangle026
+    4300026: Box002
+    4300028: Cylinder043
+    4300030: Rectangle014
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 59751
+  packageName: PBR Racing Drone
+  packageVersion: 1.2
+  assetPath: Assets/PBR Racing Drone/Models/Racing Drone v2.FBX
+  uploadId: 145915

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: a6207ae4226d2934c93750d500a22d8b
+timeCreated: 1459423779
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 59751
+  packageName: PBR Racing Drone
+  packageVersion: 1.2
+  assetPath: Assets/PBR Racing Drone/PBR Racing Drone V1 (Deprecated)/Materials/Wing
+    Parts.mat
+  uploadId: 145915

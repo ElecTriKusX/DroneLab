@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 37fb971f01dd78c4d842cf3cbd1d037d
+timeCreated: 1478819465
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 59751
+  packageName: PBR Racing Drone
+  packageVersion: 1.2
+  assetPath: Assets/PBR Racing Drone/PBR Racing Drone V1 (Deprecated)/Models/Materials/Drone
+    Cam.mat
+  uploadId: 145915

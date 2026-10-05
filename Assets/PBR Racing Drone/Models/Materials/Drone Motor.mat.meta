@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d2d54a4f273109b458ab9f63497fbf25
+timeCreated: 1478819463
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 59751
+  packageName: PBR Racing Drone
+  packageVersion: 1.2
+  assetPath: Assets/PBR Racing Drone/Models/Materials/Drone Motor.mat
+  uploadId: 145915

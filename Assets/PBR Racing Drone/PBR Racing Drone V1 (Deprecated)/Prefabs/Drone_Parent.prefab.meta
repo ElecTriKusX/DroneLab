@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d95392c9ed694f54481d32ad68102df9
+timeCreated: 1459604742
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 59751
+  packageName: PBR Racing Drone
+  packageVersion: 1.2
+  assetPath: Assets/PBR Racing Drone/PBR Racing Drone V1 (Deprecated)/Prefabs/Drone_Parent.prefab
+  uploadId: 145915

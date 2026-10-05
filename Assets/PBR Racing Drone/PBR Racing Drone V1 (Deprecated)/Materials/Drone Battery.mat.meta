@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 617d48afe6807f643aa39cb842e9665a
+timeCreated: 1459423779
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 59751
+  packageName: PBR Racing Drone
+  packageVersion: 1.2
+  assetPath: Assets/PBR Racing Drone/PBR Racing Drone V1 (Deprecated)/Materials/Drone
+    Battery.mat
+  uploadId: 145915

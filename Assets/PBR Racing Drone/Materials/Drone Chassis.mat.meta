@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 346ea3508697bfd4eb8c9b6a3a81f506
+timeCreated: 1478380629
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 59751
+  packageName: PBR Racing Drone
+  packageVersion: 1.2
+  assetPath: Assets/PBR Racing Drone/Materials/Drone Chassis.mat
+  uploadId: 145915

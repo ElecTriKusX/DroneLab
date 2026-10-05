@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 5d084e0387d47b74fbe8f08bc400ced9
+timeCreated: 1459586325
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 59751
+  packageName: PBR Racing Drone
+  packageVersion: 1.2
+  assetPath: Assets/PBR Racing Drone/Scripts/DroneAnimator.cs
+  uploadId: 145915
