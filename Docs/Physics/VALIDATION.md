@@ -99,3 +99,31 @@ HeldYawTracksRateAndReleaseBrakes — RPM spread=0. Повторные запу�
 JSON-контракт остаётся 1.0.0. Генератор DTO обновлён: optional currentA теперь double?,
 чтобы отсутствие измерения отличалось от 0 A; JSON-поля, schema и единицы не изменены.
 Ограничения физики и пульта: [PROPELLER_PERFORMANCE.md](PROPELLER_PERFORMANCE.md).
+
+## Подтверждение этапа 4 и этап 5 — 2026-10-05
+
+Пользователь сообщил, что полёт и тесты этапа 4 прошли. Скриншот H показывает
+Alt hold=true, Saturation=false, vy=0.00 m/s, tilt/yaw=0, сумму T≈9.81 N для 1 kg;
+Vhorizontal≈0.49 m/s не противоречит отсутствию position hold. Разные RPM согласуются
+с геометрией и статическим nonlinear allocator. Файл Assets/drone_performance.json
+из нового коммита пользователя также принят loader и QuadAllocator: 4 ротора, 13 LUT, T/W=4.
+
+| Проверка этапа 5 | Фактический результат |
+|---|---|
+| Roslyn C# 8: Core + EditMode, .NET 8, NUnitLite 3.14, Newtonsoft 13.0.2 | 165 passed, 0 failed; 47 новых случаев |
+| Ground multiplier, height/normal/range clamps и smooth fade | Прошло |
+| No surface / stopped / windmilling, static capacity/Q не меняются | Прошло |
+| Rotor drag: sign, axes, RPM/K scaling, zero/axial flow | Прошло |
+| Point velocity, offset COM, rotational damping, energy dissipation | Прошло, включая 500 воспроизводимых velocity/rotation случаев |
+| Ground height PID + motor lag, 50/100/200 Hz | Прошло |
+| Rate PID с постоянным rotor drag, 50/100/200 Hz | Прошло; постоянный RPM spread компенсирует torque, отпускание тормозит |
+| Совместимость RPM-таблиц / CtCq-карт, disabled flags, immutable snapshot | Прошло |
+| Full JSON Schema Draft 2020-12 | Обе схемы и 14 профилей прошли, включая 2 профиля пользователя |
+| Roslyn syntax всех 45 C# файлов | 0 syntax errors; не заменяет Unity-компиляцию |
+| 10 новых PlayMode тестов (30 всего) | Добавлены; здесь не запускались |
+| Terrain, nearest hit, self/trigger filtering, buffer growth, layer mask, slope | Проверяются новыми PlayMode сценариями; фактический запуск ожидается у пользователя |
+| Editor profile window / новый полёт на Terrain | Ожидается у пользователя |
+
+Контракт 1.0.0 не менялся. Flapping/induced/gyroscopic modules по-прежнему отклоняются.
+Ground gain не корректирует Q/current; исходные характеристики должны быть free-air.
+Модель и click-by-click инструкция — [ROTOR_EFFECTS.md](ROTOR_EFFECTS.md).

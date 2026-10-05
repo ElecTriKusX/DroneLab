@@ -80,8 +80,13 @@ namespace DroneLab.Physics
             }
             var modules=p.physicsConfiguration.modules;
             foreach(var field in typeof(PhysicsModulesProfile).GetFields())
-                if (field.Name != "motorResponse" && field.Name != "bodyDrag" && field.Name != "windInteraction" && (bool)field.GetValue(modules))
+                if (field.Name != "motorResponse" && field.Name != "bodyDrag" && field.Name != "windInteraction" && field.Name != "groundEffect" && field.Name != "rotorAerodynamics" && (bool)field.GetValue(modules))
                     unsupported("physicsConfiguration.modules."+field.Name);
+            if(modules.groundEffect)
+            {
+                if(p.groundEffect==null) error("groundEffect","Ground effect settings are required when the module is enabled.");
+                else r.Issues.Add(new ValidationIssue("groundEffect","Empirical thrust-only gain: base performance must be measured out of ground effect; torque/current are unchanged.","Warning"));
+            }
             var ids=new HashSet<string>(StringComparer.Ordinal);
             for(int i=0;i<p.rotors.Length;i++)
             {
@@ -89,6 +94,8 @@ namespace DroneLab.Physics
                 if (!ids.Add(rotor.rotorId)) error(path+".rotorId","Duplicate rotor ID.");
                 if (Math.Abs(DVector3.From(rotor.geometry.thrustAxisLocal).Length-1)>1e-5)
                     error(path+".geometry.thrustAxisLocal","Axis must be normalized and nonzero.");
+                if(modules.rotorAerodynamics && rotor.advancedAerodynamics==null)
+                    error(path+".advancedAerodynamics","Rotor drag coefficient is required for every rotor when rotorAerodynamics is enabled.");
                 var m=rotor.motor;
                 if (m.minRpm>m.idleRpm || m.idleRpm>=m.maxRpm) error(path+".motor","Require 0 <= minRpm <= idleRpm < maxRpm.");
                 var perf=rotor.performance; var perfJson=json["rotors"][i]["performance"];

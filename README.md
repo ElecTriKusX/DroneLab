@@ -25,3 +25,5 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
 в контракте и roadmap; включение ещё не реализованных моделей явно отклоняется.
 
 Характеристики винтов и CSV-импорт: [PROPELLER_PERFORMANCE.md](Docs/Physics/PROPELLER_PERFORMANCE.md).
+
+Ground effect и rotor drag: [ROTOR_EFFECTS.md](Docs/Physics/ROTOR_EFFECTS.md).

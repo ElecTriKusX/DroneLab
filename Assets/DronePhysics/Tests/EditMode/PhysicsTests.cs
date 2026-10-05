@@ -110,7 +110,7 @@ namespace DroneLab.Physics.Tests
         }
         [Test] public void UnsupportedModuleNeverSilentlyIgnored()
         {
-            var p=JObject.Parse(Read("quad_test_basic")); p["physicsConfiguration"]["modules"]["groundEffect"]=true; Assert.That(Load(p).Success,Is.False);
+            var p=JObject.Parse(Read("quad_test_basic")); p["physicsConfiguration"]["modules"]["gyroscopicRotorEffects"]=true; Assert.That(Load(p).Success,Is.False);
         }
         [Test] public void DerivedValuesAreRecomputed()
         {

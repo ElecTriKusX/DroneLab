@@ -97,12 +97,17 @@ Surfaces — отдельные двусторонние pressure patches с с�
 Скорость точки включает вращение; момент — `(position-COM) × F`. Выбранная модель
 диссипативна относительно воздуха. Axis/ProjectedArea/Surfaces выбираются взаимоисключающе.
 
-Ground effect (опциональный следующий модуль): множитель
+Ground effect (этап 5): множитель
 `1 + K (R/(4h))²` ограничивается `maxMultiplier`;
 `h >= minHeightRadiusRatio R`. Расстояние до поверхности определяется для каждого ротора.
 Это эмпирическая ограниченная модель, требующая коэффициента, не CFD.
+Поиск по -axis в PhysicsScene дрона исключает self/trigger hits. Наклон поверхности
+ослабляет усиление; от 45R до 50R оно плавно исчезает. Усиливается только положительный T;
+Q/current не исправляются. Исходные таблицы должны быть free-air. Подробности — ROTOR_EFFECTS.md.
 
-Rotor drag: `F = -Krd ω Vperpendicular`.
+Rotor drag (этап 5): `F = -Krd ω Vperpendicular` в точке каждого ротора.
+Скорость включает вращение и ветер; AddForceAtPosition уже создаёт r×F.
+Диссипативна в системе воздуха, без дополнительного множителя rho/тяги.
 Krd имеет единицы kg/rad (rad обычно трактуется как безразмерный).
 Blade flapping и induced drag требуют конкретной формулы и идентифицированных коэффициентов.
 Их поля резервируются; их единицы и диапазоны будут уточняться вместе с выбранной моделью.
@@ -147,7 +152,8 @@ ManualPrincipal задаёт положительные главные моме�
 | Quad X / + тестовый allocator | Реализовано для 4 роторов +Y с полной управляемостью |
 | ProjectedArea: box, manual/mesh LUT; Surfaces; geometry markers/export | Реализовано в этапе 3 |
 | RpmTable, PerformanceMap, SI CSV import | Реализовано в этапе 4; пульт использует статическую J=0 кривую |
-| Ground effect, rotor drag, flapping, induced drag, gyroscopic effects | Контракт; включение отклоняется |
+| Ground effect, rotor drag | Реализовано в этапе 5; независимые optional-флаги |
+| Flapping, induced drag, gyroscopic effects | Контракт; включение отклоняется до принятия моделей |
 | Battery, electrical motor, atmosphere, gust/turbulence | Контракт; включение отклоняется |
 
 `fidelity` — категория интерфейса, а не переключатель неизвестных формул.
@@ -174,3 +180,5 @@ allocator сохраняет collective при ограничении torque, п
 
 Чего mesh не определяет достоверно: массу, истинные COM/инерцию, Cd, характеристики
 двигателя/винта, батареи. Источники — измерения, производитель, пресет или явно указанная оценка.
+
+Настройки, пределы и проверка ground effect / rotor drag — [ROTOR_EFFECTS.md](ROTOR_EFFECTS.md).

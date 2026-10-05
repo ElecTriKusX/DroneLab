@@ -110,3 +110,5 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj
 Геометрия своей модели, площади и новый экспорт профилей: [GEOMETRY_AERODYNAMICS.md](GEOMETRY_AERODYNAMICS.md).
 
 Таблицы/карты винтов, CSV и проверка этапа 4: [PROPELLER_PERFORMANCE.md](PROPELLER_PERFORMANCE.md).
+
+Эффекты роторов и запуск на своей геометрии: [ROTOR_EFFECTS.md](ROTOR_EFFECTS.md).

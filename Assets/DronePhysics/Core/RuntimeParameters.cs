@@ -8,10 +8,10 @@ namespace DroneLab.Physics
         public readonly string Id;
         public readonly DVector3 Position, Axis;
         // KT/KQ are meaningful only for the two constant-coefficient models.
-        public readonly double ReactionSign, MaxOmega, MinOmega, IdleOmega, TauUp, TauDown, KT, KQ, Diameter;
+        public readonly double ReactionSign, MaxOmega, MinOmega, IdleOmega, TauUp, TauDown, KT, KQ, Diameter, RotorDragCoefficient;
         public readonly PropellerPerformance Performance;
         public readonly double MaxThrust;
-        internal RuntimeRotorParameters(RotorProfile p, double rho, bool response)
+        internal RuntimeRotorParameters(RotorProfile p, double rho, bool response, bool rotorDrag)
         {
             Id=p.rotorId; Position=DVector3.From(p.geometry.positionLocalM); Axis=DVector3.From(p.geometry.thrustAxisLocal).Normalized;
             // Viewed from the +thrust-axis tip towards the hub. Unity +Y rotates clockwise from above.
@@ -21,6 +21,7 @@ namespace DroneLab.Physics
             IdleOmega=PhysicsMath.RpmToOmega(p.motor.idleRpm);
             TauUp=response ? p.motor.responseTimeUpS : 0; TauDown=response ? p.motor.responseTimeDownS : 0;
             Diameter=p.propeller.diameterM;
+            RotorDragCoefficient=rotorDrag ? p.advancedAerodynamics.rotorDragCoefficientKgPerRad : 0;
             Performance=new PropellerPerformance(p.performance,rho,Diameter);
             if (p.performance.model == "CtCq")
             {
@@ -36,7 +37,8 @@ namespace DroneLab.Physics
         public readonly double Mass, Gravity, Density;
         public readonly DVector3 CenterOfMass, Inertia, Dimensions, DragCd, DragArea, DragPoint, Wind;
         public readonly double RotationX, RotationY, RotationZ, RotationW;
-        public readonly bool BodyDrag;
+        public readonly bool BodyDrag,RotorDrag;
+        public readonly RuntimeGroundEffect GroundEffect;
         public readonly string DragModel,ProjectedAreaMode;
         public readonly double ProjectedCd;
         public readonly DVector3 ProjectedReferenceArea;
@@ -54,6 +56,8 @@ namespace DroneLab.Physics
             var q=inertia.mode == "AutoBox" ? new double[]{0,0,0,1} : inertia.principalAxesRotationXyzw;
             RotationX=q[0]; RotationY=q[1]; RotationZ=q[2]; RotationW=q[3];
             BodyDrag=p.physicsConfiguration.modules.bodyDrag;
+            RotorDrag=p.physicsConfiguration.modules.rotorAerodynamics;
+            GroundEffect=p.physicsConfiguration.modules.groundEffect ? new RuntimeGroundEffect(p.groundEffect) : null;
             var aero=p.bodyAerodynamics; DragModel=aero.model;
             DragCd=BodyDrag && DragModel=="AxisApproximation" ? DVector3.From(aero.dragCd) : default;
             DragArea=BodyDrag && DragModel=="AxisApproximation" ? DVector3.From(aero.referenceAreaM2) : default;
@@ -69,7 +73,7 @@ namespace DroneLab.Physics
             DragPoint=p.bodyAerodynamics.dragApplicationPointLocalM == null ? CenterOfMass : DVector3.From(p.bodyAerodynamics.dragApplicationPointLocalM);
             Wind=p.physicsConfiguration.modules.windInteraction && env.windMode != "None" ? DVector3.From(env.windVelocityWorldMps) : default;
             var rotors=new List<RuntimeRotorParameters>();
-            foreach(var r in p.rotors) { var runtime=new RuntimeRotorParameters(r,Density,p.physicsConfiguration.modules.motorResponse); rotors.Add(runtime); MaxTotalThrust+=runtime.MaxThrust; }
+            foreach(var r in p.rotors) { var runtime=new RuntimeRotorParameters(r,Density,p.physicsConfiguration.modules.motorResponse,RotorDrag); rotors.Add(runtime); MaxTotalThrust+=runtime.MaxThrust; }
             Rotors=rotors.AsReadOnly();
         }
     }

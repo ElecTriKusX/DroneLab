@@ -12,6 +12,8 @@ namespace DroneLab.Simulation
         public TextAsset environmentProfile;
         public bool drawForces = true;
         public float forceGizmoScale = 0.08f;
+        [Tooltip("Colliders considered by rotor ground probes. Triggers and the drone hierarchy are ignored.")]
+        public LayerMask groundLayers=UnityEngine.Physics.DefaultRaycastLayers;
         public RuntimeDroneParameters Parameters { get; private set; }
         public Rigidbody Body { get; private set; }
         public bool IsReady => Parameters != null;
@@ -22,6 +24,11 @@ namespace DroneLab.Simulation
         public double[] AdvanceRatio { get; private set; }
         public double?[] MeasuredCurrentA { get; private set; }
         public bool[] PerformanceClamped { get; private set; }
+        public double[] GroundHeightM { get; private set; }
+        public double[] GroundEffectMultiplier { get; private set; }
+        public Vector3[] RotorDragForceN { get; private set; }
+        public Vector3 RotorDragForce { get; private set; }
+        public Vector3 RotorDragTorque { get; private set; }
         public Vector3 AirVelocity { get; private set; }
         public Vector3 DragForce { get; private set; }
         public Vector3 DragTorque { get; private set; }
@@ -29,6 +36,9 @@ namespace DroneLab.Simulation
         // Explicit stepping for isolated integration tests. Normal scenes use FixedUpdate.
         public bool AutomaticSimulation { get; set; } = true;
         private double[] commands;
+        private Vector3[] rotorPoints,rotorAxes,groundPoints;
+        private bool[] groundHits;
+        private readonly RotorGroundProbe groundProbe=new RotorGroundProbe();
 
         private void Awake()
         {
@@ -70,9 +80,18 @@ namespace DroneLab.Simulation
             int count=Parameters.Rotors.Count;
             commands=new double[count]; Omega=new double[count]; ThrustN=new double[count]; ReactionTorqueNm=new double[count];
             AdvanceRatio=new double[count]; MeasuredCurrentA=new double?[count]; PerformanceClamped=new bool[count];
+            GroundHeightM=new double[count]; GroundEffectMultiplier=new double[count]; RotorDragForceN=new Vector3[count];
+            rotorPoints=new Vector3[count]; rotorAxes=new Vector3[count]; groundPoints=new Vector3[count]; groundHits=new bool[count];
+            ClearRotorEffects();
             if(Mathf.Abs(Time.fixedDeltaTime-0.01f)>1e-6f) Debug.LogWarning("DroneLab recommends Fixed Timestep = 0.01 s. No global setting was changed.",this);
             enabled=true;
             return true;
+        }
+        private void ClearRotorEffects()
+        {
+            RotorDragForce=Vector3.zero; RotorDragTorque=Vector3.zero;
+            for(int i=0;i<GroundHeightM.Length;i++)
+            { GroundHeightM[i]=double.PositiveInfinity; GroundEffectMultiplier[i]=1; RotorDragForceN[i]=Vector3.zero; groundHits[i]=false; }
         }
         private void Fail(string message) { Debug.LogError("DroneLab: "+message,this); enabled=false; }
         public void SetArmed(bool armed)
@@ -93,7 +112,7 @@ namespace DroneLab.Simulation
             SetArmed(false);
             if(Omega == null) return;
             Array.Clear(Omega,0,Omega.Length); Array.Clear(ThrustN,0,ThrustN.Length); Array.Clear(ReactionTorqueNm,0,ReactionTorqueNm.Length);
-            Array.Clear(AdvanceRatio,0,AdvanceRatio.Length); Array.Clear(MeasuredCurrentA,0,MeasuredCurrentA.Length); Array.Clear(PerformanceClamped,0,PerformanceClamped.Length);
+            Array.Clear(AdvanceRatio,0,AdvanceRatio.Length); Array.Clear(MeasuredCurrentA,0,MeasuredCurrentA.Length); Array.Clear(PerformanceClamped,0,PerformanceClamped.Length); ClearRotorEffects();
         }
         private void FixedUpdate()
         { if(AutomaticSimulation) StepPhysics(Time.fixedDeltaTime); }
@@ -101,6 +120,7 @@ namespace DroneLab.Simulation
         {
             if(dt<=0 || float.IsNaN(dt) || float.IsInfinity(dt)) throw new ArgumentOutOfRangeException(nameof(dt));
             if(!IsReady || !enabled) return;
+            ClearRotorEffects();
             try
             {
                 for(int i=0;i<Parameters.Rotors.Count;i++)
@@ -110,9 +130,20 @@ namespace DroneLab.Simulation
                     Omega[i]=PhysicsMath.MotorStep(Omega[i],target,target>Omega[i] ? r.TauUp:r.TauDown,dt);
                     Vector3 pointWorld=transform.TransformPoint(ToUnity(r.Position));
                     Vector3 axisWorld=transform.TransformDirection(ToUnity(r.Axis));
-                    double axial=Vector3.Dot(Body.GetPointVelocity(pointWorld)-ToUnity(Parameters.Wind),axisWorld);
+                    rotorPoints[i]=pointWorld; rotorAxes[i]=axisWorld;
+                    var pointAirVelocity=Body.GetPointVelocity(pointWorld)-ToUnity(Parameters.Wind);
+                    double axial=Vector3.Dot(pointAirVelocity,axisWorld);
                     var sample=r.Performance.Evaluate(Omega[i],axial);
-                    ThrustN[i]=sample.Thrust; ReactionTorqueNm[i]=r.ReactionSign*sample.Torque;
+                    if(Parameters.GroundEffect!=null && groundProbe.Sample(this,pointWorld,axisWorld,(float)(r.Diameter/2),groundLayers.value,out var hit))
+                    {
+                        groundHits[i]=true; groundPoints[i]=hit.point; GroundHeightM[i]=hit.distance;
+                        GroundEffectMultiplier[i]=RotorAerodynamics.GroundMultiplier(Parameters.GroundEffect,r.Diameter/2,hit.distance,Vector3.Dot(axisWorld,hit.normal));
+                    }
+                    // Thrust-only model; do not invent a Q or current correction, or augment windmilling thrust.
+                    ThrustN[i]=RotorAerodynamics.ThrustWithGroundEffect(sample.Thrust,GroundEffectMultiplier[i]);
+                    ReactionTorqueNm[i]=r.ReactionSign*sample.Torque;
+                    if(Parameters.RotorDrag)
+                        RotorDragForceN[i]=ToUnity(RotorAerodynamics.Drag(FromUnity(pointAirVelocity),FromUnity(axisWorld),Omega[i],r.RotorDragCoefficient));
                     AdvanceRatio[i]=sample.AdvanceRatio; MeasuredCurrentA[i]=sample.Current; PerformanceClamped[i]=sample.Clamped;
                 }
             }
@@ -124,8 +155,10 @@ namespace DroneLab.Simulation
             for(int i=0;i<Parameters.Rotors.Count;i++)
             {
                 var r=Parameters.Rotors[i];
-                Vector3 axis=transform.TransformDirection(ToUnity(r.Axis));
-                Body.AddForceAtPosition(axis*(float)ThrustN[i],transform.TransformPoint(ToUnity(r.Position)),ForceMode.Force);
+                Vector3 axis=rotorAxes[i];
+                Body.AddForceAtPosition(axis*(float)ThrustN[i]+RotorDragForceN[i],rotorPoints[i],ForceMode.Force);
+                RotorDragForce+=RotorDragForceN[i];
+                RotorDragTorque+=Vector3.Cross(rotorPoints[i]-Body.worldCenterOfMass,RotorDragForceN[i]);
                 Body.AddTorque(axis*(float)ReactionTorqueNm[i],ForceMode.Force);
             }
             Vector3 point=transform.TransformPoint(ToUnity(Parameters.DragPoint));
@@ -155,6 +188,8 @@ namespace DroneLab.Simulation
                 Gizmos.color=Color.green; Gizmos.DrawLine(pos,pos+transform.TransformDirection(ToUnity(r.Axis))*(float)ThrustN[i]*forceGizmoScale);
                 Gizmos.DrawWireSphere(pos,0.012f);
                 Gizmos.color=Color.cyan; Gizmos.DrawLine(pos,pos+transform.TransformDirection(ToUnity(r.Axis))*0.15f);
+                Gizmos.color=new Color(1,0.5f,0); Gizmos.DrawLine(pos,pos+RotorDragForceN[i]*forceGizmoScale);
+                if(groundHits[i]) { Gizmos.color=Color.yellow; Gizmos.DrawLine(pos,groundPoints[i]); Gizmos.DrawWireSphere(groundPoints[i],0.01f); }
             }
             Gizmos.color=Color.blue; Gizmos.DrawLine(Body.worldCenterOfMass,Body.worldCenterOfMass+ToUnity(Parameters.Wind)*0.15f);
             Gizmos.color=Color.red; var cp=transform.TransformPoint(ToUnity(Parameters.DragPoint));
