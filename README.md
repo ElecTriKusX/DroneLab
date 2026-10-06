@@ -4,7 +4,7 @@
 аэродинамика, ветер, питание, нагрев и телеметрия. Движение корпуса и столкновения
 интегрирует Rigidbody/PhysX; параметры аппарата и среды задаются отдельными JSON.
 
-**SDK 0.3.3 · JSON 1.0.0 · CSV 1.4.0 · Unity 6000.3.25f1 · Python 3.10+ · .NET 8.**
+**SDK 0.3.4 · JSON 1.0.0 · CSV 1.4.0 · Unity 6000.3.25f1 · Python 3.10+ · .NET 8.**
 Windows — основная платформа разработки, Linux поддерживается инструментами и CI.
 Разработческий проект использует HDRP; Physics/Demo не зависят от HDRP.
 
@@ -80,6 +80,48 @@ dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj --configuration Release
 18 Python и 482 C# теста, package verification и генерация контракта.
 Unity import/PlayMode/EXE требуют отдельного запуска в Unity.
 
-Разработка Physics/Demo — `physics-packages`; погодная интеграция —
-`envieroment-packages`. Границы ответственности описаны в DEVELOPMENT.
+Общая разработка Physics/Demo/Environment — `physics-packages`. Погодная интеграция
+влита из `envieroment-packages`; пакеты остаются отдельными. Границы ответственности описаны в DEVELOPMENT.
 Лицензия кода: [GPL-3.0](LICENSE). Изменения выпуска: [CHANGELOG](CHANGELOG.md).
+
+## Дополнение: Enviro и живая среда
+
+Пакет `com.dronelab.environment` 0.2.0 связывает Enviro 3 с Physics/Demo 0.3.4.
+Исходники адаптера — `Assets/DroneEnvironment`; Enviro установлен отдельно и в UPM-экспорт не включается.
+Ядро Physics не зависит от Enviro или HDRP.
+
+- Контроллер выбирает погодные пресеты с плавным/мгновенным переходом, задаёт ручной ветер,
+  температуру и время суток; встроенное инженерное окно можно скрыть для будущего GUI.
+- Один снимок ветра и сухой атмосферы передаёт локальные температуру/давление/плотность
+  в силы, привод и теплообмен без повторного Initialize и сброса SOC, энергии, нагрева или RPM.
+- Живой воздух требует CtCq/PerformanceMap. Для OmegaSquared/RpmTable использовать только
+  ветер, отключив `syncAir` до запуска. Давление задаётся пользователем на контрольной высоте.
+- Enviro `windSpeed` 0…1 переводится в м/с явной шкалой `fullStrengthWindMps`
+  (по умолчанию 20 м/с); это настройка адаптера, не измеренная характеристика Enviro.
+- Осадки остаются VisualOnly metadata/VFX. Реальные метеоданные из сети ещё не подключены.
+
+### Подключение погоды
+
+1. Добавить настроенный Enviro prefab, назначить камеру, включить Weather/Environment.
+2. Создать **DroneLab → Test Bench → Combined Physics Drone**.
+3. В Edit Mode выделить дрон → **DroneLab → Environment → Connect Selected Drone to Enviro**;
+   сохранить новую копию JSON среды, проверить контрольные давление/высоту/мировую Y и сохранить сцену.
+4. Play → окно **DroneLab Weather / Wind** → выбрать профиль, ручной ветер или температуру.
+
+Единицы, API для GUI, порядок обновления, установка пакета и ограничения:
+[README адаптера](Assets/DroneEnvironment/README.md).
+
+Дополнительные команды из корня репозитория:
+
+```console
+python Tools/build_environment_package.py
+python Tools/build_environment_package.py --check
+dotnet test Tests/Environment/DroneLab.Environment.Tests.csproj --configuration Release
+```
+
+[Проверки Physics/Demo 0.3.4 и Environment 0.2.0](https://github.com/ElecTriKusX/DroneLab/actions/runs/37527180198)
+прошли на Windows и Ubuntu. Результаты предыдущего выпуска выше сохранены;
+актуальные результаты и область проверки — в [VALIDATION](Docs/Physics/VALIDATION.md).
+Unity import/PlayMode/EXE требуют отдельного запуска в Unity.
+
+Код DroneLab — GPL-3.0; Enviro остаётся сторонним продуктом со своей лицензией.

@@ -36,6 +36,9 @@ ExportedObj/
 .consulo/
 *.csproj
 !Tests/DotNet/*.csproj
+!Tests/Environment/*.csproj
+Tests/Environment/bin/
+Tests/Environment/obj/
 Tests/DotNet/bin/
 Tests/DotNet/obj/
 Tools/__pycache__/

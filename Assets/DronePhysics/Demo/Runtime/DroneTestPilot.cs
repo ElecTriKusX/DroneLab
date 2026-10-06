@@ -212,7 +212,7 @@ namespace DroneLab.Simulation
             GUILayout.Label($"Vertical {velocity.y:F2} m/s | World Y {transform.position.y:F2} m | From reset {Vector3.Distance(startPosition,transform.position):F2} m");
             GUILayout.Label($"Tilt {tilt:F1} deg | Yaw {rate.y:F1} / target {DesiredAngularRateLocal.y*Mathf.Rad2Deg:F1} deg/s");
             GUILayout.Label($"RPM spread {maxRpm-minRpm:F2} | Torque local [{RequestedTorqueLocal.x:F4}, {RequestedTorqueLocal.y:F4}, {RequestedTorqueLocal.z:F4}] Nm");
-            GUILayout.Label($"Environment {p.Environment.DensityMode} | altitude {physicsBody.Air.AltitudeM:F1} m | density {physicsBody.Air.Density:F4} kg/m³");
+            GUILayout.Label($"Environment {(physicsBody.UsesLiveAir ? "LiveAir" : p.Environment.DensityMode)} | altitude {physicsBody.Air.AltitudeM:F1} m | density {physicsBody.Air.Density:F4} kg/m³");
             GUILayout.Label($"Wind {p.Environment.WindMode} | world {physicsBody.WindVelocityWorld} m/s | simulation {physicsBody.SimulationTimeS:F2} s");
             if(physicsBody.WindSamplingRatio.HasValue)
                 GUILayout.Label($"Wind frequency / Nyquist {physicsBody.WindSamplingRatio:F3} | {(physicsBody.WindUnderResolved ? "UNDER-RESOLVED: reduce fixed timestep / spectral band" : "resolved")}");

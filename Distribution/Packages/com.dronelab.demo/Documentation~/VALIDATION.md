@@ -1,6 +1,6 @@
 # Профили и проверка моделей
 
-SDK 0.3.3. Результаты относятся к конкретным моделям и диапазонам данных.
+SDK 0.3.4. Результаты относятся к конкретным моделям и диапазонам данных.
 Контрольные точки holdout исключены из таблиц профиля и используются независимо
 от интерполяционных узлов. Полные численные результаты:
 [reference-validation-results.json](Data/reference-validation-results.json).
@@ -95,3 +95,37 @@ python -m unittest discover -s Tests/Python -v
 `ReferenceProfileRigidbodyTests` проверяет изолированный стенд зависания.
 Benchmark JSON имеет отдельный formatVersion и не является drone profile.
 Запуск стендов и установка тестов описаны в [DEVELOPMENT](DEVELOPMENT.md).
+
+## Дополнение: проверки Physics/Demo 0.3.4 и Environment 0.2.0
+
+Результаты выпуска 0.3.3 выше сохранены как отдельная проверенная база.
+
+[Проверенный CI Physics/Demo 0.3.4 и Environment 0.2.0](https://github.com/ElecTriKusX/DroneLab/actions/runs/37527180198):
+
+| Проверка | Windows | Ubuntu |
+|---|---|---|
+| Physics pure C#/EditMode через .NET 8 | 505 passed, 0 failed, 0 skipped | 505 passed, 0 failed, 0 skipped |
+| Environment pure C# | 21 passed, 0 failed, 0 skipped | 21 passed, 0 failed, 0 skipped |
+| Python анализатор/упаковка | 21 passed | 21 passed |
+| UPM / GUID / SHA-256 / локальные ссылки | Прошло | Прошло |
+| Повторная генерация DTO/схем/PARAMETERS | Без изменений | Без изменений |
+
+Python-регрессии проверяют Windows-пути, кириллицу/пробелы, BOM/CRLF и обнаружение
+устаревшего экспорта. Новая редакция документации дополнительно проверяется текущим
+package/links suite. Результат CI выше относится к указанному commit/run.
+Unity import, PlayMode и EXE этим CI не выполняются.
+
+## Интеграция Enviro
+
+Environment 0.2.0 использует единый снимок ветра, локальных T/p и атмосферной колонки.
+Добавлены проверки локальных измерений, идеального газа, зависимости тяги/drag от
+плотности, совместимости CtCq/PerformanceMap, общего неизменяемого снимка и сохранения
+истории питания/тепла при изменении воздуха. Python проверяет экспорт, metadata и UTF-8/BOM/CRLF.
+`LiveAirRigidbodyTests` подготовлен для Unity: изменение воздуха без пересоздания
+Parameters/Power/Drive, сохранение заряда/тепла и соответствие телеметрии. Здесь не запускался.
+
+Результаты live-air suite включены в CI этого дополнения. Проверяются вычисления и состояние ядра;
+сторонний Enviro, Unity import и Play Mode этим CI не запускаются.
+JSON остаётся fallback до первого снимка, затем применяются данные провайдера.
+Запуск Enviro/Rigidbody, сохранение SOC и температур при смене профиля
+требуют проверки в Play Mode. Подключение: [README адаптера](https://github.com/ElecTriKusX/DroneLab/blob/physics-packages/Assets/DroneEnvironment/README.md).

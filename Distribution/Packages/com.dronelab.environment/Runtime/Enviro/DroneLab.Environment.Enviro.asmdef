@@ -1,0 +1,4 @@
+{
+  "name": "DroneLab.Environment.Enviro",
+  "references": ["DroneLab.Environment", "DroneLab.Physics", "DroneLab.Simulation", "Enviro3.Runtime"]
+}

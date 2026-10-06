@@ -1,0 +1,5 @@
+{
+  "name": "DroneLab.Environment",
+  "references": ["DroneLab.Physics"],
+  "noEngineReferences": true
+}
