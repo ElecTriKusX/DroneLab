@@ -53,7 +53,7 @@ namespace DroneLab.Physics.Tests
         [UnityTest] public IEnumerator SamplingWarningUsesFastestMovingRotorPoint()
         {
             var p=Create(); p.Body.linearVelocity=new Vector3(5,0,0); p.Body.maxAngularVelocity=100; p.Body.angularVelocity=new Vector3(0,100,0);
-            p.StepPhysics(.1);
+            p.StepPhysics(.1f);
             Assert.That(p.WindSamplingRatio,Is.GreaterThan(.5)); Assert.That(p.WindUnderResolved,Is.True); yield break;
         }
         [UnityTest] public IEnumerator StoppedDisarmedRotorsHaveNoLiftWhileWindDragStillActs()
