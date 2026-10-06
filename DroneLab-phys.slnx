@@ -1,10 +1,13 @@
 ﻿<Solution>
+  <Project Path="Enviro3.Editor.csproj" />
   <Project Path="DroneLab.Physics.PlayModeTests.csproj" />
   <Project Path="DroneLab.Editor.csproj" />
   <Project Path="DroneLab.Simulation.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="DroneLab.Physics.EditModeTests.csproj" />
   <Project Path="DroneLab.Physics.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Enviro3.Runtime.csproj" />
   <Project Path="DroneLab.Demo.csproj" />
   <Project Path="DroneLab.Demo.Editor.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
 </Solution>
