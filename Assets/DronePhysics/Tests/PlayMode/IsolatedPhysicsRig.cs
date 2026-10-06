@@ -17,7 +17,7 @@ namespace DroneLab.Physics.Tests
         private readonly Scene scene;
         private readonly PhysicsScene physicsScene;
         private readonly TextAsset profile;
-        public IsolatedPhysicsRig(bool pilot=false,bool instantaneous=false,string environment="environment_calm",string json=null,IWindProvider customWind=null)
+        public IsolatedPhysicsRig(bool pilot=false,bool instantaneous=false,string environment="environment_calm",string json=null,IWindProvider customWind=null,IAirProvider customAir=null)
         {
             scene=SceneManager.CreateScene("DroneLab test "+Guid.NewGuid(),new CreateSceneParameters(LocalPhysicsMode.Physics3D));
             physicsScene=scene.GetPhysicsScene();
@@ -26,6 +26,7 @@ namespace DroneLab.Physics.Tests
             Go.AddComponent<BoxCollider>().size=new Vector3(0.4f,0.1f,0.4f); Go.AddComponent<Rigidbody>();
             Physics=Go.AddComponent<DronePhysicsBody>(); Physics.AutomaticSimulation=false;
             Physics.CustomWindProvider=customWind;
+            Physics.CustomAirProvider=customAir;
             json=json ?? Resources.Load<TextAsset>("DronePhysics/quad_test_basic").text;
             if(instantaneous) json=json.Replace("\"motorResponse\": true","\"motorResponse\": false");
             profile=new TextAsset(json); Physics.droneProfile=profile;

@@ -9,15 +9,50 @@ namespace DroneLab.Weather
         public readonly string WeatherName;
         public readonly DVector3 WindWorldMps;
         public readonly double TemperatureK, Wetness, SnowCover, VisualTurbulence, CapturedAtS;
+        public readonly AtmosphereColumn AirColumn;
+        public readonly WeatherSample Weather;
         public WeatherSnapshot(string name, DVector3 wind, double temperatureK, double wetness,
-            double snowCover, double visualTurbulence, double capturedAtS)
+            double snowCover, double visualTurbulence, double capturedAtS, AtmosphereColumn airColumn = null,
+            WeatherSample? weather = null)
         {
             EnvironmentMath.Finite(wind); EnvironmentMath.Finite(temperatureK);
             EnvironmentMath.Finite(capturedAtS);
             if (temperatureK <= 0 || capturedAtS < 0) throw new ArgumentOutOfRangeException();
             WindConversion.Ratio(wetness); WindConversion.Ratio(snowCover); WindConversion.Ratio(visualTurbulence);
+            if(airColumn!=null && Math.Abs(airColumn.ReferenceTemperatureK-temperatureK)>1e-8)
+                throw new ArgumentException("Snapshot and air column must use the same reference temperature.");
             WeatherName = name ?? ""; WindWorldMps = wind; TemperatureK = temperatureK;
             Wetness = wetness; SnowCover = snowCover; VisualTurbulence = visualTurbulence; CapturedAtS = capturedAtS;
+            AirColumn=airColumn; var metadata=weather ?? new WeatherSample("None",0);
+            Weather=new WeatherSample(metadata.Precipitation,metadata.IntensityMmPerHour);
+        }
+    }
+    public sealed class WeatherState : IWindProvider, IAirProvider, IWeatherProvider
+    {
+        public WeatherSnapshot Current { get; private set; }
+        public void Publish(WeatherSnapshot snapshot)
+        {
+            if(snapshot==null) throw new ArgumentNullException(nameof(snapshot));
+            if(snapshot.AirColumn==null) throw new ArgumentException("A complete weather state requires an air column.");
+            Current=snapshot;
+        }
+        public DVector3 Sample(DVector3 position,double time)
+        {
+            EnvironmentMath.Finite(position); EnvironmentMath.Finite(time);
+            if(time<0) throw new ArgumentOutOfRangeException(nameof(time));
+            return Current?.WindWorldMps ?? default;
+        }
+        public bool TrySampleAir(DVector3 position,double time,out AirSample air)
+        {
+            EnvironmentMath.Finite(position); EnvironmentMath.Finite(time);
+            if(time<0) throw new ArgumentOutOfRangeException(nameof(time));
+            var snapshot=Current;
+            if(snapshot!=null) return snapshot.AirColumn.TrySampleAir(position,time,out air);
+            air=default; return false;
+        }
+        public bool TrySampleWeather(out WeatherSample weather)
+        {
+            weather=Current?.Weather ?? new WeatherSample("None",0); return Current!=null;
         }
     }
 

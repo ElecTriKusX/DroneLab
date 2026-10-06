@@ -22,7 +22,7 @@ class EnvironmentPackageTests(unittest.TestCase):
         self.assertNotIn("EnviroManager.cs", " ".join(files))
         self.assertNotIn("Enviro3.Runtime.asmdef", " ".join(files))
         self.assertIn("Enviro3.Runtime", json.loads(files["Runtime/Enviro/DroneLab.Environment.Enviro.asmdef"])["references"])
-        self.assertEqual(json.loads(files["package.json"])["dependencies"]["com.dronelab.physics"], "0.3.3")
+        self.assertEqual(json.loads(files["package.json"])["dependencies"]["com.dronelab.physics"], "0.3.4")
         hashes = json.loads(files["source-files.sha256.json"])
         self.assertEqual(set(hashes), set(files) - {"source-files.sha256.json"})
         for path, data in files.items():

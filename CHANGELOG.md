@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.4
+
+- IAirProvider и IWeatherProvider: живое состояние воздуха и weather metadata без повторного Initialize.
+- AtmosphereColumn: сухая атмосфера с локальными контрольными температурой/давлением и привязкой высоты сцены.
+- Один AirSample на шаг для сил, rotor performance, привода и тепла; CSV использует применённое состояние.
+- Измеренные OmegaSquared/RpmTable не допускают live-density provider; JSON 1.0.0 и CSV 1.4.0 сохранены.
+- Добавлены математические регрессии и Unity-тесты сохранения состояния при изменении воздуха.
+
 ## 0.3.3
 
 - Windows/Linux-пути, UTF-8/LF, стабильные .meta и SHA-256; проверка обязательных исходников до экспорта.

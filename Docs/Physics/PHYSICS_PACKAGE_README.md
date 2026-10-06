@@ -1,4 +1,4 @@
-# DroneLab Physics 0.3.3
+# DroneLab Physics 0.3.4
 
 `com.dronelab.physics`: параметризованная мультироторная физика Unity 6000.3.
 Pure C# ядро вычисляет силы, моменты, RPM, питание и тепло; Rigidbody/PhysX интегрирует

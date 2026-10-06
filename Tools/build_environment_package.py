@@ -8,7 +8,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 NAME = "com.dronelab.environment"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 PACKAGE_ROOT = ROOT / "Distribution/Packages"
 TEXT_SUFFIXES = {".cs", ".asmdef", ".json", ".md", ".meta"}
 
@@ -43,7 +43,7 @@ def collect(root=ROOT):
     files["package.json"] = (json.dumps({"name": NAME, "version": VERSION,
         "displayName": "DroneLab Environment", "unity": "6000.3", "license": "GPL-3.0-only",
         "description": "Enviro 3 weather and SI wind bridge for DroneLab; Enviro must be installed separately.",
-        "dependencies": {"com.dronelab.physics": "0.3.3", "com.unity.modules.imgui": "1.0.0"}}, indent=2) + "\n").encode()
+        "dependencies": {"com.dronelab.physics": "0.3.4", "com.unity.modules.imgui": "1.0.0"}}, indent=2) + "\n").encode()
     directories = {str(parent) for path in files for parent in PurePosixPath(path).parents if str(parent) != "."}
     for path in sorted(directories) + list(files) + ["source-files.sha256.json"]:
         if path.endswith(".meta") or path + ".meta" in files:

@@ -1,12 +1,12 @@
 {
   "name": "com.dronelab.environment",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "DroneLab Environment",
   "unity": "6000.3",
   "license": "GPL-3.0-only",
   "description": "Enviro 3 weather and SI wind bridge for DroneLab; Enviro must be installed separately.",
   "dependencies": {
-    "com.dronelab.physics": "0.3.3",
+    "com.dronelab.physics": "0.3.4",
     "com.unity.modules.imgui": "1.0.0"
   }
 }

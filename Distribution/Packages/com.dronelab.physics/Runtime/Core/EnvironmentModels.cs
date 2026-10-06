@@ -7,6 +7,30 @@ namespace DroneLab.Physics
         // World axes, metres, seconds, m/s. Must not depend on query order or change simulation state.
         DVector3 Sample(DVector3 worldPositionM,double timeS);
     }
+    public interface IAirProvider
+    {
+        // Return false before a valid snapshot exists; consumer uses its JSON environment.
+        // Read-only, order-independent SI query. No reset, stepping or network calls.
+        bool TrySampleAir(DVector3 worldPositionM,double timeS,out AirSample air);
+    }
+    public interface IWeatherProvider
+    {
+        bool TrySampleWeather(out WeatherSample weather);
+    }
+    public readonly struct WeatherSample
+    {
+        public readonly string Precipitation;
+        public readonly double IntensityMmPerHour;
+        public WeatherSample(string precipitation,double intensityMmPerHour)
+        {
+            EnvironmentMath.Finite(intensityMmPerHour);
+            if(precipitation!="None" && precipitation!="Rain" && precipitation!="Snow" && precipitation!="Hail")
+                throw new ArgumentException("Unknown precipitation kind.",nameof(precipitation));
+            if(intensityMmPerHour<0 || intensityMmPerHour>200 || (precipitation=="None")!=(intensityMmPerHour==0))
+                throw new ArgumentOutOfRangeException(nameof(intensityMmPerHour));
+            Precipitation=precipitation; IntensityMmPerHour=intensityMmPerHour;
+        }
+    }
     public readonly struct AirSample
     {
         public readonly double Density,TemperatureK,PressurePa,AltitudeM;
@@ -24,6 +48,50 @@ namespace DroneLab.Physics
             double t=seaLevelTemperatureK-Lapse*altitudeM;
             double p=seaLevelPressurePa*Math.Pow(t/seaLevelTemperatureK,Gravity/(GasConstant*Lapse));
             return new AirSample(p/(GasConstant*t),t,p,altitudeM);
+        }
+    }
+    // Dry hydrostatic column anchored to LOCAL temperature/pressure at a surveyed scene altitude.
+    // Unlike Troposphere's sea-level inputs, reference measurements here are at ReferenceAltitudeM.
+    public sealed class AtmosphereColumn : IAirProvider
+    {
+        public readonly double ReferenceTemperatureK,ReferencePressurePa,ReferenceAltitudeM,ReferenceWorldY;
+        public AtmosphereColumn(double temperatureK,double pressurePa,double altitudeM=0,double worldY=0)
+        {
+            EnvironmentMath.Finite(temperatureK); EnvironmentMath.Finite(pressurePa);
+            EnvironmentMath.Finite(altitudeM); EnvironmentMath.Finite(worldY);
+            if(temperatureK<200 || temperatureK>330 || pressurePa<1000 || pressurePa>200000 || altitudeM< -500 || altitudeM>11000)
+                throw new ArgumentOutOfRangeException("Reference air requires 200..330 K, 1000..200000 Pa, -500..11000 m.");
+            ReferenceTemperatureK=temperatureK; ReferencePressurePa=pressurePa;
+            ReferenceAltitudeM=altitudeM; ReferenceWorldY=worldY;
+        }
+        public bool TrySampleAir(DVector3 worldPositionM,double timeS,out AirSample air)
+        {
+            EnvironmentMath.Finite(worldPositionM); EnvironmentMath.Finite(timeS);
+            if(timeS<0) throw new ArgumentOutOfRangeException(nameof(timeS));
+            double height=worldPositionM.Y-ReferenceWorldY,altitude=ReferenceAltitudeM+height;
+            if(altitude< -500 || altitude>11000) throw new ArgumentOutOfRangeException(nameof(worldPositionM));
+            double t=ReferenceTemperatureK-Atmosphere.Lapse*height;
+            double p=ReferencePressurePa*Math.Pow(t/ReferenceTemperatureK,Atmosphere.Gravity/(Atmosphere.GasConstant*Atmosphere.Lapse));
+            air=new AirSample(p/(Atmosphere.GasConstant*t),t,p,altitude);
+            LiveAirValidation.Validate(air); return true;
+        }
+    }
+    public static class LiveAirValidation
+    {
+        public static void RequireCompatible(RuntimeDroneParameters parameters)
+        {
+            if(parameters==null) throw new ArgumentNullException(nameof(parameters));
+            foreach(var rotor in parameters.Rotors)
+                if(rotor.Performance.Model!="CtCq" && rotor.Performance.Model!="PerformanceMap")
+                    throw new ArgumentException("Live air requires CtCq or PerformanceMap. Measured rotor data cannot be silently scaled with density.");
+        }
+        public static void Validate(AirSample air)
+        {
+            EnvironmentMath.Finite(air.Density); EnvironmentMath.Finite(air.TemperatureK);
+            EnvironmentMath.Finite(air.PressurePa); EnvironmentMath.Finite(air.AltitudeM);
+            if(air.Density<=0 || air.Density>100 || air.TemperatureK<100 || air.TemperatureK>500 ||
+                air.PressurePa<=0 || air.PressurePa>2000000 || air.AltitudeM< -500 || air.AltitudeM>11000)
+                throw new ArgumentOutOfRangeException(nameof(air),"Live air sample outside runtime bounds.");
         }
     }
     public static class EnvironmentMath

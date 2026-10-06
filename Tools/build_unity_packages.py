@@ -10,7 +10,7 @@ import shutil
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.3.3"
+VERSION = "0.3.4"
 PACKAGE_ROOT = ROOT / "Distribution/Packages"
 TEXT_SUFFIXES = {".cs", ".asmdef", ".json", ".md", ".txt", ".csv", ".meta"}
 

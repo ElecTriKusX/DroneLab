@@ -1,7 +1,7 @@
-# DroneLab Demo 0.3.3
+# DroneLab Demo 0.3.4
 
 `com.dronelab.demo`: тестовый controller, ввод, HUD/камера и регрессионные стенды.
-Зависимости: Physics 0.3.3 и Input System 1.20.0; Unity 6000.3.
+Зависимости: Physics 0.3.4 и Input System 1.20.0; Unity 6000.3.
 
 Angle/Acro/H реализованы каскадными PID и QuadAllocator для четырёх +Y роторов.
 Используется идеальное состояние Rigidbody; датчики/EKF, маршрутный автопилот,

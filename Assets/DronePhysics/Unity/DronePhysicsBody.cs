@@ -13,7 +13,12 @@ namespace DroneLab.Simulation
         [Tooltip("For CustomField only: component implementing DroneLab.Physics.IWindProvider.")]
         public MonoBehaviour customWindProvider;
         public IWindProvider CustomWindProvider { get; set; }
+        [Tooltip("Optional live atmosphere. Requires IAirProvider and CtCq/PerformanceMap rotors; assign before initialization.")]
+        public MonoBehaviour customAirProvider;
+        public IAirProvider CustomAirProvider { get; set; }
         public AirSample Air { get; private set; }
+        public bool UsesLiveAir { get; private set; }
+        public WeatherSample Weather { get; private set; }
         public double SimulationTimeS { get; private set; }
         public Vector3 WindVelocityWorld { get; private set; }
         public Vector3[] RotorWindVelocityWorld { get; private set; }
@@ -78,6 +83,8 @@ namespace DroneLab.Simulation
         // Explicit stepping for isolated integration tests. Normal scenes use FixedUpdate.
         public bool AutomaticSimulation { get; set; } = true;
         private IWindProvider activeWind;
+        private IAirProvider activeAir;
+        private IWeatherProvider activeWeather;
         private double referenceWorldY;
         private double[] commands,candidateOmega,axialVelocities,gyroOmega,rotorAirSpeeds;
         private Vector3[] pointAirVelocities,bodyPointForces;
@@ -120,6 +127,15 @@ namespace DroneLab.Simulation
                 activeWind=CustomWindProvider ?? customWindProvider as IWindProvider;
                 if(activeWind==null) { Parameters=null; Fail("CustomField requires a component implementing IWindProvider."); return false; }
             }
+            activeAir=CustomAirProvider ?? customAirProvider as IAirProvider;
+            if(customAirProvider!=null && activeAir==null)
+            { Parameters=null; Fail("Custom air component must implement IAirProvider."); return false; }
+            if(activeAir!=null)
+            {
+                try { LiveAirValidation.RequireCompatible(Parameters); }
+                catch(ArgumentException ex) { Parameters=null; Fail(ex.Message); return false; }
+            }
+            activeWeather=activeAir as IWeatherProvider ?? activeWind as IWeatherProvider;
             Body.mass=(float)Parameters.Mass;
             Body.centerOfMass=ToUnity(Parameters.CenterOfMass);
             Body.inertiaTensorRotation=new Quaternion((float)Parameters.RotationX,(float)Parameters.RotationY,(float)Parameters.RotationZ,(float)Parameters.RotationW);
@@ -134,6 +150,7 @@ namespace DroneLab.Simulation
             RotorWindVelocityWorld=new Vector3[count];
             bodyPointForces=new Vector3[Parameters.DragModel=="Surfaces" ? Parameters.Surfaces.Count : 1];
             referenceWorldY=Body.worldCenterOfMass.y; Air=Parameters.Environment.SampleAir(0); SimulationTimeS=0; WindVelocityWorld=Vector3.zero;
+            UsesLiveAir=false; Weather=ProfileWeather();
             commands=new double[count]; candidateOmega=new double[count]; pointAirVelocities=new Vector3[count]; Omega=new double[count]; ThrustN=new double[count]; ReactionTorqueNm=new double[count];
             axialVelocities=new double[count]; gyroOmega=new double[count]; rotorAirSpeeds=new double[count];
             RotorEnvelopeSamples=new RotorFlightEnvelopeSample[count];
@@ -178,7 +195,7 @@ namespace DroneLab.Simulation
             Drive?.Reset();
             DragForce=DragTorque=AirVelocity=Vector3.zero; ProjectedAreaM2=0;
             if(bodyPointForces!=null) Array.Clear(bodyPointForces,0,bodyPointForces.Length);
-            if(Parameters!=null) Air=Parameters.Environment.SampleAir(0);
+            if(Parameters!=null) { Air=Parameters.Environment.SampleAir(0); UsesLiveAir=false; Weather=ProfileWeather(); }
             if(RotorWindVelocityWorld!=null) Array.Clear(RotorWindVelocityWorld,0,RotorWindVelocityWorld.Length);
             if(Omega == null) return;
             WindSamplingRatio=null; Array.Clear(RotorEnvelopeSamples,0,RotorEnvelopeSamples.Length);
@@ -196,7 +213,12 @@ namespace DroneLab.Simulation
             ClearRotorEffects();
             try
             {
-                Air=Parameters.Environment.SampleAir(Body.worldCenterOfMass.y-referenceWorldY);
+                AirSample liveAir=default;
+                UsesLiveAir=activeAir!=null && activeAir.TrySampleAir(FromUnity(Body.worldCenterOfMass),SimulationTimeS,out liveAir);
+                if(UsesLiveAir) { LiveAirValidation.Validate(liveAir); Air=liveAir; }
+                else Air=Parameters.Environment.SampleAir(Body.worldCenterOfMass.y-referenceWorldY);
+                Weather=activeWeather!=null && activeWeather.TrySampleWeather(out var weather) ? weather : ProfileWeather();
+                Weather=new WeatherSample(Weather.Precipitation,Weather.IntensityMmPerHour);
                 WindVelocityWorld=WindAt(Body.worldCenterOfMass);
                 WindSamplingRatio=Parameters.Environment.WindSamplingRatio(FromUnity(Body.linearVelocity),dt);
                 for(int i=0;i<Parameters.Rotors.Count;i++)
@@ -298,6 +320,7 @@ namespace DroneLab.Simulation
                 throw new ArgumentOutOfRangeException(nameof(wind),"Wind provider exceeds runtime safety bound 1e6 m/s.");
             return ToUnity(wind);
         }
+        private WeatherSample ProfileWeather()=>new WeatherSample(Parameters.Environment.Precipitation,Parameters.Environment.PrecipitationIntensityMmPerHour);
         private void OnDisable() { SetArmed(false); }
         private void OnDrawGizmos()
         {
