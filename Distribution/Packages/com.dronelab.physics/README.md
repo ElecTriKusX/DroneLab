@@ -1,6 +1,6 @@
 # Перенос DroneLab Physics между проектами
 
-SDK 0.3.0 предназначен для Unity 6000.3 (разработческий стенд 6000.3.25f1).
+SDK 0.3.2 предназначен для Unity 6000.3 (разработческий стенд 6000.3.25f1).
 JSON profile version остаётся 1.0.0. Проекты карты, меню и модели используют
 одну зафиксированную версию SDK, а не копируют изменённые скрипты друг у друга.
 
@@ -9,7 +9,7 @@ JSON profile version остаётся 1.0.0. Проекты карты, меню
 | Пакет | Содержимое | Зависимости |
 |---|---|---|
 | `com.dronelab.physics` | Pure C# core, Rigidbody/ветер/ground probes, profiles/schemas, markers/authoring/import, CSV/fault, EditMode tests | Newtonsoft 3.2.1, стандартные Unity physics/terrain/JSON/IMGUI modules |
-| `com.dronelab.demo` | DroneTestPilot (Angle/Acro/H), keyboard/gamepad, camera, test-drone menus, PlayMode regression | Physics 0.3.0, Input System 1.20 |
+| `com.dronelab.demo` | DroneTestPilot (Angle/Acro/H), keyboard/gamepad, camera, test-drone menus, PlayMode regression | Physics 0.3.2, Input System 1.20 |
 
 Physics не ссылается на Demo или Unity.InputSystem. Pure PID/allocator/input-value
 утилиты пока остаются в математическом core как доступные функции; сами они не
@@ -58,7 +58,7 @@ Unity Package Manager также поддерживает Git package с `?path=
 ```
 
 Для командной сборки заменить fragment после `#` на один и тот же полный commit SHA.
-Version 0.3.0 — версия содержимого package.json, SHA однозначно фиксирует артефакт.
+Version 0.3.2 — версия содержимого package.json, SHA однозначно фиксирует артефакт.
 Не смешивать Git-installed и embedded копии. Весь Git repo содержит тяжёлые model assets;
 локальные embedded SDK-папки проще для первого переноса.
 
@@ -115,3 +115,12 @@ CSV 1.4.0, public benchmarks, новые профили, меню и итого�
 `python Tools/build_unity_packages.py --check` сверяет каждый файл с source.
 Чистый Unity import, PlayMode и EXE проверяет команда: Unity в среде сборки не установлен.
 Пошаговый smoke test и новое меню — MENU.md; измерения/модели — REFERENCE_DRONES.md.
+
+
+## Исправления SDK 0.3.2
+
+Включает hotfix 0.3.1 (ручная тяга reference стендов и HUD) и исправляет создание
+ScaleReferences.mat в чистом UPM-проекте. Все импортируемые файлы и папки имеют
+стабильные .meta, исходные GUID компонентов сохранены. Для поиска manifest.json
+использовать DroneLab → Diagnostics → Show Project Manifest (package tests).
+Подробная настройка Test Runner и обновления существующих сцен — MENU.md.

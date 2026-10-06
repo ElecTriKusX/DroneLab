@@ -7,6 +7,13 @@ namespace DroneLab.Editor
 {
     public static class DroneDiagnosticsMenu
     {
+        [MenuItem("DroneLab/Diagnostics/Show Project Manifest (package tests)")]
+        public static void ShowProjectManifest()
+        {
+            string path=System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath,"..","Packages","manifest.json"));
+            EditorUtility.RevealInFinder(path);
+        }
+
         [MenuItem("DroneLab/Diagnostics/Add Flight Recorder and Motor Fault Scenario")]
         public static void Add()
         {

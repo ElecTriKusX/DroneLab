@@ -28,6 +28,9 @@ namespace DroneLab.Editor
                 var shader=Shader.Find("HDRP/Lit") ?? Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
                 if(shader != null)
                 {
+                    // UPM installs do not include the development project's Assets folder.
+                    if(!AssetDatabase.IsValidFolder("Assets/DronePhysics"))
+                        AssetDatabase.CreateFolder("Assets","DronePhysics");
                     material=new Material(shader);
                     if(material.HasProperty("_BaseColor")) material.SetColor("_BaseColor",new Color(0.7f,0.7f,0.7f));
                     AssetDatabase.CreateAsset(material,"Assets/DronePhysics/ScaleReferences.mat");

@@ -501,3 +501,33 @@ Hummingbird analytic numbers не объединяются с независим
 JUDGES_BRIEF.md, REFERENCE_DRONES.md, MENU.md включены в обновлённый SDK.
 Физическая приёмка без оборудования завершена в пределах этих numerical/bench checks;
 точность полного реального полёта и импорт целевого Unity проекта ещё не подтверждены.
+
+## Reference fixture hotfix 0.3.1 — 2026-10-06
+
+Исправлена настройка keyboard collective новых reference стендов: `1.25 / T/W`
+в пределах 0.1…0.95 вместо фиксированных 38%. JSON и модели сил не менялись.
+HUD показывает height target и Space thrust/weight. Старые сцены сохраняют
+свой serialized collective; требуется 0.60 либо пересоздание стенда.
+Проверки этой сессии: Python analyzer/package suite и rebuild --check.
+.NET/Unity в текущей среде отсутствуют: новый C# набор здесь не запускался.
+Предыдущие 482 результата относятся к предыдущей сессии.
+
+
+## UPM hotfix 0.3.2 — 2026-10-06
+
+Scale References создаёт папку Assets/DronePhysics через AssetDatabase до CreateAsset.
+Добавлена read-only команда показа проектного manifest.json. Генератор экспортирует
+стабильные .meta всех импортируемых root файлов, включая checksum JSON; исходные
+GUID компонентов не меняются. Documentation~ не импортируется Unity.
+
+| Проверка | Фактический результат этой сессии |
+|---|---|
+| Python analyzer/package suite | **13 passed, 0 failed** |
+| Rebuild / --check | Physics/Demo **0.3.2**, все байты соответствуют исходникам |
+| Metadata и SHA-256 | Все импортируемые файлы имеют .meta, GUID не повторяются между пакетами; все checksum entries сверены |
+| git diff --check | Прошло |
+| Unity Scale menu / manifest reveal / HUD / package import | Не запускались: Unity отсутствует в этой среде |
+| C#/.NET rerun | Не выполнялся: dotnet отсутствует; предыдущие 482 результата относятся к этапу 14 |
+
+Состав включает ранее подготовленный hotfix 0.3.1. Формулы, JSON-контракт и CSV не
+менялись. Личные полётные логи и производные отчёты не включены в Git.

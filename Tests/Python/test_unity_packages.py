@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -11,6 +12,20 @@ spec.loader.exec_module(builder)
 
 
 class UnityPackageTests(unittest.TestCase):
+    def test_all_importable_package_assets_have_stable_metadata_and_hashes(self):
+        first = builder.collect()
+        self.assertEqual(first, builder.collect())
+        for name, files in first.items():
+            hashes = json.loads(files["source-files.sha256.json"])
+            self.assertEqual(set(hashes), set(files) - {"source-files.sha256.json"})
+            for path, content in files.items():
+                if path != "source-files.sha256.json":
+                    self.assertEqual(hashes[path], hashlib.sha256(content).hexdigest(), name + "/" + path)
+                if path.endswith(".meta") or path.startswith("Documentation~/"):
+                    continue
+                self.assertIn(path + ".meta", files, name + "/" + path)
+            self.assertFalse(any(path.startswith("Documentation~/") and path.endswith(".meta") for path in files))
+
     def test_physics_has_no_demo_input_or_render_pipeline_dependency(self):
         files = builder.collect()["com.dronelab.physics"]
         manifest = json.loads(files["package.json"])

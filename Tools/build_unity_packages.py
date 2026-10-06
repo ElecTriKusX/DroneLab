@@ -10,7 +10,7 @@ import shutil
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.3.0"
+VERSION = "0.3.2"
 PACKAGE_ROOT = ROOT / "Distribution/Packages"
 
 
@@ -56,7 +56,7 @@ def collect(root=ROOT):
         for doc in (root / "Docs/Physics").rglob("*"):
             if doc.is_file() and (not demo or doc.name in wanted or doc.name in {"MENU.md", "REFERENCE_DRONES.md", "JUDGES_BRIEF.md"}):
                 files[str(Path("Documentation~") / doc.relative_to(root / "Docs/Physics"))] = doc.read_bytes()
-        files["CHANGELOG.md"] = ("# Changelog\n\n## " + VERSION + "\n\nRotor airflow, coupled RPM/J electrical power and rotor inertia/gyro, thermal protection, finite-band Dryden and descent diagnostics. Open reference profiles, withheld measurement comparisons, organized test menus and physics/judges documentation. JSON 1.0.0 retained; CSV 1.4.0.\n").encode()
+        files["CHANGELOG.md"] = ("# Changelog\n\n## " + VERSION + "\n\nScale References creates its material folder in UPM projects. Generated package root files include stable .meta files; documentation under Documentation~ remains excluded from asset import. Diagnostics can reveal the project manifest for enabling package tests.\n\n## 0.3.1\n\nReference fixture keyboard thrust uses aircraft thrust/weight instead of the basic rig fixed 38%. HUD shows altitude target and insufficient manual thrust. Test Runner setup documented. Physics/JSON 1.0.0/CSV 1.4.0 unchanged.\n").encode()
         # Deterministic metadata for generated folders; source script GUIDs stay unchanged.
         directories = set()
         for path in files:
@@ -68,9 +68,16 @@ def collect(root=ROOT):
             if key not in files:
                 guid = uuid.uuid5(uuid.NAMESPACE_URL, name + "/" + directory).hex
                 files[key] = ("fileFormatVersion: 2\nguid: " + guid + "\nfolderAsset: yes\nDefaultImporter:\n  externalObjects: {}\n  userData:\n  assetBundleName:\n  assetBundleVariant:\n").encode()
-        for path in list(files):
-            if path.endswith((".cs", ".asmdef", ".json")) and path != "package.json" and not path.startswith("Documentation~") and path + ".meta" not in files:
+        # Unity cannot generate metadata inside immutable Git/cache packages.
+        # The checksum file is added later but needs its own metadata too.
+        for path in list(files) + ["source-files.sha256.json"]:
+            if path.endswith(".meta") or path.startswith("Documentation~/") or path + ".meta" in files:
+                continue
+            if path.endswith((".cs", ".asmdef", ".json")) and path not in {"package.json", "source-files.sha256.json"}:
                 raise ValueError("Missing source metadata: " + name + "/" + path)
+            guid = uuid.uuid5(uuid.NAMESPACE_URL, name + "/" + path).hex
+            importer = "TextScriptImporter" if path.endswith(".json") else "DefaultImporter"
+            files[path + ".meta"] = ("fileFormatVersion: 2\nguid: " + guid + "\n" + importer + ":\n  externalObjects: {}\n  userData:\n  assetBundleName:\n  assetBundleVariant:\n").encode()
         files = {path: (b"\n".join(line.rstrip() for line in content.splitlines()) + b"\n" if path.endswith(".meta") else content) for path, content in files.items()}
         files["source-files.sha256.json"] = text({path: hashlib.sha256(content).hexdigest() for path, content in sorted(files.items())})
         result[name] = files

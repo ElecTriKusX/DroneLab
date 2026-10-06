@@ -47,6 +47,11 @@ namespace DroneLab.Editor
                     Resources.Load<TextAsset>("DronePhysics/drone-profile.schema").text,Resources.Load<TextAsset>("DronePhysics/environment-profile.schema").text);
                 if(!check.Success) { Debug.LogError(string.Join("\n",check.Issues),body); return; }
                 var p=check.Parameters; body.GetComponent<BoxCollider>().size=DronePhysicsBody.ToUnity(p.Dimensions);
+                // Space requests a thrust fraction, not RPM. The basic rig's 38%
+                // can be below weight for a reference aircraft with a smaller T/W.
+                var pilot=body.GetComponent<DroneTestPilot>();
+                pilot.manualCollectiveFraction=Mathf.Clamp((float)(1.25/p.ThrustToWeight),0.1f,0.95f);
+                EditorUtility.SetDirty(pilot);
                 var old=body.transform.Find("Visual - replace with your asset"); if(old!=null) Object.DestroyImmediate(old.gameObject);
                 var visual=new GameObject("Reference Visual - schematic, replace with manufacturer mesh"); visual.transform.SetParent(body.transform,false);
                 Primitive(visual.transform,PrimitiveType.Cube,"Body",Vector3.zero,new Vector3((float)p.Dimensions.X*.25f,(float)p.Dimensions.Y*.3f,(float)p.Dimensions.Z*.25f));

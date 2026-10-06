@@ -200,6 +200,13 @@ namespace DroneLab.Simulation
             GUILayout.Label("F arm | WASD tilt | Q/E yaw | Space/Ctrl lift\nZ Angle/Acro | H altitude hold | Backspace reset");
             if(inputDevice==PilotDevice.Gamepad) GUILayout.Label("Start arm | Right stick tilt | Left X yaw / Y climb | RT throttle\nX/Square mode | A/Cross altitude | Y/Triangle reset");
             GUILayout.Label($"Mass {p.Mass:F2} kg | T/W {p.ThrustToWeight:F2} | Saturation {Saturated}");
+            if(altitudeHold) GUILayout.Label($"Height target Y {targetAltitude:F2} m | error {targetAltitude-transform.position.y:F2} m | height only, no position hold");
+            else if(inputDevice==PilotDevice.Keyboard)
+            {
+                double keyboardThrustToWeight=manualCollectiveFraction*p.ThrustToWeight*physicsBody.Air.Density/p.Density;
+                GUILayout.Label($"Space thrust / weight {keyboardThrustToWeight:F2} | release = zero throttle");
+                if(keyboardThrustToWeight<=1) GUILayout.Label("Space thrust is below weight: increase Manual Collective Fraction or use H.");
+            }
             if(physicsBody.Drive.HasFault) GUILayout.Label("MOTOR DRIVE FAULT | test pilot cannot guarantee controlled flight");
             GUILayout.Label($"Speed {velocity.magnitude:F2} m/s = {velocity.magnitude*3.6f:F1} km/h | Horizontal {new Vector2(velocity.x,velocity.z).magnitude:F2} m/s");
             GUILayout.Label($"Vertical {velocity.y:F2} m/s | World Y {transform.position.y:F2} m | From reset {Vector3.Distance(startPosition,transform.position):F2} m");
