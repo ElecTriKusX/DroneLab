@@ -87,7 +87,7 @@ PID компенсирует отклонение, пока есть запас,
 
 ## Проверка в Unity
 
-1. Подтянуть ветку codex/physics-foundation; дождаться компиляции.
+1. Подтянуть ветку physics-packages; дождаться компиляции.
 2. Window → General → Test Runner → EditMode → Run All; затем PlayMode → Run All.
 3. Для чистого стенда назначить DronePhysicsBody → Drone Profile:
    `Assets/DronePhysics/Resources/DronePhysics/quad_test_rpm_table.json`.

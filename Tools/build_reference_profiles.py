@@ -4,7 +4,7 @@ Never changes the JSON contract or treats estimates as measured data.
 from pathlib import Path
 import json,math,copy,uuid
 root=Path(__file__).resolve().parents[1];resources=root/'Assets/DronePhysics/Resources/DronePhysics'
-base=json.loads((resources/'quad_test_basic.json').read_text())
+base=json.loads((resources/'quad_test_basic.json').read_text(encoding='utf-8-sig'))
 BIT='https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/functional-areas/pwm-to-thrust/'
 PAPER='https://arxiv.org/pdf/2603.05944'
 HUM='https://archive.air.in.tum.de/Main/Publications/Klose2011a.pdf'
@@ -12,8 +12,8 @@ PYB='https://github.com/utiasDSL/gym-pybullet-drones/blob/7ebad1ecabd28a7000add2
 JAX='https://github.com/Data-Science-in-Mechanical-Engineering/CrazyflieBrushJAX/blob/5e449f116b03218e803e728f2a9d8f68f60b05fe/environment/quadcopter.py'
 UIUC='https://m-selig.ae.illinois.edu/props/volume-1/data/'
 def save(p,data):
-    p.write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n')
-    if 'Assets' in p.parts and not Path(str(p)+'.meta').exists(): Path(str(p)+'.meta').write_text('fileFormatVersion: 2\nguid: '+uuid.uuid4().hex+'\n')
+    p.write_bytes((json.dumps(data,indent=2,ensure_ascii=False)+'\n').encode('utf-8'))
+    if 'Assets' in p.parts and not Path(str(p)+'.meta').exists(): Path(str(p)+'.meta').write_bytes(('fileFormatVersion: 2\nguid: '+uuid.uuid4().hex+'\n').encode('utf-8'))
 def prov(path,kind,source,confidence): return dict(path=path,sourceType=kind,source=source,confidence=confidence)
 def profile(name,model,mass,inertia,dim,pos,diameter,pitch,maxrpm,up,down):
     p=copy.deepcopy(base);p['metadata']=dict(name=name,manufacturer=model.split(' ')[0],model=model,description='Open reference profile; sources and estimates are explicit. Static/low-speed validation only, not a calibrated full aircraft digital twin.')
@@ -52,7 +52,7 @@ for i,r in enumerate(p['rotors']):
 p['parameterProvenance'] += [prov('massProperties.massKg / massProperties.inertia / rotors.geometry / rotors.performance','Measured',HUM+' ; Table 1: total mass .68 kg, arm .17 m, Iroll/pitch .007, Iyaw .012, thrust 5.7e-8 N/RPM^2, Q/T .016 m. Paper vehicle referenced by RotorS Hummingbird. Unity inertia permutation; no extra rotor mass on published total.',.75),prov('rotors.motor.maxRpm','Calculated',HUM+' ; maximum 3.5 N/rotor -> sqrt(3.5/5.7e-8) RPM. Published saturation, not independently measured maximum RPM.',.6),prov('rotors.motor.responseTimeUpS / rotors.motor.responseTimeDownS','Estimated',HUM+' ; paper identifies propulsion/thrust lag 1/80 and 1/40 s; reused as RPM first-order approximation near hover, not an exact thrust startup match.',.4),prov('massProperties.dimensionsM / rotors.propeller / rotors.geometry.positionLocalM[1]','Estimated','RotorS visual geometry reference: radius 0.1 m, offset .01 m; pitch .1 m placeholder. RotorS motor_constant=8.54858e-6 differs from paper; not used.',.2)]
 save(resources/'reference_hummingbird.json',p)
 # Separate propeller holder, explicitly not a fourth real aircraft.
-stat=[tuple(map(float,line.split())) for line in (root/'Docs/Physics/Data/apcsf_10x4.7_static_kt0835.txt').read_text().splitlines()[1:]]
+stat=[tuple(map(float,line.split())) for line in (root/'Docs/Physics/Data/apcsf_10x4.7_static_kt0835.txt').read_text(encoding='utf-8-sig').splitlines()[1:]]
 uiucRows=[dict(rpm=r,ct=ct,cp=cp,role='training' if k%2==0 or k==15 else 'holdout') for k,(r,ct,cp) in enumerate(stat)]
 p=copy.deepcopy(p);p['metadata']=dict(name='UIUC APC 10x4.7 SF static bench holder',manufacturer='DroneLab / APC',model='Synthetic holder, APC 10x4.7 SF',description='Measured propeller on a synthetic multirotor holder; not stock Hummingbird or a measured aircraft. Training rows only; independent holdout comparisons in benchmark file.')
 p['parameterProvenance']=[prov('massProperties / rotors.geometry / rotors.motor / physicsConfiguration.modules','Estimated','Synthetic holder geometry copied from Hummingbird reference; all battery/aero extras disabled. Startup join below 2377 RPM synthetic, excluded from accuracy claims.',.1),prov('rotors.propeller / rotors.performance','Measured',UIUC+'apcsf_10x4.7_static_kt0835.txt ; UIUC Volume 1 v3 static CT/CP; D=0.254 m, pitch=.11938 m. CP/(2pi)=CQ; forces assume rho=1.225; validation uses measured coefficients, not direct measured N.',.8)]
@@ -73,6 +73,6 @@ save(resources/'bench_apc_10x47_axial.json',p)
 bench=dict(formatVersion='1.0.0',retrievedAt='2026-10-06',scope='Static measured holdouts / published identified curve reproduction, not whole-flight calibration.',datasets=[dict(id='cf20_bitcraze_2015',kind='MeasuredStatic',profile='reference_crazyflie20',sourceUrl=BIT,rows=rows),dict(id='uiuc_apc_10x47_static',kind='MeasuredStaticCoefficients',profile='bench_apc_10x47_static',sourceUrl=UIUC+'apcsf_10x4.7_static_kt0835.txt',assumedDensityKgM3=1.225,rows=uiucRows),dict(id='uiuc_apc_10x47_axial',kind='MeasuredAxialCoefficients',profile='bench_apc_10x47_axial',sourceUrl=UIUC+'apcsf_10x4.7_kt0836_4014.txt',rpm=4014,assumedDensityKgM3=1.225,rows=axialRows),dict(id='cfbrush_published_fit',kind='PublishedFit',profile='reference_crazyflie_brushless',sourceUrl=PAPER,codeUrl=JAX,scope='Representation error against identified polynomial, not independent raw measurements.',thrustCoefficients=[-.23009526,.56176458,-.0433191,0],torqueCoefficients=[-.0003396,.00087032,.0002896,0],normalizationOmegaRadS=2900,massKg=.044,inertiaSourceXyz=[3.3e-5,3.6e-5,5.9e-5],tauS=.05),dict(id='hummingbird_published',kind='PublishedIdentification',profile='reference_hummingbird',sourceUrl=HUM,massKg=.68,armM=.17,thrustNPerRpmSquared=5.7e-8,torquePerThrustM=.016,rollMomentNm=.544,yawMomentNm=.102,rollAccelerationRadS2=77.7,yawAccelerationRadS2=8.5)])
 save(resources/'Benchmarks/reference-benchmarks.json',bench)
 meta=Path(str(resources/'Benchmarks')+'.meta');
-if not meta.exists(): meta.write_text('fileFormatVersion: 2\nguid: '+uuid.uuid4().hex+'\nfolderAsset: yes\n')
+if not meta.exists(): meta.write_bytes(('fileFormatVersion: 2\nguid: '+uuid.uuid4().hex+'\nfolderAsset: yes\n').encode('utf-8'))
 
 save(root/'Docs/Physics/Data/reference-source-manifest.json',dict(retrievedAt='2026-10-06',sources=[dict(name='Bitcraze2015',url=BIT),dict(name='UIUC static',url=UIUC+'apcsf_10x4.7_static_kt0835.txt'),dict(name='UIUC axial',url=UIUC+'apcsf_10x4.7_kt0836_4014.txt'),dict(name='Brushless identified paper',url=PAPER),dict(name='Brushless code',url=JAX,commit='5e449f116b03218e803e728f2a9d8f68f60b05fe'),dict(name='Hummingbird identified paper',url=HUM),dict(name='CF2 geometry',url=PYB,commit='7ebad1ecabd28a7000add2d05f888aa2e837c2cc'),dict(name='RotorS visual reference',url='https://github.com/ethz-asl/rotors_simulator',commit='cd813b7a8c375d677352aa20ad20047feb661126')]))

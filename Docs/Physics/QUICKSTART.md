@@ -4,7 +4,7 @@
 
 ```bash
 git fetch origin
-git switch codex/physics-foundation
+git switch physics-packages
 git pull --ff-only
 ```
 

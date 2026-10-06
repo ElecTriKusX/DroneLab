@@ -2,7 +2,7 @@
 
 ## Проверить на своей модели
 
-1. Подтянуть `codex/physics-foundation`, дождаться компиляции Unity и обновления пакетов.
+1. Подтянуть `physics-packages`, дождаться компиляции Unity и обновления пакетов.
 2. Остановить Play. Выбрать **корень дрона** с DronePhysicsBody.
 3. **DroneLab → Power → Create Profile with Battery**.
 4. Drone root должен указывать на этот корень. Для первой проверки оставить

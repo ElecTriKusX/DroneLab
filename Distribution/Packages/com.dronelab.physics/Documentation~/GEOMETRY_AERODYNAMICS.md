@@ -2,7 +2,7 @@
 
 ## Сначала проверить обновление
 
-1. `git pull --ff-only` в ветке `codex/physics-foundation`.
+1. `git pull --ff-only` в ветке `physics-packages`.
 2. Открыть существующую сцену, дождаться компиляции.
 3. Window → General → Test Runner → EditMode → Run All, затем PlayMode → Run All.
 4. Старый `quad_test_basic` оставляет прежнее сопротивление по осям. Новые режимы

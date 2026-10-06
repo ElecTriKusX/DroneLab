@@ -1,0 +1,290 @@
+# Физика DroneLab — спецификация 1.0.0
+
+Это постоянная спецификация проекта. При продолжении работы сначала читать этот файл,
+`ROADMAP.md`, `PARAMETERS.md` и `QUICKSTART.md`. Принятые решения из исследования
+и ограничения зафиксированы здесь. Версии движка определяет `ProjectSettings/ProjectVersion.txt`.
+
+## Контракт и единицы
+
+Источник структуры контракта: `Tools/generate_physics_contract.py`.
+Он генерирует C# DTO, JSON Schema Draft 2020-12 и реестр параметров.
+Имена JSON-полей совпадают с именами полей DTO. Векторы — массивы `[x,y,z]`,
+quaternion — `[x,y,z,w]`. Числа конечные; строки enum регистрозависимы.
+Неизвестные поля, отсутствующие обязательные поля, дубли ключей и версии схемы отклоняются.
+Структурная валидация дополняется проверкой физических зависимостей и возможностей runtime.
+
+Профиль дрона и EnvironmentProfile — отдельные JSON. Система управления также отдельная:
+коэффициенты регулятора не определяют физические свойства аппарата.
+Исходные характеристики, параметры модели и производные данные различаются.
+`derived` — кэш для UI; runtime пересчитывает свои величины и не доверяет ему.
+Происхождение параметров сохраняется в `parameterProvenance`; confidence не является
+измеренной статистической вероятностью и не изменяет физику.
+
+| Величина | Единица |
+|---|---|
+| Положение, COM, размеры, диаметр, шаг | m |
+| Масса, плотность | kg, kg/m³ |
+| Скорость, ускорение | m/s, m/s² |
+| Инерция | kg·m² |
+| Тяга, момент | N, N·m |
+| Обороты в профиле / в формулах | RPM / rad/s |
+| Коэффициент kT | N/(rad/s)² |
+| Коэффициент kQ | N·m/(rad/s)² |
+| Cd, Ct, Cq, J | безразмерные |
+| Время, площадь | s, m² |
+| Ёмкость, ток, напряжение, сопротивление | Ah, A, V, Ω |
+| Температура, давление | K, Pa |
+
+`modelScaleMetersPerUnit` — метаданные преобразования исходного mesh в метры.
+Не масштабирует физические координаты профиля: они уже в метрах. Корневой объект физики
+и его родители имеют scale (1,1,1). Масштабировать и поворачивать можно дочернюю визуальную модель.
+
+## Оси и знаки
+
+Unity: +X вправо, +Y вверх, +Z вперёд; локальные физические координаты в этой системе.
+CW/CCW определяются при взгляде от положительного конца оси тяги к центру ротора.
+Для вертикального ротора это взгляд сверху. Положительное вращение Unity вокруг +Y
+выглядит CW сверху. Реактивный момент на корпус противоположен вращению ротора:
+CW даёт `-Q axis`, CCW даёт `+Q axis`.
+Момент от силы считается в соглашении Unity: `(rRotor-rCOM) × F`.
+Знаки проверяются тестами, в том числе для переднего левого ротора и mixer.
+
+TestQuad X: FL CW, FR CCW, RR CW, RL CCW. Все оси тяги +Y.
+Команда мотора [0,1] задаёт целевую долю максимальной угловой скорости.
+Команда 0 означает остановку. Команда 0.5 даёт 25% максимальной тяги в модели ω².
+Idle RPM не включается автоматически: его должен запросить отдельный контроллер.
+
+## Основные модели
+
+Мотор: `ωnext = ωtarget + (ωcurrent-ωtarget) exp(-dt/τ)`.
+Отдельные τ раскрутки и остановки. При τ=0 отклик мгновенный.
+При dt=0 состояние сохраняется. Disarm задаёт target=0; механическое вращение затухает.
+Reset тестового стенда обнуляет состояние сразу.
+
+OmegaSquared: `T=kT ω²`, `Q=kQ ω²`.
+kT/kQ относятся к заданной `referenceAirDensityKgM3`; при другой плотности профиль
+отклоняется. Автоматическое масштабирование измеренных коэффициентов не подразумевается.
+CtCq: `T=Ct ρ n² D⁴`, `Q=Cq ρ n² D⁵`, `n=RPM/60=ω/(2π)`.
+Реализованы постоянные Ct/Cq и карты RPM/J. Диаметр непосредственно влияет на расчёт,
+шаг и число лопастей сохраняются как характеристики винта, но сами не определяют Ct/Cq.
+
+RpmTable сохраняет RPM → thrust/torque/current; силы интерполируются линейно,
+плотность должна совпадать с referenceAirDensityKgM3. PerformanceMap сохраняет RPM/J/Ct/Cq
+и опциональный Reynolds; реализована билинейная интерполяция по полной прямоугольной сетке.
+J=dot(VrotorPoint-Vwind,axis)/(n D); коэффициенты масштабируются текущими rho/n/D.
+Clamp и Reject задаются явно; остановка даёт нулевые силы до вычисления J.
+Границы, CSV, статическая инверсия для пульта и ограничения — PROPELLER_PERFORMANCE.md. `Cp` нельзя подставлять вместо `Cq`:
+при одинаковых соглашениях `Cp=2π Cq`.
+Advance ratio описывает осевое обтекание. Он не заменяет модель бокового обтекания,
+blade flapping и vortex ring state. Эти режимы нельзя объявлять точными без данных.
+
+Корпус AxisApproximation:
+`Vair = Vpoint - Vwind`, `Fj = -0.5 ρ Cd_j A_j Vair_j |Vair_j|`.
+Это отдельная по осям эмпирическая модель, а не точная проекция mesh.
+Сила вычисляется в локальных осях и преобразуется в world space.
+Если CP задан, используется скорость точки с вращательной составляющей и сила
+прикладывается в CP; иначе — в COM. Ветер не является отдельной произвольной силой.
+
+ProjectedArea (реализовано в этапе 3): `F = -0.5 ρ Cd A(direction) |Vair| Vair`.
+Силуэт выбранной mesh-ветки рассчитывается в редакторе по объединению пикселей, хранится
+в JSON LUT и интерполируется в runtime. 13 unsigned осей; противоположные направления
+имеют одинаковую площадь. Положительная IDW-интерполяция и ограничения — в GEOMETRY_AERODYNAMICS.md.
+Сумма площадей треугольников не равна площади силуэта: нужно учитывать перекрытия.
+Для геометрии box `A = Ayz |dx| + Axz |dy| + Axy |dz|` при единичном направлении.
+Surfaces — отдельные двусторонние pressure patches с собственными точками, нормалями,
+площадями и Cd: `vn=dot(Vpoint-Vwind,n)`, `F=-0.5 rho Cd A vn abs(vn) n`.
+Касательная скорость не создаёт силы. Нет shielding, lift polar и skin friction.
+Скорость точки включает вращение; момент — `(position-COM) × F`. Выбранная модель
+диссипативна относительно воздуха. Axis/ProjectedArea/Surfaces выбираются взаимоисключающе.
+
+Ground effect (этап 5): множитель
+`1 + K (R/(4h))²` ограничивается `maxMultiplier`;
+`h >= minHeightRadiusRatio R`. Расстояние до поверхности определяется для каждого ротора.
+Это эмпирическая ограниченная модель, требующая коэффициента, не CFD.
+Поиск по -axis в PhysicsScene дрона исключает self/trigger hits. Наклон поверхности
+ослабляет усиление; от 45R до 50R оно плавно исчезает. Усиливается только положительный T;
+Q/current не исправляются. Исходные таблицы должны быть free-air. Подробности — ROTOR_EFFECTS.md.
+
+Rotor drag (этап 5): `F = -Krd ω Vperpendicular` в точке каждого ротора.
+Скорость включает вращение и ветер; AddForceAtPosition уже создаёт r×F.
+Диссипативна в системе воздуха, без дополнительного множителя rho/тяги.
+Krd имеет единицы kg/rad (rad обычно трактуется как безразмерный).
+Этап 10 реализует bounded axial inflow, translational lift и blade flapping с явными
+коэффициентами/единицами/пределами; ROTOR_FLOW.md. Это эмпирические поправки,
+не dynamic inflow/VRS и не совместная модель энергетики.
+Не включать произвольный translational-lift множитель поверх карты, описывающей тот же эффект.
+
+Аккумулятор (этап 6): SOC, линейная OCV(SOC), `Vbus=Voc-I R`, coulomb counting
+`SOCnext=max(0,SOC-I dt/(3600 capacityAh))`. Напряжения относятся ко всей батарее.
+Simple: мощность винта Qω / motorEfficiency + nominalVoltage × noLoadCurrent;
+мощность батареи дополнительно делится на escEfficiency. Electrical: эквивалентный
+DC/BLDC steady-state: `Kt=60/(2π Kv)`, `Imotor=I0+Q/Kt`, `Vrequired=Kt ω+Imotor Rmotor`,
+`Pbus=Vrequired Imotor/escEfficiency`. Motor efficiency здесь следует из потерь DC-модели;
+постоянный motorEfficiency используется только Simple, не применяется второй раз.
+Общий ток — устойчивый малый корень `Pbus=I(Voc-I R)`; при перегрузке общий множитель
+RPM ищется ограниченным числом итераций. Проверяются напряжение, токи, мощность,
+остаток заряда на шаг. Governor не создаёт новую максимальную тягу поверх профиля.
+
+Поддержаны OmegaSquared/CtCq и RpmTable с неубывающим Q. Этап 11 добавляет
+PerformanceMap + battery с Clamp и проверкой монотонной Q(RPM,flow).
+Load-dependent efficiencyCurve пока отклоняется. Ток CSV остаётся отдельной
+телеметрией. Параметры моторов/батареи требуют источника; дефолты демонстрационные.
+В legacy FirstOrder энергетика квазистационарная: вращательная энергия роторов
+не учитывается, при disarm ток=0 и используется эмпирическое затухание, пустая
+батарея обнуляет доступные обороты. RotorInertia этапа 11 учитывает spin energy и
+сохраняет пассивное вращение. Оба режима пока не моделируют индуктивность, regen,
+химическую динамику и потребление бортовой электроники. Этап 12 добавляет optional
+тепловые узлы, cooling и protection limits; THERMAL_WEATHER.md. Численные пределы
+и инструкции — POWER_SYSTEM.md и COUPLED_POWER.md.
+
+Среда (этап 7): Constant или сухая тропосфера StandardAtmosphere −500…11000 m.
+Начальная MSL-высота задаётся altitudeM, далее добавляется изменение world COM Y.
+В StandardAtmosphere temperatureK/pressurePa задают опорные значения уровня моря;
+при отсутствии используются 288.15 K / 101325 Pa. airDensityKgM3 используется только
+Constant. Текущая плотность передаётся в CtCq/PerformanceMap, корпус и Qω энергетики
+однократно. OmegaSquared/RpmTable отклоняют переменную атмосферу. Пульт компенсирует
+плотность в статическом allocator; allocator использует J=0; battery+map поддержан этапом 11 с ограничениями COUPLED_POWER.md.
+
+Ветер задаётся в мировых осях: None / Constant / периодический Gust / stateless seeded
+Turbulence / CustomField. Турбулентность — ограниченное аналитическое Fourier поле,
+не Dryden/CFD. Ветер запрашивается в точке каждого ротора и CP/patch корпуса.
+IWindProvider не должен менять состояние или зависеть от порядка запросов.
+Часы среды принадлежат дрону и обнуляются при reset. Формулы, пределы параметров,
+смысл интенсивности/временного масштаба и инструкция — ENVIRONMENT.md.
+
+Для визуализации висения: `Adisk=πD²/4`, `vi≈sqrt(T/(2ρAdisk))`.
+Это оценка индуцированного потока в режиме висения; она не создаёт взаимодействующий с
+окружением CFD-поток. Реализованный helper возвращает скорость, но пока не управляет VFX.
+
+## Rigidbody и доступность
+
+Rigidbody интегрирует движение и столкновения. Наш код задаёт массу, COM, главные
+моменты инерции и quaternion главных осей, вычисляет силы в FixedUpdate.
+Каждый ротор использует AddForceAtPosition, реактивный момент — AddTorque.
+Корпус передаёт сумму аэродинамических сил в COM и отдельный суммарный момент r×F,
+эквивалентный приложению каждой силы в её CP без повторного подсчёта момента.
+Линейный и угловой Unity damping равны нулю; не учитываем drag дважды.
+Гравитация применяется самим модулем из EnvironmentProfile один раз;
+`Rigidbody.useGravity=false`, глобальная Physics.gravity не меняется.
+Рекомендуемый dt 0.01 s задаётся в проекте пользователем, не скрытно из Awake.
+
+AutoBox — инерция сплошного однородного прямоугольного параллелепипеда данных размеров
+относительно назначенного COM. Это грубая оценка, не анализ массы mesh.
+ManualPrincipal задаёт положительные главные моменты с треугольными неравенствами
+и единичный quaternion главных осей. Полный симметричный тензор можно представить
+через его главные оси; ввод матрицы 3×3 в runtime-контракте не предусмотрен. Этап 9 добавляет
+отдельный CAD import-document и Jacobi decomposition, который сохраняет результат
+в существующий ManualPrincipal; INERTIA_IMPORT.md.
+
+| Возможность | Текущий runtime |
+|---|---|
+| JSON, schema, семантическая валидация, runtime snapshot | Реализовано |
+| Масса, COM, AutoBox / ManualPrincipal | Реализовано |
+| Произвольное число роторов и их положение / оси | Реализовано в физике |
+| Motor lag, OmegaSquared, постоянные Ct/Cq | Реализовано |
+| Constant density, None / Constant wind, Axis drag, CP | Реализовано |
+| Quad X / + тестовый allocator | Реализовано для 4 роторов +Y с полной управляемостью |
+| ProjectedArea: box, manual/mesh LUT; Surfaces; geometry markers/export | Реализовано в этапе 3 |
+| RpmTable, PerformanceMap, SI CSV import | Реализовано в этапе 4; пульт использует статическую J=0 кривую |
+| Ground effect, rotor drag | Реализовано в этапе 5; независимые optional-флаги |
+| Blade flapping, axial inflow, translational lift | Реализовано в этапе 10; ограничения и source formulas — ROTOR_FLOW.md |
+| Gyroscopic rotor effects / spin energy | Реализовано в opt-in RotorInertia этапе 11, weak-coupling envelope |
+| Battery Simple / Electrical, SOC/OCV/sag, RPM/current/power envelope | Реализовано в этапе 6; ограничения — POWER_SYSTEM.md |
+| Battery + RPM/J map | Реализовано в этапе 11: Clamp, Q>=0, monotone load envelope |
+| Efficiency curve / motor inductance | Не реализованы; efficiency curve с батареей отклоняется |
+| Thermal motor/ESC/battery, Rmotor(T), current derating | Реализовано в optional thermalEnabled этапе 12; effective single nodes, Electrical required |
+| Weather presets и precipitation metadata | Реализовано в этапе 12; VisualOnly, без water/ice forces/heat, VFX — внешняя интеграция |
+| StandardAtmosphere, Gust, seeded Turbulence, CustomField/IWindProvider | Реализовано в этапе 7; ограничения и формулы — ENVIRONMENT.md |
+| Telemetry CSV/manifest, drive-loss scenarios, VFX data API | Реализовано в этапе 8; DIAGNOSTICS.md; реальная калибровка/VFX simulation не выполнены |
+
+`fidelity` — категория интерфейса, а не переключатель неизвестных формул.
+Неиспользуемые исходные характеристики можно хранить; включённая неподдерживаемая модель
+всегда даёт ошибку. Новые обязательные поля и смена смыслов требуют версии контракта.
+
+## Проверки и ограничения
+
+Чистые C# тесты проверяют загрузку, валидацию, степени ω/n/D, экспоненциальный отклик,
+знаки моментов, симметричное зависание, allocator и направление сопротивления.
+Unity Play Mode проверяет путь JSON → Rigidbody, зависание, падение, ветер и остановку моторов.
+В контейнере без Unity нельзя считать Play Mode подтверждённым.
+
+Сумма максимальной тяги / mg — проверка запаса, но не доказательство возможности
+зависания для произвольной геометрии, наклонённых осей и смещённого COM.
+DroneTestPilot использует каскадные PID с anti-windup, Angle/Acro и keyboard/gamepad;
+allocator сохраняет collective при ограничении torque, показывает Saturation.
+Контракт ввода, настройки и ограничения управления — в FLIGHT_CONTROL.md.
+Реальных коэффициентов дрона из ассета пока нет: тестовый профиль синтетический.
+В установившемся движении одинаковые RPM допустимы при отсутствии аэродинамического
+момента. Axis/ProjectedArea в COM сами не дают rotational drag. Surfaces и смещённый CP
+могут создать такой момент, что требует постоянной разницы тяги моторов.
+Ориентиры первого стенда — в BEHAVIOR_BASELINE.md; новые модели — GEOMETRY_AERODYNAMICS.md.
+
+Чего mesh не определяет достоверно: массу, истинные COM/инерцию, Cd, характеристики
+двигателя/винта, батареи. Источники — измерения, производитель, пресет или явно указанная оценка.
+
+Настройки, пределы и проверка ground effect / rotor drag — [ROTOR_EFFECTS.md](ROTOR_EFFECTS.md).
+
+## Диагностика этапа 8
+
+Drive authority — сценарная runtime-настройка, не свойство профиля: умножает target RPM
+перед motor lag. При 0 мотор не получает battery power; остаточные RPM/T/Q затухают
+по responseTimeDownS без отдельной kinetic-energy модели. Reset восстанавливает authority=1.
+Quad allocator остаётся обычным четырёхмоторным; PID интегралы заморожены при drive fault.
+
+StepPrepared публикуется после подготовки сил до интегратора Rigidbody. CSV хранит
+позу/скорость на начало шага, силы/RPM шага и энергию/заряд на его конец. Reset разделяет
+сегменты; Initialize разделяет записи. Файлы включают принятые JSON и настройки старта.
+Формат телеметрии этапа 8 — 1.0.0; этап 10 добавляет столбцы в версии 1.1.0.
+Профиль JSON сохраняет 1.0.0 с документированными optional additions. Данные VFX — только
+оценка hover inflow и фактическое состояние ротора, без новых сил/CFD. DIAGNOSTICS.md.
+
+## SDK 0.2.0 / этап 9
+
+Physics assembly не зависит от Input System или тестового пульта. Исполняемый
+Angle/Acro/H adapter, input и test camera находятся в optional Demo assembly/package.
+Pure controller/allocator utilities остаются доступными в core; сами не создают сил.
+Recorder читает optional IFlightControlTelemetry; без controller mode=None.
+Package resource paths не зависят от Assets-folder. MODULE_INTEGRATION.md описывает
+контракт и migration. Импорт полного tensor меняет mass/COM/inertia, но не силы
+нового вида или смысл JSON 1.0.0. PHYSICS_UPGRADES.md задаёт последующие этапы.
+
+## Этап 10: расширенный поток
+
+Static thrust + bounded dT и hub flapping moment: ROTOR_FLOW.md. Три новых коэффициента
+масштабируются rho/reference rho; старый H-force не изменён. Формулы используют поток
+каждой точки и arbitrary thrust axes. Negative/zero base thrust или stop запрещают
+новые поправки. Ограничения dT/T и M/(T*R) и отдельный clip flag обязательны.
+Axial/lift bundle с RPM/J map отклоняется; Q/current остаются на базовой модели.
+Новые поля optional; старые профили/force signs сохраняются. UPM snapshots пересобираются
+в конце улучшений по решению пользователя, не в каждом исходном physics commit.
+
+## Этап 11: supply/load/spin
+
+COUPLED_POWER.md фиксирует optional dynamicsModel и Jr, midpoint forces/load,
+заряд/энергию/потери, coast без active braking, mount torque без двойного Q,
+и gyro -omegaBody cross H. Mass inertia уже включает locked rotors, Jr повторно
+не прибавляется. Малые Jr/body rates — предположение модели; mass-matrix back-coupling
+не решается. CSV 1.2.0 различает RPM end/force и ток DC equivalent/bus/CSV measurements.
+
+## Thermal и погодные пресеты (этап 12)
+
+powerSystem.thermalEnabled по умолчанию false. Требуются Electrical battery и явные
+thermal nodes батареи/каждого motor/ESC, параметры в SI. C*dT/dt=Ploss-G(T-Ta),
+точное экспоненциальное решение для frozen step inputs; потери уже включены в power
+расчёт, повторный расход энергии запрещён. Температура меняет Rmotor и допустимые
+токи/мощность через continuous derating, не умножает произвольно thrust. Thermal
+Resolve/Commit сохраняет spin/coast и обновляет температуру/заряд один раз. CSV 1.3.0
+и API публикуют состояние/энергию; источники/envelope/проверка — THERMAL_WEATHER.md.
+Environment weather задаёт None/Rain/Snow/Hail и liquid-equivalent mm/h как VisualOnly
+metadata. Физически действуют существующие T/P/wind; water impacts/icing/hail damage
+и chemistry/cold-capacity батареи остаются не реализованными.
+
+## Снижение и ветер (этап 13)
+
+windMode=DrydenFrozen — optional finite-band random-phase synthesis пространственных
+Dryden PSD на одной горизонтальной frozen line; явные sigma/L/axis/speed/seed/N/band.
+Старый Turbulence остаётся bounded demo field. Rotor operatingEnvelope ReportOnly
+задаёт climb/descent/lateral limits, не меняет силы/команды. Raw point air speed,
+reference -Vaxial/vi_hover, flow regime и max sampling/Nyquist ratio — diagnostics
+в HUD/CSV 1.4.0. DESCENT_WIND.md фиксирует формулы, источники и domain. VRS forces,
+dynamic inflow и полный 3D/terrain wind не реализованы.

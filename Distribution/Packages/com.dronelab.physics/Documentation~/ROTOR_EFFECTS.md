@@ -115,7 +115,7 @@ ground gain и дополнительные моменты, пока хвата�
 
 ## Проверить на своём Terrain
 
-1. Получить codex/physics-foundation, дождаться компиляции.
+1. Получить physics-packages, дождаться компиляции.
 2. Window → General → Test Runner → EditMode → Run All, затем PlayMode → Run All.
 3. Выйти из Play; выбрать свой корень с DronePhysicsBody и назначенным текущим JSON.
 4. DroneLab → Rotors → Create Profile with Rotor Effects.

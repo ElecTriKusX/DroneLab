@@ -124,7 +124,7 @@ obj('EnvironmentProfile', {'schemaVersion':enum('1.0.0'),'gravityMps2':P,'airDen
 def write(path, text):
     p = ROOT / path
     p.parent.mkdir(parents=True,exist_ok=True)
-    p.write_text(text,encoding='utf-8')
+    p.write_bytes(text.replace('\r\n','\n').encode('utf-8'))
 def cs_type(s):
     if '$ref' in s:return s['$ref'].split('/')[-1]
     return {'number':'double','integer':'int','string':'string','boolean':'bool','array':None}.get(s.get('type')) or cs_type(s['items'])+'[]'

@@ -1,6 +1,6 @@
 # Перенос DroneLab Physics между проектами
 
-SDK 0.3.2 предназначен для Unity 6000.3 (разработческий стенд 6000.3.25f1).
+SDK 0.3.3 предназначен для Unity 6000.3 (разработческий стенд 6000.3.35f1).
 JSON profile version остаётся 1.0.0. Проекты карты, меню и модели используют
 одну зафиксированную версию SDK, а не копируют изменённые скрипты друг у друга.
 
@@ -9,7 +9,7 @@ JSON profile version остаётся 1.0.0. Проекты карты, меню
 | Пакет | Содержимое | Зависимости |
 |---|---|---|
 | `com.dronelab.physics` | Pure C# core, Rigidbody/ветер/ground probes, profiles/schemas, markers/authoring/import, CSV/fault, EditMode tests | Newtonsoft 3.2.1, стандартные Unity physics/terrain/JSON/IMGUI modules |
-| `com.dronelab.demo` | DroneTestPilot (Angle/Acro/H), keyboard/gamepad, camera, test-drone menus, PlayMode regression | Physics 0.3.2, Input System 1.20 |
+| `com.dronelab.demo` | DroneTestPilot (Angle/Acro/H), keyboard/gamepad, camera, test-drone menus, PlayMode regression | Physics 0.3.3, Input System 1.20 |
 
 Physics не ссылается на Demo или Unity.InputSystem. Pure PID/allocator/input-value
 утилиты пока остаются в математическом core как доступные функции; сами они не
@@ -53,12 +53,12 @@ Unity Package Manager также поддерживает Git package с `?path=
 только по semver зависимости Demo. Для теста можно использовать ветку:
 
 ```json
-"com.dronelab.physics": "https://github.com/ElecTriKusX/DroneLab.git?path=/Distribution/Packages/com.dronelab.physics#codex/physics-foundation",
-"com.dronelab.demo": "https://github.com/ElecTriKusX/DroneLab.git?path=/Distribution/Packages/com.dronelab.demo#codex/physics-foundation"
+"com.dronelab.physics": "https://github.com/ElecTriKusX/DroneLab.git?path=/Distribution/Packages/com.dronelab.physics#physics-packages",
+"com.dronelab.demo": "https://github.com/ElecTriKusX/DroneLab.git?path=/Distribution/Packages/com.dronelab.demo#physics-packages"
 ```
 
 Для командной сборки заменить fragment после `#` на один и тот же полный commit SHA.
-Version 0.3.2 — версия содержимого package.json, SHA однозначно фиксирует артефакт.
+Version 0.3.3 — версия содержимого package.json, SHA однозначно фиксирует артефакт.
 Не смешивать Git-installed и embedded копии. Весь Git repo содержит тяжёлые model assets;
 локальные embedded SDK-папки проще для первого переноса.
 
@@ -117,10 +117,19 @@ CSV 1.4.0, public benchmarks, новые профили, меню и итого�
 Пошаговый smoke test и новое меню — MENU.md; измерения/модели — REFERENCE_DRONES.md.
 
 
-## Исправления SDK 0.3.2
+## Исправления SDK 0.3.3
 
 Включает hotfix 0.3.1 (ручная тяга reference стендов и HUD) и исправляет создание
 ScaleReferences.mat в чистом UPM-проекте. Все импортируемые файлы и папки имеют
 стабильные .meta, исходные GUID компонентов сохранены. Для поиска manifest.json
 использовать DroneLab → Diagnostics → Show Project Manifest (package tests).
 Подробная настройка Test Runner и обновления существующих сцен — MENU.md.
+
+
+## Разработка в ветке physics-packages
+
+В 0.3.3 исходники по-прежнему Assets/DronePhysics; Distribution является экспортом.
+Windows/Linux, перенос правок из installed packages, release и UTF-8/LF описаны в
+[DEVELOPMENT.md](DEVELOPMENT.md). Пакеты имеют разные README: Physics содержит
+описание силовых моделей, Demo — управление и стенды. Полные величины/единицы —
+[PHYSICAL_QUANTITIES.md](PHYSICAL_QUANTITIES.md), формулы — [PHYSICS_REFERENCE.md](PHYSICS_REFERENCE.md).

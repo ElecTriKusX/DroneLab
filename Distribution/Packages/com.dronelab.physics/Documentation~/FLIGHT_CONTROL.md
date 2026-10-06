@@ -7,7 +7,7 @@
 
 ## Получить и проверить
 
-1. Обновить ветку `codex/physics-foundation`: `git pull --ff-only`.
+1. Обновить ветку `physics-packages`: `git pull --ff-only`.
 2. Открыть существующую сцену, дождаться компиляции. Выбрать корень дрона.
 3. В DroneTestPilot оставить **Read Keyboard = true**, **Input Device = Keyboard**.
    Старое имя Read Keyboard теперь включает выбранный источник ввода.

@@ -531,3 +531,27 @@ GUID компонентов не меняются. Documentation~ не импо�
 
 Состав включает ранее подготовленный hotfix 0.3.1. Формулы, JSON-контракт и CSV не
 менялись. Личные полётные логи и производные отчёты не включены в Git.
+
+## Windows/Linux и документация 0.3.3 — 2026-10-06
+
+Выпуск основан на актуальной physics-plugins: пользовательская очистка проекта и
+`StepPhysics(.1f)` сохранены. Ветка physics-packages предназначена для дальнейшего
+развития SDK. Основная рабочая платформа — Windows; инструменты поддерживают Linux.
+
+| Проверка | Фактический результат подготовки выпуска |
+|---|---|
+| `python -m unittest discover -s Tests/Python -v` | **18 passed, 0 failed** |
+| Windows logical paths | Результат совпадает с POSIX; Documentation~/Data не запрашивает .meta |
+| UTF-8 BOM / CRLF / кириллица и пробелы | Канонические пакеты и SHA-256 совпадают; --check принимает CRLF checkout и обнаруживает изменение содержимого |
+| Metadata и документация | GUID сохранены, повторений нет, у импортируемых файлов есть .meta; все локальные Markdown-ссылки внутри обоих пакетов разрешаются |
+| Reference profile generator | Отдельная временная копия с кириллицей/пробелами и BOM/CRLF; JSON-значения всех профилей не изменились |
+| Contract generator | Повторная генерация не изменила DTO, обе схемы и PARAMETERS.md |
+| UPM rebuild / --check | Physics/Demo **0.3.3**, канонические файлы соответствуют исходникам |
+| Python syntax / git diff --check | Прошло |
+| .NET текущей локальной среды | Не запускался: dotnet отсутствует; исторические 482 не выдаются за новый результат |
+| Windows/Ubuntu CI | Добавлена матрица package/Python/.NET/contract; результат запуска доступен в [GitHub Actions](https://github.com/ElecTriKusX/DroneLab/actions?query=branch%3Aphysics-packages) |
+| Unity import / Scale menu / PlayMode / EXE | Не запускались: Unity отсутствует в этой среде; CI без Unity не проверяет эти сценарии |
+
+Исправления упаковки не меняют уравнения, JSON 1.0.0 или CSV 1.4.0. Reference-профили
+по-прежнему не содержат неизвестных измеренных body-drag/power/thermal параметров.
+README, PHYSICS_REFERENCE и PHYSICAL_QUANTITIES описывают эти ограничения явно.

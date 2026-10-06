@@ -92,7 +92,7 @@ Python-анализатор читает столбцы по именам, по�
 
 ## Проверка в Unity
 
-1. Обновить ветку `codex/physics-foundation`, открыть проект, запустить EditMode/PlayMode.
+1. Обновить ветку `physics-packages`, открыть проект, запустить EditMode/PlayMode.
 2. Выбрать Terrain → **DroneLab → Test Bench → Module Checks → Rotor Airflow**.
 3. Назначить новую цель DroneTestCamera, сохранить сцену. Включить Play, F, H.
 4. HUD показывает `Rotor flow dT`, `flap moment`, `flow limit`. При боковом полёте

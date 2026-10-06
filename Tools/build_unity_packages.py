@@ -10,16 +10,31 @@ import shutil
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.3.2"
+VERSION = "0.3.3"
 PACKAGE_ROOT = ROOT / "Distribution/Packages"
+TEXT_SUFFIXES = {".cs", ".asmdef", ".json", ".md", ".txt", ".csv", ".meta"}
 
 
 def text(value):
     return (json.dumps(value, indent=2, ensure_ascii=False) + "\n").encode()
 
 
+def canonical_bytes(path, content):
+    """Git may check out CRLF on Windows; exported text is UTF-8 without BOM, LF."""
+    if PurePosixPath(path).suffix not in TEXT_SUFFIXES:
+        return content
+    value = content.decode("utf-8-sig").replace("\r\n", "\n").replace("\r", "\n")
+    if path.endswith(".meta"):
+        value = "\n".join(line.rstrip() for line in value.splitlines()) + "\n"
+    return value.encode("utf-8")
+
+
 def collect(root=ROOT):
     source = root / "Assets/DronePhysics"
+    for relative in ("Core", "Unity", "Resources", "Editor", "Demo/Runtime", "Demo/Editor", "Tests/EditMode", "Tests/PlayMode"):
+        if not (source / relative).is_dir():
+            raise ValueError("Missing source directory: " + str(source / relative) +
+                             "; this exporter reads Assets/DronePhysics, not installed package copies.")
     result = {}
     for name, demo in (("com.dronelab.physics", False), ("com.dronelab.demo", True)):
         files = {}
@@ -51,12 +66,13 @@ def collect(root=ROOT):
             "description": "Optional Angle/Acro/H test controller, input and camera." if demo else "Parameterized multirotor physics, authoring and telemetry; no input system dependency.",
             "unity": "6000.3", "license": "GPL-3.0-only", "dependencies": dependencies})
         files["LICENSE.md"] = (root / "LICENSE").read_bytes()
-        files["README.md"] = (root / "Docs/Physics/MODULE_INTEGRATION.md").read_bytes()
-        wanted={"MODULE_INTEGRATION.md", "FLIGHT_CONTROL.md", "QUICKSTART.md", "DIAGNOSTICS.md"} if demo else {"MODULE_INTEGRATION.md", "SPECIFICATION.md", "PARAMETERS.md", "INERTIA_IMPORT.md", "PHYSICS_UPGRADES.md", "cad_inertia_test.json"}
+        files["README.md"] = (root / "Docs/Physics" / ("DEMO_PACKAGE_README.md" if demo else "PHYSICS_PACKAGE_README.md")).read_bytes()
         for doc in (root / "Docs/Physics").rglob("*"):
-            if doc.is_file() and (not demo or doc.name in wanted or doc.name in {"MENU.md", "REFERENCE_DRONES.md", "JUDGES_BRIEF.md"}):
+            if doc.name in {"PHYSICS_PACKAGE_README.md", "DEMO_PACKAGE_README.md"}:
+                continue  # Templates are copied to each package root, where their links resolve.
+            if doc.is_file():
                 files[(Path("Documentation~") / doc.relative_to(root / "Docs/Physics")).as_posix()] = doc.read_bytes()
-        files["CHANGELOG.md"] = ("# Changelog\n\n## " + VERSION + "\n\nScale References creates its material folder in UPM projects. Generated package root files include stable .meta files; documentation under Documentation~ remains excluded from asset import. Diagnostics can reveal the project manifest for enabling package tests.\n\n## 0.3.1\n\nReference fixture keyboard thrust uses aircraft thrust/weight instead of the basic rig fixed 38%. HUD shows altitude target and insufficient manual thrust. Test Runner setup documented. Physics/JSON 1.0.0/CSV 1.4.0 unchanged.\n").encode()
+        files["CHANGELOG.md"] = ("# Changelog\n\n## " + VERSION + "\n\nWindows/Linux package paths, UTF-8/LF text and stable SHA-256 metadata. Missing source folders fail before writing packages. Dedicated Physics/Demo READMEs and developer documentation. Demo includes the user fix StepPhysics(.1f) in DescentWindRigidbodyTests. Physics equations, JSON 1.0.0 and CSV 1.4.0 unchanged.\n\n## 0.3.2\n\nScale References creates its material folder in UPM projects. Generated package root files include stable .meta files; documentation under Documentation~ remains excluded from asset import. Diagnostics can reveal the project manifest for enabling package tests.\n\n## 0.3.1\n\nReference fixture keyboard thrust uses aircraft thrust/weight instead of the basic rig fixed 38%. HUD shows altitude target and insufficient manual thrust. Test Runner setup documented.\n").encode()
         # Deterministic metadata for generated folders; source script GUIDs stay unchanged.
         directories = set()
         for path in files:
@@ -78,7 +94,7 @@ def collect(root=ROOT):
             guid = uuid.uuid5(uuid.NAMESPACE_URL, name + "/" + path).hex
             importer = "TextScriptImporter" if path.endswith(".json") else "DefaultImporter"
             files[path + ".meta"] = ("fileFormatVersion: 2\nguid: " + guid + "\n" + importer + ":\n  externalObjects: {}\n  userData:\n  assetBundleName:\n  assetBundleVariant:\n").encode()
-        files = {path: (b"\n".join(line.rstrip() for line in content.splitlines()) + b"\n" if path.endswith(".meta") else content) for path, content in files.items()}
+        files = {path: canonical_bytes(path, content) for path, content in files.items()}
         files["source-files.sha256.json"] = text({path: hashlib.sha256(content).hexdigest() for path, content in sorted(files.items())})
         result[name] = files
     return result
@@ -88,7 +104,7 @@ def build(destination=PACKAGE_ROOT, check=False):
     packages = collect()
     if check:
         for name, expected in packages.items():
-            actual = {p.relative_to(destination / name).as_posix(): p.read_bytes() for p in (destination / name).rglob("*") if p.is_file()}
+            actual = {p.relative_to(destination / name).as_posix(): canonical_bytes(p.relative_to(destination / name).as_posix(), p.read_bytes()) for p in (destination / name).rglob("*") if p.is_file()}
             if expected != actual:
                 raise ValueError("Stale generated package: " + name + "; run python Tools/build_unity_packages.py")
     else:

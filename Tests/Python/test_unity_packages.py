@@ -1,6 +1,9 @@
 import importlib.util
 import hashlib
 import json
+import posixpath
+import re
+import shutil
 from pathlib import Path, PureWindowsPath
 import tempfile
 import unittest
@@ -13,6 +16,50 @@ spec.loader.exec_module(builder)
 
 
 class UnityPackageTests(unittest.TestCase):
+    def test_packaged_documentation_has_no_missing_local_links(self):
+        for name, files in builder.collect().items():
+            for path, data in files.items():
+                if not path.endswith(".md"):
+                    continue
+                for target in re.findall(r"\]\(([^)]+)\)", data.decode("utf-8")):
+                    if target.startswith(("https:", "http:", "#", "mailto:")):
+                        continue
+                    resolved = posixpath.normpath(posixpath.join(posixpath.dirname(path), target.split("#")[0]))
+                    self.assertIn(resolved, files, name + "/" + path + " -> " + target)
+
+    def test_crlf_bom_unicode_checkout_produces_same_package_bytes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder) / "DroneLab проект с пробелами"
+            root.mkdir()
+            for relative in ("Assets/DronePhysics", "Docs/Physics"):
+                shutil.copytree(ROOT / relative, root / relative)
+            shutil.copyfile(ROOT / "LICENSE", root / "LICENSE")
+            expected = builder.collect(root)
+            for file in root.rglob("*"):
+                if file.is_file() and (file.suffix in builder.TEXT_SUFFIXES or file.name == "LICENSE"):
+                    data = file.read_bytes().decode("utf-8-sig").replace("\r\n", "\n")
+                    file.write_bytes(b"\xef\xbb\xbf" + data.replace("\n", "\r\n").encode("utf-8"))
+            self.assertEqual(builder.collect(root), expected)
+
+    def test_check_accepts_windows_checkout_but_detects_content_changes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            destination = Path(folder) / "пакеты с пробелами"
+            packages = builder.build(destination)
+            for name, files in packages.items():
+                for path, data in files.items():
+                    if Path(path).suffix in builder.TEXT_SUFFIXES:
+                        (destination / name / path).write_bytes(data.replace(b"\n", b"\r\n"))
+            builder.build(destination, check=True)
+            with (destination / "com.dronelab.physics/Runtime/Core/PhysicsMath.cs").open("ab") as stream:
+                stream.write(b"// changed implementation\r\n")
+            with self.assertRaisesRegex(ValueError, "Stale"):
+                builder.build(destination, check=True)
+
+    def test_missing_sources_fail_before_emitting_partial_packages(self):
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaisesRegex(ValueError, "Missing source directory"):
+                builder.collect(Path(folder))
+
     def test_windows_package_paths_preserve_documentation_and_folder_guids(self):
         expected = builder.collect()
         def windows_package_path(value):

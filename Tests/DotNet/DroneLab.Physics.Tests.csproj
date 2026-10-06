@@ -12,6 +12,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <Compile Include="../../Assets/DronePhysics/Core/*.cs" />
     <Compile Include="../../Assets/DronePhysics/Tests/EditMode/*.cs" />
-    <None Include="../../Assets/DronePhysics/Resources/DronePhysics/*.json" CopyToOutputDirectory="PreserveNewest" Link="Profiles/%(Filename)%(Extension)" />
+    <None Include="../../Assets/DronePhysics/Resources/DronePhysics/**/*.json" CopyToOutputDirectory="PreserveNewest" Link="Profiles/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
