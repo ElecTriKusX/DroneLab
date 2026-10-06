@@ -227,7 +227,7 @@
   "Tests/Editor/FlightControlTests.cs.meta": "f42f65582cf59e8472a8e4a349253c3de49cb3e7399f04b7c0fe81bbfe9b79d2",
   "Tests/Editor/InertiaTensorTests.cs": "7b2e659cd947988e93cc0a2b73c1abb7f18fc9612334e4c937070b347dcfedd4",
   "Tests/Editor/InertiaTensorTests.cs.meta": "fbd83e9a7c2949231bd0e8fb4e146345bf25204ffe858960c8eb72deecb591de",
-  "Tests/Editor/LiveAirTests.cs": "d331b16ddd8bcd829a0771b66c9b0221f6d11fea177515e2aa03b538364846a3",
+  "Tests/Editor/LiveAirTests.cs": "fb58dc1d6345484a8fe4d187028d19188048913e49c9b9f85a86afdfee8a6bab",
   "Tests/Editor/LiveAirTests.cs.meta": "df6e93f7adf212c19954f1546b07a59586568db314756f318ac5321660c1ca0c",
   "Tests/Editor/PhysicsTests.cs": "404663ae19a8fecd3801b3df63d802f297583e0d1aeb7c8b9e5b5d189cb254ec",
   "Tests/Editor/PhysicsTests.cs.meta": "8028d769735bf76c3d235b2fbab9caeac53c02d33a715d87607a6bee279a2ed7",

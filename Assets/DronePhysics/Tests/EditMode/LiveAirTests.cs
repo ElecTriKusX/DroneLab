@@ -84,7 +84,7 @@ namespace DroneLab.Physics.Tests
                 new AtmosphereColumn(t,101325).TrySampleAir(default,0,out var air);
                 double charge=power.ConsumedAh,energy=power.Thermal.GeneratedEnergyJ;
                 power.Resolve(speeds,(double[])speeds.Clone(),.01,true,air.Density,
-                    previousOmega:speeds,ambientTemperatureK:air.TemperatureK);
+                    previousOmega:speeds,ambientTemperatureK:air.TemperatureK,rotorAirSpeed:new double[4]);
                 Assert.That(power.ConsumedAh,Is.EqualTo(charge));
                 power.Commit(.01);
                 Assert.That(power.ConsumedAh,Is.GreaterThan(charge)); Assert.That(power.Thermal.GeneratedEnergyJ,Is.GreaterThan(energy));
