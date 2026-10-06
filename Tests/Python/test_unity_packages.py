@@ -1,9 +1,10 @@
 import importlib.util
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("package_builder", ROOT / "Tools/build_unity_packages.py")
@@ -12,6 +13,20 @@ spec.loader.exec_module(builder)
 
 
 class UnityPackageTests(unittest.TestCase):
+    def test_windows_package_paths_preserve_documentation_and_folder_guids(self):
+        expected = builder.collect()
+        def windows_package_path(value):
+            # Simulate Windows separators for logical package destinations,
+            # while keeping real source IO on the host filesystem.
+            if isinstance(value, str) and value.startswith(("Runtime", "Editor", "Tests", "Documentation~")):
+                return PureWindowsPath(value)
+            return Path(value)
+        with patch.object(builder, "Path", side_effect=windows_package_path):
+            actual = builder.collect()
+        self.assertEqual(actual, expected)
+        self.assertIn("Documentation~/Data/reference-model-manifest.json", actual["com.dronelab.physics"])
+        self.assertTrue(all("\\" not in path for files in actual.values() for path in files))
+
     def test_all_importable_package_assets_have_stable_metadata_and_hashes(self):
         first = builder.collect()
         self.assertEqual(first, builder.collect())

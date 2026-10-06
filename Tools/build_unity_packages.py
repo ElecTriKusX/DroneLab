@@ -5,7 +5,7 @@ Run --check in CI to detect stale packages; edit source files, not Distribution 
 import argparse
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import shutil
 import uuid
 
@@ -27,7 +27,7 @@ def collect(root=ROOT):
         def copy_tree(src, destination):
             for p in sorted(src.rglob("*")):
                 if p.is_file():
-                    files[str(Path(destination) / p.relative_to(src))] = p.read_bytes()
+                    files[(Path(destination) / p.relative_to(src)).as_posix()] = p.read_bytes()
             meta = Path(str(src) + ".meta")
             if meta.exists():
                 files[destination + ".meta"] = meta.read_bytes()
@@ -55,12 +55,12 @@ def collect(root=ROOT):
         wanted={"MODULE_INTEGRATION.md", "FLIGHT_CONTROL.md", "QUICKSTART.md", "DIAGNOSTICS.md"} if demo else {"MODULE_INTEGRATION.md", "SPECIFICATION.md", "PARAMETERS.md", "INERTIA_IMPORT.md", "PHYSICS_UPGRADES.md", "cad_inertia_test.json"}
         for doc in (root / "Docs/Physics").rglob("*"):
             if doc.is_file() and (not demo or doc.name in wanted or doc.name in {"MENU.md", "REFERENCE_DRONES.md", "JUDGES_BRIEF.md"}):
-                files[str(Path("Documentation~") / doc.relative_to(root / "Docs/Physics"))] = doc.read_bytes()
+                files[(Path("Documentation~") / doc.relative_to(root / "Docs/Physics")).as_posix()] = doc.read_bytes()
         files["CHANGELOG.md"] = ("# Changelog\n\n## " + VERSION + "\n\nScale References creates its material folder in UPM projects. Generated package root files include stable .meta files; documentation under Documentation~ remains excluded from asset import. Diagnostics can reveal the project manifest for enabling package tests.\n\n## 0.3.1\n\nReference fixture keyboard thrust uses aircraft thrust/weight instead of the basic rig fixed 38%. HUD shows altitude target and insufficient manual thrust. Test Runner setup documented. Physics/JSON 1.0.0/CSV 1.4.0 unchanged.\n").encode()
         # Deterministic metadata for generated folders; source script GUIDs stay unchanged.
         directories = set()
         for path in files:
-            for parent in Path(path).parents:
+            for parent in PurePosixPath(path).parents:
                 if str(parent) != "." and "Documentation~" not in parent.parts:
                     directories.add(str(parent))
         for directory in sorted(directories):
@@ -88,7 +88,7 @@ def build(destination=PACKAGE_ROOT, check=False):
     packages = collect()
     if check:
         for name, expected in packages.items():
-            actual = {str(p.relative_to(destination / name)): p.read_bytes() for p in (destination / name).rglob("*") if p.is_file()}
+            actual = {p.relative_to(destination / name).as_posix(): p.read_bytes() for p in (destination / name).rglob("*") if p.is_file()}
             if expected != actual:
                 raise ValueError("Stale generated package: " + name + "; run python Tools/build_unity_packages.py")
     else:
