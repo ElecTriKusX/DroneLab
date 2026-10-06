@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "gravityMps2": 9.81,
+  "airDensityMode": "StandardAtmosphere",
+  "airDensityKgM3": 1.225,
+  "windMode": "CustomField",
+  "windVelocityWorldMps": [
+    2,
+    0,
+    0
+  ],
+  "gustEnabled": false,
+  "altitudeM": 0,
+  "temperatureK": 288.15,
+  "pressurePa": 101325,
+  "gustIntensityMps": 0.4,
+  "gustTimeScaleS": 3,
+  "turbulenceSeed": 48271
+}
