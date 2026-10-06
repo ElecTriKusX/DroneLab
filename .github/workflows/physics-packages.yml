@@ -2,9 +2,9 @@ name: Physics packages Windows and Linux
 
 on:
   push:
-    branches: [physics-packages, physics-plugins]
+    branches: [physics-packages, physics-plugins, envieroment-packages]
   pull_request:
-    branches: [physics-packages, physics-plugins]
+    branches: [physics-packages, physics-plugins, envieroment-packages]
   workflow_dispatch:
 
 permissions:

@@ -33,7 +33,8 @@ class UnityPackageTests(unittest.TestCase):
             root.mkdir()
             for relative in ("Assets/DronePhysics", "Docs/Physics"):
                 shutil.copytree(ROOT / relative, root / relative)
-            shutil.copyfile(ROOT / "LICENSE", root / "LICENSE")
+            for name in ("LICENSE", "CHANGELOG.md"):
+                shutil.copyfile(ROOT / name, root / name)
             expected = builder.collect(root)
             for file in root.rglob("*"):
                 if file.is_file() and (file.suffix in builder.TEXT_SUFFIXES or file.name == "LICENSE"):

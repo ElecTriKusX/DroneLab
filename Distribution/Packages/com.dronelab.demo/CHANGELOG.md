@@ -2,12 +2,23 @@
 
 ## 0.3.3
 
-Windows/Linux package paths, UTF-8/LF text and stable SHA-256 metadata. Missing source folders fail before writing packages. Dedicated Physics/Demo READMEs and developer documentation. Demo includes the user fix StepPhysics(.1f) in DescentWindRigidbodyTests. Physics equations, JSON 1.0.0 and CSV 1.4.0 unchanged.
+- Windows/Linux-пути, UTF-8/LF, стабильные .meta и SHA-256; проверка обязательных исходников до экспорта.
+- Float-аргумент StepPhysics(.1f) в DescentWindRigidbodyTests включён в Demo.
+- Рекурсивное копирование benchmark JSON в .NET test project; Windows/Ubuntu CI.
+- Документация объединена в шесть справочников: физика, величины, параметры, разработка, проверка профилей, источники.
+- Определены границы погодной интеграции и возможные расширения физики.
+- Уравнения, JSON 1.0.0 и CSV 1.4.0 не изменены.
 
 ## 0.3.2
 
-Scale References creates its material folder in UPM projects. Generated package root files include stable .meta files; documentation under Documentation~ remains excluded from asset import. Diagnostics can reveal the project manifest for enabling package tests.
+- Scale References создаёт папку материала до CreateAsset.
+- Stable .meta импортируемых root-файлов UPM; команда показа проектного manifest.json.
 
 ## 0.3.1
 
-Reference fixture keyboard thrust uses aircraft thrust/weight instead of the basic rig fixed 38%. HUD shows altitude target and insufficient manual thrust. Test Runner setup documented.
+- Ручная тяга reference-стендов определяется через T/W; HUD показывает цель высоты и недостаточность тяги.
+
+## 0.3.0
+
+- Связанные аэродинамика/привод/питание/тепло, атмосфера/Dryden и телеметрия CSV 1.4.0.
+- Три reference-аппарата, два APC bench-профиля, независимые propeller comparisons.

@@ -1,6 +1,6 @@
 # Разработка пакетов: Windows и Linux, SDK 0.3.3
 
-Ветка **physics-packages** — рабочая ветка физического SDK. Windows — основная рабочая среда команды, Linux — поддерживаемая среда инструментов/CI. Интеграция пакетов в Unity и EXE проверяется отдельно на целевых платформах.
+Ветка **physics-packages** — рабочая ветка физического SDK. Windows — основная рабочая среда, Linux — поддерживаемая среда инструментов/CI. Интеграция пакетов в Unity и EXE проверяется отдельно на целевых платформах.
 
 ## 1. Источник истины и структура
 
@@ -46,7 +46,7 @@ dotnet --version
 ### Windows / PowerShell
 
 ```powershell
-Set-Location "C:\Users\elect\Documents\Projects\DroneLab"
+Set-Location "C:\Projects\DroneLab"
 python -m venv .venv
 .\.venv\Scripts\python.exe Tools/build_unity_packages.py
 .\.venv\Scripts\python.exe Tools/build_unity_packages.py --check
@@ -132,17 +132,118 @@ COMMIT_SHA — полный SHA нужного опубликованного к
 
 CI [physics-packages.yml](https://github.com/ElecTriKusX/DroneLab/blob/physics-packages/.github/workflows/physics-packages.yml) запускает package verification, Python regression и .NET core tests на windows-latest/ubuntu-latest. Он не запускает Unity и не доказывает совместимость EXE. Проверка кириллицы/пробелов, BOM/CRLF и Windows logical paths также есть в Python suite.
 
-## 6. Диагностика частых ошибок
 
-| Симптом | Причина / действие |
+## Подключение и запуск в Unity
+
+В целевом проекте создать GameObject с Rigidbody, Collider и DronePhysicsBody;
+назначить drone/environment TextAssets. Один Rigidbody в иерархии, без frozen axes;
+root/parents scale=1. Mesh добавляется дочерним визуальным объектом.
+Newtonsoft нужен Physics; Input System нужен только Demo.
+
+```csharp
+if (body.Initialize(droneAsset, environmentAsset))
+{
+    body.SetArmed(true);
+    body.SetMotorCommand(0, 0.5); // доля max RPM, не тяги
+}
+```
+
+Это обращение к API, не полноценный controller: команды распределяются всем роторам.
+Обычно FixedUpdate вызывает StepPhysics автоматически. Для внешнего пошагового стенда
+задать AutomaticSimulation=false и вызывать StepPhysics(float dt) вручную.
+Начальный Fixed Timestep — 0,01 с; сходимость проверяется отдельно.
+
+Для готового стенда: сцена с collider → DroneLab → Test Bench → Combined Physics Drone.
+Назначить дрон камере, сохранить сцену, Play → Game View → F → H.
+Reference Drones создаёт частичные профили, Propeller Bench — APC-стенды,
+Module Checks — отдельные проверки аэродинамики, привода/питания и тепла.
+
+## Управление
+
+| Режим / ввод | Поведение |
 |---|---|
-| Missing source metadata для Documentation~\Data | Старый Windows-сборщик смешал `\` и `/`; обновить до 0.3.3, не создавать .meta документации |
-| Missing source directory | Удалена Assets-source или команда запущена с инструментом из другого дерева; вернуть исходники, не собирать урезанный пакет |
-| Missing source metadata у .cs/.json runtime | Новый исходный asset без .meta; получить/сохранить метаданные в Unity и повторить сборку |
-| Stale generated package | Distribution не соответствует source/version/docs; пересобрать оба пакета |
-| Изменения исчезли после пересборки | Редактировался Distribution или cache; восстановить из Git/резервной копии и перенести в source |
-| Duplicate assemblies/GUID | Одновременно установлены UPM-пакеты и Assets-source |
-| UnicodeDecodeError / искажённый русский текст | Старый script/default codepage; инструменты 0.3.3 читают текст явно в UTF-8 |
-| Space не поднимает старый reference-стенд | Старый serialized manualCollectiveFraction; поставить 0.60 либо пересоздать стенд |
-| Дрон разгоняется без ограничения | Reference-profile отключает bodyDrag, Cd=0; использовать Combined либо отдельный откалиброванный полётный профиль |
-| Тест .1 не компилируется при float API | Использовать `.1f`; пользовательский фикс включён в 0.3.3 |
+| Angle, WASD | Заданный наклон → attitude PID → rate PID; нейтральный ввод выравнивает аппарат |
+| Acro, WASD | Целевая угловая скорость; после отпускания достигнутый наклон сохраняется |
+| Q/E | Yaw rate; удержание курса отсутствует |
+| H | Высота → vertical speed → acceleration → collective; позиция X/Z не удерживается |
+| Space/Ctrl при H | Изменение высотной цели |
+| Space без H | Manual collective fraction; отпускание даёт нулевой target RPM |
+| F / Z / Backspace | Arm-disarm / Angle-Acro / reset |
+
+Demo использует идеальное состояние Rigidbody и QuadAllocator для четырёх +Y роторов.
+Распределение сохраняет collective, затем ограничивает моменты; команды RPM находятся
+инверсией статической тяги. PID содержит фильтр D, предел I и conditional anti-windup.
+При H наклон компенсируется до upright=0,35; перевёрнутый полёт с H не поддерживается.
+Параметры — DroneTestPilot Inspector; стартовые gains не являются калибровкой аппарата.
+Gamepad выбирается в Input Device: правый стик roll/pitch, левый X yaw, RT throttle,
+левый Y climb при H; отключение устройства/потеря фокуса вызывает disarm.
+
+Текущий controller остаётся в com.dronelab.demo рядом с регрессионными стендами.
+Ветка не нужна для разделения зависимостей: Physics уже работает без Demo/Input System.
+Маршрутный автопилот, датчики и estimator целесообразно реализовать отдельным пакетом
+поверх motor-command API, используя тот же Physics и общие интеграционные тесты.
+На одном аппарате допускается один активный writer команд моторов.
+
+## Authoring и диагностика
+
+| Команда DroneLab | Назначение |
+|---|---|
+| Geometry → Create Markers from Profile | COM/ротора/drag markers из профиля |
+| Geometry → Export Profile … | Marker geometry, Box drag, mesh silhouette или Surfaces; площадь mesh не определяет Cd |
+| Mass Properties → Import CAD Inertia Tensor | Симметричный тензор относительно COM, масса/COM в SI и осях Unity; [пример](Examples/cad_inertia_test.json) |
+| Propellers → Import Performance CSV | RPM/T/Q или RPM/J/Ct/Cq; строгие названия колонок и значения SI |
+| Rotors / Power / Environment | Создание профилей роторных эффектов, батареи, тепла и среды |
+| Diagnostics → Add Flight Recorder and Motor Fault Scenario | Запись CSV 1.4.0, активных JSON и manifest; сценарий отказа |
+| Diagnostics → Open Flight Recordings Folder | Папка записей для анализа |
+| Test Bench → Scale References (meters) | Размерные ориентиры; материал создаётся в Assets/DronePhysics |
+
+CSV винта использует разделитель `,` и десятичную точку. RpmTable: обязательные
+`rpm,thrustN,torqueNm`, опциональная `currentA`. PerformanceMap: обязательные
+`rpm,advanceRatio,ct,cq`, опциональная `reynolds`. `cq` не является `cp`; vendor aliases
+и угадывание единиц отсутствуют. До 4096 строк; итоговая карта проходит проверку
+прямоугольной сетки, диапазонов и физической совместимости профиля.
+
+CAD-ввод должен быть заранее приведён к COM, метрам/килограммам и actual tensor signs;
+автоматического угадывания CAD-системы нет. Импорт сохраняет прочие параметры профиля.
+CSV анализируется `python Tools/analyze_flight.py --help`; reset создаёт новый segment.
+RPM/current/power/temperature/fault/envelope — разные показатели, их причины не смешиваются.
+
+Известное ограничение reference-профилей: body drag и неизвестное питание выключены,
+поэтому реалистичная максимальная скорость/flight time не подтверждены. При H строка
+throttle 0% означает ручной ввод, а не отсутствие тяги. При насыщении проверить T/W,
+наклон, ограничения батареи/тепла и активный fault. Duplicate assemblies означает
+одновременное подключение Assets-source и UPM. Stale package требует пересборки;
+новым импортируемым assets нужны .meta. Правки PackageCache не являются исходниками.
+
+## Границы Physics и погодной интеграции
+
+| Разработка | Ответственность |
+|---|---|
+| physics-packages / Physics | SI, сухая атмосфера, плотность/давление/температура, запрос местного ветра, аэродинамические силы, охлаждение, физические ограничения |
+| envieroment-packages | Купленный погодный плагин, небо/облака/осадки/освещение, получение реальных метеоданных, время/координаты, адаптер к Physics |
+| Demo | Ручное управление, HUD/камера и совместные регрессионные стенды |
+
+envieroment-packages создаётся от согласованного SDK. Погодные изменения возвращаются
+отдельным пакетом/адаптером; перенос всей ветки среды в Physics не является способом
+обновления физического ядра. Платный плагин подключается отдельно; его код сейчас не
+входит в этот SDK. На текущей основе интеграция с внешним метеосервисом не реализована.
+
+Готовая точка подключения ветра — IWindProvider.Sample(DVector3 worldPositionM,
+double timeS), возвращающая м/с в мировых осях Unity. Для неё профиль использует
+windMode=CustomField, windInteraction=true; customWindProvider/CustomWindProvider
+назначается до Initialize. Sample не изменяет состояние и не зависит от порядка
+запросов. Источник заранее кэширует значения; HTTP-запросы не выполняются в physics step.
+
+Текущий внешний интерфейс изменяет только ветер. Температура/давление/плотность среды
+фиксируются валидированным snapshot при Initialize; live-обновление этих величин
+потребует расширения адаптера/контракта. Повторный Initialize сбрасывает состояния
+привода и питания и не подходит для незаметного обновления погоды в полёте.
+
+Метеоданные приводятся к SI: °C→К, гПа→Па, км/ч→м/с. Направление метеоветра «откуда»
+преобразуется в вектор «куда» с учётом севера сцены. Давление на станции и sea-level
+pressure различаются: StandardAtmosphere ожидает sea-level inputs. Поддержка влажности
+отсутствует. Один набор погодных данных управляет визуалом и адаптером; погодный плагин
+не должен дополнительно прикладывать те же силы. Для воспроизводимости сохраняются
+место, время, источник, возраст данных и использованный snapshot; offline fallback
+задаётся явно. Описание внешнего плагина/API относится к ветке среды, формулы сил —
+к PHYSICS_REFERENCE.

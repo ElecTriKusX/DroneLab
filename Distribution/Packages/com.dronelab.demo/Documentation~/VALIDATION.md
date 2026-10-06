@@ -1,557 +1,97 @@
-# Проверка физики и управления
-
-Дата: 2026-10-04.
-
-| Проверка | Результат |
-|---|---|
-| Чистое ядро C#, компиляция Roslyn с C# 8 | Успешно |
-| NUnit 3.14: 31 тестовый случай | 31 passed, 0 failed |
-| Newtonsoft.Json 13.0.2 (версия, используемая официальным Unity-пакетом) | Тесты выполнены с этой версией |
-| JSON Schema Draft 2020-12: проверка самих схем | Успешно |
-| Basic, CtCq, Calm, Wind fixtures по JSON Schema | 4 профиля успешно проверены |
-| Компиляция и импорт исходного этапа в Unity 6000.3.25f1 | Пользователь подтвердил работу проекта и физики |
-| 4 Unity Play Mode теста: hover, free fall, wind, motor spin-down | Добавлены; здесь не запускались |
-| Ручной полёт с моделью из ассета / Terrain | Пользователь подтвердил работу; сообщил об ощущении масштаба и равных RPM |
-| Одноосевой yaw: 50/100/200 Hz, motor lag, allocator | Установившаяся скорость 70.000°/s, RPM spread <0.001; тесты прошли |
-| Одноосевой Angle hold | 20.000°, RPM spread ≈0.0005; тест прошёл |
-| Yaw braking и ускорение при tilt 20° | Тесты прошли; начальное ускорение ≈3.57055 m/s² |
-| Ещё 3 Play Mode теста реального пульта/масштаба | Добавлены; здесь не запускались |
-| Импорт новых ориентиров и новой телеметрии в Unity | Требуется запуск у пользователя |
-
-Обычный `dotnet test` в текущем контейнере остановился до сборки из-за ошибки среды
-`System.Diagnostics.Process.GetStat/GetProcessName`. Для фактической проверки те же
-Core-файлы и EditMode-тесты напрямую скомпилированы Roslyn и выполнены через NUnitLite
-на .NET 8. Код проекта для обхода этой ошибки не менялся. В обычной среде команда
-`dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj` использует стандартный test adapter.
-
-Прохождение математических тестов не подтверждает импорт ассетов, UI, физический
-интегратор Unity или настройку конкретной сцены. Первый этап считается проверенным
-полностью после успешного запуска Unity-тестов и сценариев из QUICKSTART.md.
-
-## Этап 2 — 2026-10-04
-
-| Проверка | Фактический результат |
-|---|---|
-| Roslyn C# 8, чистое ядро + все EditMode исходники | Компиляция успешна |
-| NUnitLite 3.14 / .NET 8 / Newtonsoft 13.0.2 | 47 passed, 0 failed; 16 новых случаев |
-| Production rate PID + allocator + motor lag, 50/100/200 Hz | Через 5 s: 70.497–70.499°/s; торможение прошло |
-| Attitude PID, наклон и выравнивание, 50/100/200 Hz | Прошло, точность ±0.5° после 8 s |
-| Height + vertical velocity PID с motor lag, 50/100/200 Hz | Цель 2 m → 1.9998–2.0001 m после 12 s |
-| Постоянный внешний момент, anti-windup, D kick, reset | Прошло |
-| Allocator при насыщении | Сохраняет collective и направление torque, commands в 0…1 |
-| Unity PlayMode: ещё 3 сценария пульта и 2 теста ввода | Добавлены; не запускались здесь |
-| Импорт этапа 2 и полёт у пользователя | 2026-10-05: пользователь подтвердил |
-
-Подробности: [FLIGHT_CONTROL.md](FLIGHT_CONTROL.md). Одноосевые модели не заменяют
-проверку трёхмерной динамики и столкновений в Unity. Существующие 31 случая сохраняются
-как физическая регрессия, в том числе прежний P-пульт для сравнения с PID.
-
-## Подтверждение этапа 2 и этап 3 — 2026-10-05
-
-Пользователь подтвердил ручные сценарии, EditMode без ошибок и полный повторный
-PlayMode-прогон. На первом запуске HoverHasNoTranslationOrRotation показал 0.0969805 m/s,
-HeldYawTracksRateAndReleaseBrakes — RPM spread=0. Повторные запуски прошли.
-По исходникам вероятны лишний шаг gravity до Initialize и focus-triggered disarm;
-это гипотезы, здесь исходные сбои не воспроизведены.
-Стенды теперь работают в отдельных local physics scenes с явными шагами и теми же
-допусками. Обычный полёт сохраняет FixedUpdate и disarm при потере фокуса.
-
-| Проверка этапа 3 | Фактический результат |
-|---|---|
-| Roslyn C# 8: Core + EditMode исходники, NUnitLite 3.14, .NET 8 | 78 passed, 0 failed; 31 новый случай |
-| Box mesh silhouette по осям и диагоналям, sphere против πR² | Прошло, допуск 2.5% при raster resolution=128 |
-| Дубли/перекрытия triangle mesh, scale², translation, ±direction | Прошло |
-| LUT: положительность, диапазон, симметрия, exact samples, непрерывность | Прошло |
-| CP speed с вращением, момент r×F, энергия pressure patches | Прошло |
-| Прежний Axis drag и отключение bodyDrag | Прошло |
-| Валидация conditional fields, normals, ID и sample axis duplicates | Прошло |
-| Новые JSON presets: Projected box/LUT, Surfaces | Загрузка и семантическая валидация прошли |
-| Полный JSON Schema Draft 2020-12, jsonschema | Обе схемы и 7 профилей прошли |
-| Roslyn syntax check всех 34 C# файлов DronePhysics | 0 синтаксических ошибок; не заменяет Unity-компиляцию |
-| 15 Unity PlayMode случаев, включая 3 новых | Добавлены/обновлены; здесь не запускались |
-| Импорт новых скриптов, маркеры, mesh bake и экспорт в Unity | Ожидается у пользователя |
-
-Настройка и границы модели: [GEOMETRY_AERODYNAMICS.md](GEOMETRY_AERODYNAMICS.md).
-
-## Этап 4 — 2026-10-05
-
-Пользователь подтвердил Box/Mesh export и работу физики этапа 3. Присланный
-`drone_geometry_mesh.json` дополнительно проверен текущим loader и QuadAllocator:
-принят, 4 ротора, 13 LUT образцов, статический T/W=4. Полный новый Unity Test Runner
-прогон этапа 3 не заявлен.
-
-| Проверка этапа 4 | Фактический результат |
-|---|---|
-| Roslyn C# 8: Core + EditMode, .NET 8, NUnitLite 3.14, Newtonsoft 13.0.2 | 118 passed, 0 failed; 40 новых случаев |
-| RPM knots, линейные силы/момент/ток, явный нулевой узел | Прошло |
-| Map knots, bilinear RPM/J, singleton RPM, signed Ct/Cq | Прошло |
-| Density scaling только Ct/Cq, table reference density | Прошло |
-| Clamp/Reject, motor max coverage, отсутствие extrapolation | Прошло |
-| Immutable snapshot, валидация сеток/дублей/optional current | Прошло |
-| SI CSV: сортировка, ru-RU locale, неверные заголовки/NaN/пропуски | Прошло |
-| Нелинейный allocator: T/Q, saturation, unequal rotors, COM offset | Прошло |
-| RPM-table rate PID + motor lag: 50/100/200 Hz, yaw и торможение | Прошло |
-| Full JSON Schema Draft 2020-12 | Обе схемы и 10 профилей, включая присланный mesh JSON, прошли |
-| Roslyn syntax всех 40 C# DronePhysics файлов | 0 syntax errors; не заменяет Unity-компиляцию |
-| 5 новых Unity PlayMode тестов (20 всего) | Добавлены; здесь не запускались |
-| Unity импорт/CSV окно/полёт с таблицами и картами | Ожидается у пользователя |
-
-JSON-контракт остаётся 1.0.0. Генератор DTO обновлён: optional currentA теперь double?,
-чтобы отсутствие измерения отличалось от 0 A; JSON-поля, schema и единицы не изменены.
-Ограничения физики и пульта: [PROPELLER_PERFORMANCE.md](PROPELLER_PERFORMANCE.md).
-
-## Подтверждение этапа 4 и этап 5 — 2026-10-05
-
-Пользователь сообщил, что полёт и тесты этапа 4 прошли. Скриншот H показывает
-Alt hold=true, Saturation=false, vy=0.00 m/s, tilt/yaw=0, сумму T≈9.81 N для 1 kg;
-Vhorizontal≈0.49 m/s не противоречит отсутствию position hold. Разные RPM согласуются
-с геометрией и статическим nonlinear allocator. Файл Assets/drone_performance.json
-из нового коммита пользователя также принят loader и QuadAllocator: 4 ротора, 13 LUT, T/W=4.
-
-| Проверка этапа 5 | Фактический результат |
-|---|---|
-| Roslyn C# 8: Core + EditMode, .NET 8, NUnitLite 3.14, Newtonsoft 13.0.2 | 165 passed, 0 failed; 47 новых случаев |
-| Ground multiplier, height/normal/range clamps и smooth fade | Прошло |
-| No surface / stopped / windmilling, static capacity/Q не меняются | Прошло |
-| Rotor drag: sign, axes, RPM/K scaling, zero/axial flow | Прошло |
-| Point velocity, offset COM, rotational damping, energy dissipation | Прошло, включая 500 воспроизводимых velocity/rotation случаев |
-| Ground height PID + motor lag, 50/100/200 Hz | Прошло |
-| Rate PID с постоянным rotor drag, 50/100/200 Hz | Прошло; постоянный RPM spread компенсирует torque, отпускание тормозит |
-| Совместимость RPM-таблиц / CtCq-карт, disabled flags, immutable snapshot | Прошло |
-| Full JSON Schema Draft 2020-12 | Обе схемы и 14 профилей прошли, включая 2 профиля пользователя |
-| Roslyn syntax всех 45 C# файлов | 0 syntax errors; не заменяет Unity-компиляцию |
-| 10 новых PlayMode тестов (30 всего) | Добавлены; здесь не запускались |
-| Terrain, nearest hit, self/trigger filtering, buffer growth, layer mask, slope | Проверяются новыми PlayMode сценариями; фактический запуск ожидается у пользователя |
-| Editor profile window / новый полёт на Terrain | Ожидается у пользователя |
-
-Контракт 1.0.0 не менялся. Flapping/induced/gyroscopic modules по-прежнему отклоняются.
-Ground gain не корректирует Q/current; исходные характеристики должны быть free-air.
-Модель и click-by-click инструкция — [ROTOR_EFFECTS.md](ROTOR_EFFECTS.md).
-
-## Проверка этапа 5 у пользователя и исправление теста — 2026-10-05
-
-Пользователь сообщил: все EditMode прошли; в PlayMode повторяемо не прошёл только
-WindCreatesSeparateBodyAndRotorDragForces. Unity верно выдала 0.673749983 N, но тест
-ожидал 0.6125 N: в ожидаемой величине был пропущен CdX=1.1 из quad_test_rotor_drag.json.
-Правильная независимая оценка корпуса: 0.5 × 1.225 × 1.1 × 0.04 × 5² = 0.67375 N.
-Rotor drag отдельно составляет 4 × 0.0001 × (5000 × 2π/60) × 5 ≈ 1.047197551 N.
-Исправлено только ожидание PlayMode; допуск 1e-6 сохранён. Физика и профиль не менялись.
-
-Добавлен EditMode WindFixtureProducesIndependentBodyAndRotorDrag: загружает тот же
-профиль/ветер, проверяет обе силы, их направления и отсутствие суммарного момента.
-Фактический запуск Core + EditMode через Roslyn/NUnitLite: **166 passed, 0 failed**.
-Syntax check всех 45 C# файлов: 0 ошибок. Исправленный PlayMode здесь не запускался;
-необходим повтор этого теста в Unity у пользователя.
-
-На двух скриншотах H активен, Saturation=false, сумма тяги≈9.81 N, вертикальная
-скорость≈0. При высоте роторов 0.850 m ground gain округляется до 1.000; при 0.152 m
-составляет 1.011, RPM немного ниже при той же тяге. Это согласуется с R=0.0635 m
-и формулой ground effect. Новый Assets/drone_rotor_effects.json принят текущим
-loader и QuadAllocator: 4 ротора, 13 LUT, T/W=4.
-
-## Подтверждение этапа 5, input isolation и этап 6 — 2026-10-05
-
-Пользователь сообщил, что после исправления ожидаемого Cd все тесты прошли.
-Однако KeyboardMapsSignsActionsAndZeroThrottleOnRelease и
-GamepadMapsTwoSticksTriggerAndModeButtons иногда проваливались по bool действий,
-после повторов проходили. Поэтому input-тесты переведены с общей Input System state
-на официальный InputTestFixture: отдельный runtime, ручной update, полное восстановление
-состояния и предварительная регистрация wasPressedThisFrame свежих ButtonControl.
-Документация Unity допускает пропуск быстрых нажатий при первом чтении этого свойства;
-это согласуется со сбоем, но здесь исходный сбой и исправление в Unity не воспроизведены.
-Physics/Rigidbody тесты уже используют отдельные local physics scenes; новая сцена
-вручную не нужна. Ссылки на первичные источники и TestFramework setup — POWER_SYSTEM.md.
-
-Первый новый скриншот: rotor height≈0.035 m, gain=1.206, суммарная тяга≈7.00 N,
-vy=0, WorldY≈0.03 m. Это контакт с землёй: опора поддерживает часть веса, не свободное
-висение. Второй: height≈0.167 m, gain=1.009, сумма T≈9.81 N, vy=0, RPM выше;
-согласуется со свободным висением с меньшим ground effect. Оба Saturation=false.
-
-| Проверка этапа 6 | Фактический результат |
-|---|---|
-| Roslyn C# 8 / .NET 8 / NUnitLite 3.14 / Newtonsoft 13.0.2 | **217 passed, 0 failed**; 51 новых случаев |
-| Simple Qω/efficiency, no-load loss; Electrical Kv/R/I0, back-EMF, ESC loss | Прошло против независимых формул |
-| Корень constant-power sag, R=0 / очень малое R, невозможная нагрузка | Прошло |
-| SOC/OCV, mAh, energy balance, отсутствие двойного подсчёта потерь | Прошло |
-| Battery/motor/ESC current, maxPower, low voltage, empty pack, residual charge bounds | Прошло |
-| Disarm, reset, disabled discharge, immutable snapshot, ошибочные настройки | Прошло |
-| Совместимость CtCq / RPM table, ток CSV отдельно; явный reject battery+map/curve | Прошло |
-| 500 случайных асимметричных команд на каждый режим | Ток/энергия/voltage/RPM/SOC bounds прошли |
-| SOC: постоянная и переменная OCV, 50/100/200 Hz | Прошло |
-| Altitude PID + allocator + motor lag + battery, оба режима, 50/100/200 Hz | Прошло: через 10 s высота в ±0.025 m, скорость <0.01 m/s |
-| JSON Schema Draft 2020-12 | Обе схемы и 17 профилей прошли, включая 3 профиля пользователя |
-| Пользовательский drone_rotor_effects.json + demo battery Simple / Electrical | Обе временные версии приняты текущим loader и QuadAllocator; исходный профиль сохранён |
-| Roslyn syntax всех 50 C# файлов | 0 syntax errors; не заменяет Unity-компиляцию |
-| 6 новых PowerRigidbodyTests (36 PlayMode случаев проекта всего) | Добавлены; здесь не запускались |
-| InputTestFixture повтор, Unity импорт/editor/полёт с батареей | Ожидается у пользователя |
-
-Контракт JSON 1.0.0 не менялся. Электрическая модель квазистационарная и не включает
-индуктивность, rotor kinetic energy, regen/thermal или нагрузку бортовой электроники.
-Governor ограничивает фактические RPM, а PID учитывает power limited для anti-windup.
-Ограничения battery+RPM/J map / efficiency curve фиксируются явно, не скрываются.
-Настройка и формулы — [POWER_SYSTEM.md](POWER_SYSTEM.md).
-
-## Подтверждение этапа 6 и этап 7 — 2026-10-05
-
-Пользователь подтвердил все тесты этапа 6. Ручной сценарий: при Pack current limit=4 A
-взлёт невозможен; при 9 A и малой ёмкости сначала подъём, затем снижение SOC и потеря
-возможности набирать высоту с постепенным снижением на землю.
-Скриншот 4 A: Vbus≈15.96 V, Pbus≈63.8 W, Power limited=true; четыре тяги
-1.45+1.63+1.33+1.15≈5.56 N при массе1 kg. Тяга ниже веса, контакт с землёй закономерен.
-Это подтверждение пользовательского сценария, не сравнение с измеренным реальным дроном.
-
-| Проверка этапа 7 | Фактический результат |
-|---|---|
-| Roslyn C# 8 / .NET 8 / NUnitLite 3.14 / Newtonsoft 13.0.2 | **260 passed, 0 failed**, 43 новых случая |
-| Тропосфера: 0/3000/11000 m, идеальный газ, монотонность и диапазоны | Прошло против независимых численных значений |
-| CtCq/PerformanceMap: изменение плотности ровно один раз, J неизменен | Прошло; measured kT/kQ и RPM tables явно отвергают переменную плотность |
-| Axis/ProjectedArea/Surfaces: density scaling и диссипативность | Прошло |
-| Gust: период, амплитуда, направление, fallback при нулевом среднем ветре | Прошло |
-| Seeded field: повтор seed, другой seed, порядок запросов, пространственные отличия | Прошло |
-| 500 точек: граница нормы, непрерывность, перенос поля; overlay bound | Прошло |
-| Поле на 50/100/200 Hz и интегрирование сходимости относительно 400 Hz | Прошло |
-| LinearWindField / отсутствие custom provider / disabled wind | Прошло |
-| CtCq Qω и батарея с текущей плотностью | Прошло |
-| Altitude PID + density-aware allocator + motor lag, MSL 3000 m, 50/100/200 Hz | Прошло: высота ±0.025 m, скорость <0.01 m/s через 15 s |
-| JSON Schema Draft 2020-12 | Обе схемы и **26** профилей прошли, включая текущие JSON пользователя |
-| Loader + QuadAllocator | Все 26 профилей приняты; atmosphere fixture проверен с CtCq |
-| Unity .meta для новых файлов, GUID uniqueness | Полнота и уникальность подтверждены |
-| Roslyn syntax всех 56 C# файлов | 0 ошибок; не заменяет Unity-компиляцию |
-| 12 новых EnvironmentRigidbodyTests (48 PlayMode случаев всего) | Добавлены в изолированных physics scenes; **здесь не запускались** |
-| Unity импорт/editor, фактический ветер/атмосфера и повтор полного Test Runner | Ожидается у пользователя |
-
-Физические силы используют ветер в каждой точке приложения; плотность берётся один раз
-в COM на шаг и передаётся также в энергетику. Некорректный provider проверяется до
-передачи сил Rigidbody и расхода заряда. Проверка этого пути добавлена в PlayMode,
-но фактический запуск требует Unity. Новый экспорт сохраняет отдельный environment JSON
-и не меняет геометрию/моторы пользователя. JSON-контракт 1.0.0 не менялся.
-Турбулентность — bounded analytic Fourier field, не валидированная метеорологическая
-модель Dryden/CFD. Формулы и инструкция — [ENVIRONMENT.md](ENVIRONMENT.md).
-
-## Исправление импорта PlayMode этапа 7 — 2026-10-05
-
-При открытии проекта пользователь получил CS0246 для Newtonsoft и JObject в
-EnvironmentRigidbodyTests. В PlayMode asmdef отсутствовала явная ссылка на
-Newtonsoft.Json.dll, которая уже есть в Core, Editor и EditMode. Исправлено:
-overrideReferences=true, precompiledReferences=[Newtonsoft.Json.dll, nunit.framework.dll],
-по существующей настройке EditMode. Ссылки на Input System/TestFramework сохранены.
-JSON asmdef и наличие прямых Newtonsoft-ссылок во всех использующих его сборках
-проверены локально; git diff --check прошёл. Физические модели не менялись.
-Полная Unity-компиляция и PlayMode здесь не запускались; требуется повтор у пользователя.
-
-## Подтверждение этапа 7 и этап 8 — 2026-10-05
-
-Пользователь подтвердил стабильную работу после исправления PlayMode asmdef.
-Два пропущенных WindowsInput mouse tests принадлежат Input System 1.20.0:
-в официальных IntegrationTests.cs оба явно помечены Ignore("Unstable due to 1252825").
-Это штатный пропуск тестов пакета; DroneLab/PilotInputTests менять не требуется.
-Ссылка на проверенный первичный источник — DIAGNOSTICS.md.
-
-| Проверка этапа 8 | Фактический результат |
-|---|---|
-| Roslyn C# 8 / .NET 8 / NUnitLite 3.14 | **276 passed, 0 failed**, 16 новых случаев |
-| Drive loss: экспоненциальный выбег, 50/100/200 Hz | Прошло |
-| Половина target RPM → четверть quadratic T | Прошло |
-| Simple/Electrical: failed motor bus current=0, shaft accounting, остаточная тяга | Прошло |
-| Все приводы отказали / пустая батарея | Ток/расход=0, выбег не останавливается мгновенно |
-| Invalid authority, reset | Прошло |
-| CSV ru-RU/en-US, escaping rotorId, empty vs zero, invalid/nonfinite frames | Прошло |
-| Hover induced velocity estimate | Прошло; helper не создаёт дополнительную силу |
-| Python analyzer: reset segments, energy baseline, incomplete/NaN/time reversal | **4 passed, 0 failed** |
-| Core CSV writer → файл → Python CLI | Успешно; две строки, T=mg=9.81 N, energy error=0 J |
-| Roslyn syntax всех 63 C# файлов | 0 ошибок; не заменяет Unity-компиляцию |
-| Прямые Newtonsoft references и .meta для новых ассетов | Полнота/корректность проверены; GUID уникальны |
-| 6 новых DiagnosticsRigidbodyTests (54 PlayMode случаев всего) | Добавлены; **здесь не запускались** |
-| Unity file lifecycle/manifest/segments, реакция Rigidbody и сравнение 50/100/200 Hz | Требуют запуска у пользователя |
-| Реальный профиль, калибровка по независимым измерениям, VFX Graph | Процедура/API подготовлены; реальные измерения и визуальная интеграция не выполнены |
-
-CSV публикуется до интегратора Rigidbody; SOC/charge/energy имеют суффикс _end.
-Активные JSON сохраняются из Initialize. Recorder использует buffered synchronous writer;
-ошибка записи завершает recorder, без нового расчёта сил/ветра/энергии. Reset разделяет
-сегменты, новый runtime snapshot — папки. Manifest фиксирует настройки на начало записи,
-не заменяет сцену/collider/конфигурацию внешнего программного provider.
-Drive authority — сценарная runtime-настройка; контракт JSON 1.0.0 не изменён.
-Recovery на трёх моторах, jam/broken propeller, rotational-energy dynamics и CFD
-не объявляются реализованными. Подробная инструкция — [DIAGNOSTICS.md](DIAGNOSTICS.md).
-
-## Финальный аудит и сквозная регрессия — 2026-10-05
-
-Пользователь подтвердил все тесты этапа 8 и ручное поведение drive fault во всех
-режимах. Наблюдение наклона при снижении с исправными моторами не интерпретируется
-как валидация VRS: этой модели нет. В сохранённой PhysTest из пользовательского
-коммита 2d5d96d включён automaticFault через 5 s; для baseline его нужно отключить.
-Коммит пользователя получен fast-forward, его сцена/профили сохранены.
-
-| Проверка | Фактический результат |
-|---|---|
-| Core + EditMode, Roslyn C# 8 / .NET 8 / NUnitLite | **284 passed, 0 failed**, 8 новых случаев |
-| Combined CtCq/GE/atmosphere/Electrical/lag budget, 50/100/200 Hz | Qω и terminal/loss balance, charge integral и steady hover thrust прошли |
-| Drag dissipation, failed motor current/coast в общем профиле | Прошло |
-| Surfaces alternative + Electrical; RpmTable/PerformanceMap/Simple branches | Прошло |
-| Python flight analyzer regression | **4 passed, 0 failed** |
-| JSON Schema Draft 2020-12 | Обе схемы и **29** профилей прошли, включая новый пользовательский environment_test |
-| Production ProfileLoader + QuadAllocator | **29** допустимых профиль/среда комбинаций приняты |
-| Roslyn syntax всех **65** C# файлов | 0 ошибок; не заменяет Unity-компиляцию |
-| Unity metadata | Новые .meta присутствуют, 244 GUID уникальны |
-| git diff --check | Прошло |
-| Новые FinalAcceptanceRigidbodyTests | **5** сценариев добавлены; 59 PlayMode случаев суммарно; **здесь не запускались** |
-| Unity compilation / final coupled hover / inertia pulse / marker + inverted axes | Нужен запуск у пользователя; предыдущая suite подтверждена пользователем |
-| Real-world accuracy / calibration | Не измерена, проценты точности не заявляются |
-
-Основной fixture: quad_test_final_acceptance + environment_final_acceptance.
-Включены только совместимые реализованные модели; unsupported module flags остаются false.
-Остальные альтернативы проверяются отдельно, не суммируются для double counting.
-Новое Editor menu создаёт общий стенд, recorder и manual fault. Marker-only export
-сохраняет выбранную аэродинамику, батарею и enable flags; пересчитывает rotor/COM/CP
-authoring geometry, удаляет stale derived cache. Для mesh/surfaces нужен соответствующий export.
-JSON contract 1.0.0 не изменён, новых динамических сил не добавлено.
-
-Итог исследования и ТЗ, ограничения и proposal runtime-маршрута —
-[PHYSICS_AUDIT.md](PHYSICS_AUDIT.md). Воспроизводимая инструкция —
-[FINAL_ACCEPTANCE.md](FINAL_ACCEPTANCE.md).
-
-## SDK / mass properties, этап 9 — 2026-10-06
-
-Пользователь подтвердил финальные Unity-тесты предыдущего этапа.
-Ниже перечислены проверки кода SDK и синтетических inertia fixtures.
-
-| Проверка | Фактический результат |
-|---|---|
-| Core/EditMode / Roslyn C# 8 / .NET 8 / NUnitLite | **300 passed, 0 failed**; 16 новых inertia cases |
-| Random physical tensors from 20 point masses about COM | 600 матриц, 3 масштаба, реконструкция полного tensor прошла |
-| Repeated eigenvalues, symmetry, SPD, physical triangle inequality, quaternion basis | Прошло |
-| CAD import: explicit units/axes/reference, mass/COM/inertia, preserved motor/aero/power, validated output | Прошло; runtime JSON 1.0.0 не менялся |
-| Resources-based fixtures | Pure regression прошла; hardcoded Assets path удалён для установки в package |
-| Python analyzer + package checks | **8 passed, 0 failed** |
-| Package output / --check | Physics 181 files + Demo 55 files, 0.2.0; воспроизводимость/stale detection прошли |
-| Assembly dependency graph | 7 assemblies, DAG; Physics Runtime не ссылается на Input System/Demo |
-| GUID/source .meta | 257 GUID уникальны в Assets, новые .meta присутствуют; старые pilot/input/camera GUID сохранены |
-| Syntax parse | 73 C# files, 0 syntax errors; не заменяет Unity semantic compilation |
-| Новые ControlBoundaryTests | 2 scenarios добавлены: no-pilot direct motor/CSV и independent controller telemetry/manifest; здесь не запускались |
-| Actual Unity import обоих UPM packages, existing scene references, новый CAD Editor workflow / EXE | Ожидают запуска у пользователя |
-| Physically calibrated drone / precision percentage | Не получены; синтетический профиль остаётся regression fixture |
-
-Изменения сил/контроллерных gains отсутствуют. Полный tensor importer повышает точность
-введения mass properties при наличии достоверных исходных данных. Assembly relocation
-сохраняет MonoScript GUID и names/fields; проверить Missing Scripts при Unity-импорте.
-Pure PID/allocator utilities остаются core; управляющие MonoBehaviours — optional Demo.
-Recorder зависит только от IFlightControlTelemetry, не конкретного DroneTestPilot.
-UPM export создаётся Tools/build_unity_packages.py; исходные scripts — Assets/DronePhysics.
-Пользовательские FBX, scenes, профили и настройки Packages не изменялись этим этапом.
-
-## Этап 10 — 2026-10-05
-
-Пользователь подтвердил предыдущие тесты этапа 9. Новые результаты относятся к
-исходникам Assets/DronePhysics; финальную пересборку UPM откладываем по его решению.
-
-| Проверка | Фактический результат |
-|---|---|
-| Core + EditMode, Roslyn / .NET 8 / NUnitLite | **342 passed, 0 failed**, включая **42** новых случай RotorFlow |
-| Знаки осевой тяги/flapping, lateral lift, arbitrary axis, rho, stop/windmilling | Прошло |
-| Speed/thrust/moment caps, snapshot, flags, запрет axial/lift с RPM/J map | Прошло |
-| Независимая линейная осевая динамика, 50/100/200 Hz | Прошло, ошибка относительно exp(-c*t) <0.001 m/s |
-| Rate PID + local rotor forces/flapping, 50/100/200 Hz | Прошло; остаточная rate <0.025 rad/s, постоянная разница RPM для компенсации момента |
-| Height PID + motor lag + battery + ground gain + lift/inflow, 50/100/200 Hz | Прошло; ошибка высоты <0.005 m, вертикальная скорость <0.005 m/s; одноосевой математический стенд |
-| Python flight analyzer | **5 passed, 0 failed**, старые столбцы и новые dT/M/clip не дублируют thrust |
-| JSON Schema Draft 2020-12 | 2 схемы и **21** resource profile прошли |
-| Production ProfileLoader + QuadAllocator, advanced_rotors + final atmosphere/wind | Принят; 4 ротора, 13 LUT axes, static T/W=4; estimates/energy limitations явно предупреждаются |
-| Roslyn syntax | **76 C# files**, 0 syntax errors; не Unity semantic compilation |
-| Unity .meta | 121 GUID уникальны в DronePhysics, 261 во всех Assets; новые .meta присутствуют |
-| git diff --check | Прошло |
-| Новые RotorFlowRigidbodyTests | **6** isolated scenarios, **67** PlayMode cases суммарно; здесь не запускались |
-| Unity import, HUD/menu, фактический coupled flight / Rigidbody | Требуется проверка у пользователя |
-| Distribution/Packages rebuild / --check | Намеренно отложены до конца улучшений; snapshots 0.2.0 содержат этап 9 |
-| Измеренная точность всей сборки / coupled aero power | Не подтверждена; этап 14 заменён открытыми данными/численной приёмкой, load solver — этап 11 |
-
-Формулы, коэффициенты, clipping, совместимость и инструкция — ROTOR_FLOW.md.
-CSV версии 1.1.0 хранит correction до GE и pure flap moment отдельно. Q/current не
-получают выдуманную поправку из dT: батарея остаётся квазистационарной. Новые физические
-профили не подменяют сцены/профили пользователя. FBX и UPM snapshots не изменялись.
-
-
-## Этап 11 — 2026-10-05
-
-Пользователь подтвердил Unity-тесты этапа 10. Проверки ниже относятся к исходникам
-Assets/DronePhysics. Пересборка UPM остаётся отложенной до конца улучшений.
-
-| Проверка | Фактический результат |
-|---|---|
-| Core + EditMode / Roslyn / .NET 8 / NUnitLite | **383 passed, 0 failed**; **41** новый случай CoupledPower |
-| RPM/J load, Clamp, монотонность Q, maps + Simple/Electrical battery | Прошло; отрицательные/неподдержанные нагрузки отклоняются |
-| Midpoint spin dynamics, acceleration reaction, motor/ESC losses, SOC, reset, alias safety | Прошло; shaft = propeller work + spin energy rate, потери отдельно |
-| Disarm / failed motor / empty SOC / limits | Прошло; нет мгновенного удаления RPM, рекуперации или активного торможения |
-| Независимый аналитический quadratic coast, 50/100/200 Hz | Прошло; ошибка конечной скорости <0.05 rad/s за 1 s |
-| Rate PID + allocator + lag + motor inertia + rotor drag, 50/100/200 Hz | Прошло; слежение 70°/s, остаточная rate после release <0.03 rad/s |
-| Gyroscopic signs / CW-CCW cancellation / moment power orthogonality | Прошло |
-| CSV 1.2.0 | Новые shaft/spin/loss/gyro поля и отдельный force_rpm прошли; FirstOrder сохраняет семантику |
-| Python flight analyzer | **5 passed, 0 failed** |
-| JSON Schema Draft 2020-12 | **2** схемы, **23** resource profiles прошли |
-| Production ProfileLoader + QuadAllocator | Оба новых coupled_power / coupled_power_map с final atmosphere/wind приняты: 4 ротора, 13 LUT axes, static T/W=4 |
-| Roslyn syntax | **79 C# files**, 0 syntax errors; не заменяет Unity semantic compilation |
-| Unity .meta | **126** уникальных GUID в DronePhysics, **266** во всех Assets; все .meta присутствуют |
-| git diff --check | Прошло |
-| Новые CoupledPowerRigidbodyTests | **6** isolated scenarios добавлены, **73** PlayMode cases суммарно; здесь не запускались |
-| Actual Unity import / Rigidbody / menu / combined flight | Требуется запуск у пользователя |
-| UPM snapshots | Не пересобирались по решению пользователя, версия 0.2.0 содержит этап 9 |
-| Измеренная точность / полная энергетика аэродинамики | Не подтверждены; fixtures синтетические, limitations зафиксированы в COUPLED_POWER.md |
-
-RotorInertia — явно выбираемый режим; старые JSON сохраняют FirstOrder. Силы,
-карта Q, flow и spin momentum в инерционном режиме используют середину шага; CSV rpm
-сохраняет конечную скорость, force_rpm — скорость оценки сил. Spin balance относится
-к вращению относительно корпуса, а не всему аппарату. Weak-coupling guard sum(Jr)
-≤5% минимальной locked-body inertia ограничивает применимость упрощения, не даёт
-обещания точности 5%. Thrust-only ground/lift/flapping corrections остаются
-эмпирическими; нет обещания полного aero power balance. Пользовательский FBX не
-включён в коммит. Следующий этап — thermal / derating.
-
-
-## Этап 12 — 2026-10-06 (Asia/Yekaterinburg)
-
-Пользователь подтвердил Unity-тесты этапа 11. Здесь проверялись source Assets,
-а не отложенные UPM snapshots. Реальный Unity Runner в окружении недоступен.
-
-| Проверка | Фактический результат |
-|---|---|
-| Core + EditMode / Roslyn C# 8 / .NET 8 / NUnitLite | **431 passed, 0 failed**; **48** новых thermal cases |
-| Independent exponential heating / adiabatic heat / cooling sign / no overshoot | Прошло; 50/100/200 Hz для constant-loss analytical response |
-| Airflow cooling/cap / winding R(T) / immutable snapshot / optional disabled mode | Прошло; прежний electrical result сохранён без thermal |
-| Motor/ESC/battery separate current limits, cutoff/coast/recovery boundary | Прошло; motor cap <= no-load current не блокирует остальные моторы |
-| Coupled governor numerical sweep, 50/100/200 Hz против dt=0.001 s | Прошло: конечные omega в пределах 5 rad/s, T в пределах 0.25 K, SOC в пределах 0.0002 после 12 s; synthetic stress fixture |
-| Heat balance и chemical/terminal/Joule loss energy, SOC/reset | Прошло; тепло не добавлено повторно к bus energy |
-| Repeated trials/Resolve, failed queries, duplicate/mismatched Commit | Прошло; thermal/SOC state меняются один раз на успешный шаг |
-| FirstOrder и RotorInertia thermal disarm/cutoff | Прошло; FirstOrder сохраняет caller coast, RotorInertia сохраняет spin energy |
-| Weather VisualOnly invariance / cold vs warm ambient | Прошло; precipitation не создаёт дополнительные силы/мощность |
-| Python flight analyzer | **7 passed, 0 failed**, включая CSV weather/heat и отсутствие double counting |
-| JSON Schema Draft 2020-12 | **2** схемы, **29** resource profiles прошли |
-| Production ProfileLoader + QuadAllocator | Thermal и thermal_stress с warm environment приняты: 4 ротора, 13 LUT axes, static T/W=3.802 |
-| Roslyn syntax | **84 C# files**, 0 syntax errors; не Unity semantic compilation |
-| Unity .meta | **137** unique GUID в DronePhysics, **277** в Assets; все .meta присутствуют |
-| git diff --check | Прошло |
-| Новые ThermalRigidbodyTests | **6** isolated scenarios добавлены; **79** PlayMode cases суммарно; здесь не запускались |
-| Unity import/HUD/thermal editor/manual combined flight | Требуется пользовательский прогон |
-| Package rebuild / measured precision / precipitation VFX | Не выполнялись; UPM deferred, коэффициенты synthetic/estimated, VFX — внешняя интеграция |
-
-Основной профиль quad_test_thermal не предназначен для немедленного перегрева в H.
-quad_test_thermal_stress имеет искусственно низкую C и пороги для быстрого наблюдения
-derating. Это не рекомендация для настоящего двигателя/аккумулятора. Формулы,
-источники, valid domain, energy semantics и инструкция — THERMAL_WEATHER.md.
-
-## Этап 13 — 2026-10-06 (Asia/Yekaterinburg)
-
-Пользователь подтвердил тесты и общий профиль этапа 12. Этап 13 добавляет
-DrydenFrozen и report-only rotor descent/envelope; VRS force остаётся не реализованной.
-Источник PSD — primary NASA Madden 2019; scope/формулы/ограничения — DESCENT_WIND.md.
-
-| Проверка | Фактический результат здесь |
-|---|---|
-| Core + EditMode / Roslyn C# 8 / .NET 8 / NUnitLite | **468 passed, 0 failed**, **37** новых cases |
-| One-sided PSD / independent Simpson quadrature / band energy | Прошло для u/v/w и 8/32/128 modes; missing tails не перенормируются |
-| 2048-seed mean/variance/covariance | u variance 0.15731 vs 0.15287, v 0.14774 vs 0.15135, w 0.05906 vs 0.05912 (m/s)²; mean -0.01288 / -0.00094 / -0.00721 m/s; lag-2 s covariance в пределах 9% retained variance от независимого PSD integral |
-| Frozen advection/query order/time schedule/zero spectrum/disabled wind | Прошло; transverse coherence намеренно infinite, tested как ограничение |
-| Envelope signs/inclusive limits/stopped/nonpositive thrust/missing limits | Прошло; report-only metadata не меняет base thrust |
-| Passive descent analytical solution, 50/100/200 Hz | Через 5 s v=-9.1329702/-9.1329700/-9.1329692 m/s против -9.1329703 m/s analytic; midpoint RK2 + production drag, не PhysX |
-| Wind-driven translation / relative-air drag passivity | 3 s: position error 0.003071/0.006912/0.014602 m для 200/100/50 Hz против 1000 Hz; synthetic drag-only fixture |
-| JSON Schema Draft 2020-12 | **2** схемы, **31** resource profiles прошли |
-| Production loader + QuadAllocator | quad_test_descent_wind + environment_dryden_frozen принят: 4 ротора, 13 LUT axes, static T/W=4; estimate warnings сохранены |
-| Whole DronePhysics syntax parser | **88** C# files, 0 syntax errors; не Unity semantic compilation |
-| Unity .meta | **143** unique DronePhysics GUID / **283** Assets GUID; все .meta присутствуют |
-| Python CSV analysis | **8 passed**, новые counters не повторно суммируют тягу |
-| C# CSV 1.4.0 → Python analyzer | Два synthetic rows, unknown diagnostics сохранены пустыми; bus energy balance проверен |
-| Новые DescentWindRigidbodyTests | **6** isolated scenarios добавлены, **85** PlayMode cases всего; **здесь не запускались** |
-| Unity import/editor/HUD/combined flight | Требуется пользовательский прогон нового этапа |
-
-Проверки ансамбля используют фиксированные seed, local scene integration не зависит
-от Terrain/active scene/focus. Тесты спектра проверяют конечнополосную аппроксимацию,
-а не её тождество continuous Dryden filters/full 3D turbulence. Ветряной sampling flag
-advisory; при чрезмерном dt силы не меняются молча. Частоты выше Nyquist требуют
-изменения dt/band/length scales. Данные synthetic: абсолютная точность реального FPV
-или VRS не заявляется. Distribution/Packages остаются stage-9 snapshot до конца,
-FBX пользователя не включён. Следующий этап — итоговые independent checks и сборка.
-
-## Этап 14 — открытые reference данные и итоговый SDK, 2026-10-06
-
-| Проверка | Фактический результат |
-|---|---|
-| Полный Core/EditMode набор через .NET 8 / NUnitLite | **482/482 passed**; +14 reference cases к 468 этапа 13; не Unity Test Runner |
-| Bitcraze 2015 independent withheld thrust | 7 точек, mean relative 3.313%, max 16.153% на 7570 RPM; RMSE 0.0012622 Н на ротор. Редкая low-RPM таблица — явное ограничение |
-| UIUC APC static withheld CT/CP | 7 точек, max absolute CT 0.0010400 / CP 0.0004472; converted thrust RMSE 0.0122444 Н |
-| UIUC APC axial 4014 RPM withheld CT/CP | 8 точек, max absolute CT 0.0008000 / CP 0.0004000; converted thrust RMSE 0.0102031 Н; assumed density 1.225 |
-| Brushless published identified fit | 53 промежуточных точки, max representation dT 0.0000368837 Н / dQ 0.0000000574992 Н·м; **не independent measured accuracy** |
-| Hummingbird paper parameters | 6000 RPM → 2.052 Н; saturation 3.5 Н/ротор; roll 77.714 против округлённых 77.7 рад/с², yaw 8.5; аналитическая сверка |
-| Production ReferenceValidation CLI | Все пять профилей приняты loader/QuadAllocator; отчёт сохранён в Data/reference-validation-results.json |
-| JSON Schema Draft 2020-12 | 36 resource profiles, обе схемы прошли. Nested benchmark JSON — отдельный формат, не drone profile |
-| C# syntax | 90 source files, 0 syntax errors; не Unity semantic compilation |
-| Unity metadata | Все .meta присутствуют; 152 DronePhysics GUID, 292 unique Assets GUID |
-| Python flight analyzer + package tests | **12/12 passed** |
-| Загрузка внешних моделей | 7 закреплённых geometry/URDF/template/license файлов скачаны fetch_reference_models.py и сверены с SHA-256; конвертация/Unity import не выполнялись |
-| UPM rebuild / --check | Physics/Demo **0.3.0**, source-file hashes, original GUID и разделение InputSystem сохранены |
-| Новые PlayMode reference tests | 3 isolated hover scenarios добавлены; 88 PlayMode cases всего; **здесь не запускались** |
-| Unity clean-project import / PlayMode / EXE | Требуется прогон командой; Unity здесь не установлен |
-
-Benchmark holdout points не включены в profile curves. Новые критерии для редкой CF2
-таблицы: full-range error <20%, >10000 RPM <2.5%; первоначальный blanket 8% предел
-не прошёл на 7570 RPM. Мы документировали предел интерполяции, не подменяли measured
-holdout точку или источник. UIUC CP преобразуется в CQ/(torque) с корректным 2π.
-Ток/voltage Bitcraze не используются для якобы измеренной батареи. Brushless curve и
-Hummingbird analytic numbers не объединяются с независимыми измерениями в общий «процент точности».
-
-Общий synthetic acceptance fixture — quad_test_descent_wind + environment_dryden_frozen,
-меню Test Bench / Combined Physics Drone. Проверки отдельных модулей и реальные
-частичные reference profiles имеют разные цели. Итоговые документы PHYSICS_REFERENCE.md,
-JUDGES_BRIEF.md, REFERENCE_DRONES.md, MENU.md включены в обновлённый SDK.
-Физическая приёмка без оборудования завершена в пределах этих numerical/bench checks;
-точность полного реального полёта и импорт целевого Unity проекта ещё не подтверждены.
-
-## Reference fixture hotfix 0.3.1 — 2026-10-06
-
-Исправлена настройка keyboard collective новых reference стендов: `1.25 / T/W`
-в пределах 0.1…0.95 вместо фиксированных 38%. JSON и модели сил не менялись.
-HUD показывает height target и Space thrust/weight. Старые сцены сохраняют
-свой serialized collective; требуется 0.60 либо пересоздание стенда.
-Проверки этой сессии: Python analyzer/package suite и rebuild --check.
-.NET/Unity в текущей среде отсутствуют: новый C# набор здесь не запускался.
-Предыдущие 482 результата относятся к предыдущей сессии.
-
-
-## UPM hotfix 0.3.2 — 2026-10-06
-
-Scale References создаёт папку Assets/DronePhysics через AssetDatabase до CreateAsset.
-Добавлена read-only команда показа проектного manifest.json. Генератор экспортирует
-стабильные .meta всех импортируемых root файлов, включая checksum JSON; исходные
-GUID компонентов не меняются. Documentation~ не импортируется Unity.
-
-| Проверка | Фактический результат этой сессии |
-|---|---|
-| Python analyzer/package suite | **13 passed, 0 failed** |
-| Rebuild / --check | Physics/Demo **0.3.2**, все байты соответствуют исходникам |
-| Metadata и SHA-256 | Все импортируемые файлы имеют .meta, GUID не повторяются между пакетами; все checksum entries сверены |
-| git diff --check | Прошло |
-| Unity Scale menu / manifest reveal / HUD / package import | Не запускались: Unity отсутствует в этой среде |
-| C#/.NET rerun | Не выполнялся: dotnet отсутствует; предыдущие 482 результата относятся к этапу 14 |
-
-Состав включает ранее подготовленный hotfix 0.3.1. Формулы, JSON-контракт и CSV не
-менялись. Личные полётные логи и производные отчёты не включены в Git.
-
-## Windows/Linux и документация 0.3.3 — 2026-10-06
-
-Выпуск основан на актуальной physics-plugins: пользовательская очистка проекта и
-`StepPhysics(.1f)` сохранены. Ветка physics-packages предназначена для дальнейшего
-развития SDK. Основная рабочая платформа — Windows; инструменты поддерживают Linux.
-
-| Проверка | Фактический результат подготовки выпуска |
-|---|---|
-| `python -m unittest discover -s Tests/Python -v` | **18 passed, 0 failed** |
-| Windows logical paths | Результат совпадает с POSIX; Documentation~/Data не запрашивает .meta |
-| UTF-8 BOM / CRLF / кириллица и пробелы | Канонические пакеты и SHA-256 совпадают; --check принимает CRLF checkout и обнаруживает изменение содержимого |
-| Metadata и документация | GUID сохранены, повторений нет, у импортируемых файлов есть .meta; все локальные Markdown-ссылки внутри обоих пакетов разрешаются |
-| Reference profile generator | Отдельная временная копия с кириллицей/пробелами и BOM/CRLF; JSON-значения всех профилей не изменились |
-| Contract generator | Повторная генерация не изменила DTO, обе схемы и PARAMETERS.md |
-| UPM rebuild / --check | Physics/Demo **0.3.3**, канонические файлы соответствуют исходникам |
-| Python syntax / git diff --check | Прошло |
-| .NET текущей локальной среды | Не запускался: dotnet отсутствует; исторические 482 не выдаются за новый результат |
-| Windows/Ubuntu CI | Добавлена матрица package/Python/.NET/contract; результат запуска доступен в [GitHub Actions](https://github.com/ElecTriKusX/DroneLab/actions?query=branch%3Aphysics-packages) |
-| Unity import / Scale menu / PlayMode / EXE | Не запускались: Unity отсутствует в этой среде; CI без Unity не проверяет эти сценарии |
-
-Исправления упаковки не меняют уравнения, JSON 1.0.0 или CSV 1.4.0. Reference-профили
-по-прежнему не содержат неизвестных измеренных body-drag/power/thermal параметров.
-README, PHYSICS_REFERENCE и PHYSICAL_QUANTITIES описывают эти ограничения явно.
+# Профили и проверка моделей
+
+SDK 0.3.3. Результаты относятся к конкретным моделям и диапазонам данных.
+Контрольные точки holdout исключены из таблиц профиля и используются независимо
+от интерполяционных узлов. Полные численные результаты:
+[reference-validation-results.json](Data/reference-validation-results.json).
+
+## Согласование контрольных значений
+
+Для положительной тяги `MAPE = mean(|Tmodel − Tref| / Tref)`.
+Согласование ниже означает `100% × (1 − MAPE)`, а не вероятность, корреляцию или
+процент точных траекторий. Точки с нулевой/отрицательной тягой оцениваются отдельно
+по абсолютной ошибке и сохранению знака.
+
+| Набор | Контрольные точки | Среднее согласование тяги | Средняя / максимальная относительная ошибка | RMSE тяги |
+|---|---:|---:|---|---|
+| APC 10×4.7 SF, статический UIUC | 7 | **99,64%** | 0,365% / 0,884% | 0,012244 Н |
+| APC 10×4.7 SF, осевой UIUC, 4014 RPM | 8 всего; процент только для положительной тяги | **99,17%** | 0,835% / 1,425% | 0,010203 Н по всем 8 точкам |
+| Crazyflie 2.0, Bitcraze 2015 | 7 | **96,69%** | 3,313% / 16,153% | 0,001262 Н на ротор |
+
+Для статического APC даже худшая положительная контрольная точка имеет согласование
+99,12% по указанной метрике. Для CF2 максимальная ошибка приходится на 7570 RPM:
+известное ограничение разреженной низкооборотной таблицы. На контрольных точках
+CF2 выше 10000 RPM максимальная ошибка меньше 2,5%.
+
+UIUC публикует CT/CP. Пересчёт в Н/Н·м использует принятую плотность 1,225 кг/м³ и
+`CQ = CP/(2π)`; это не отдельное измерение силы целого аппарата. Абсолютные ошибки
+CT/CP: static ≤0,0010400/0,0004472; axial ≤0,0008000/0,0004000. Осевой набор включает
+отрицательную тягу; относительная метрика вблизи нуля непоказательна.
+
+| Проверка переноса опубликованной модели | Результат | Область подтверждения |
+|---|---|---|
+| Crazyflie Brushless | 53 промежуточных RPM: max ΔT=0,0000368837 Н, max ΔQ=0,0000000574992 Н·м | Представление идентифицированного полинома; независимых измерений этих точек нет |
+| Hummingbird | Roll 77,714 против округлённых 77,7 рад/с²; yaw 8,5 против 8,5 рад/с² | Аналитическая проверка единиц и переноса параметров; не полётный эксперимент |
+
+## Профили аппаратов
+
+| Ресурс | Масса | Данные источника | Оценочные / неподтверждённые параметры |
+|---|---:|---|---|
+| `reference_crazyflie20` | 0,027 кг | Bitcraze RPM–тяга; масса/инерция/геометрия CF2X URDF | Q/T, отклик мотора, размеры оболочки, шаг винта; yaw не откалиброван независимо |
+| `reference_crazyflie_brushless` | 0,044 кг | Масса/инерция защищённого варианта, идентифицированные T/Q и отклик | Визуальная оболочка, шаг винта, соединение кривой с нулём ниже 250 рад/с |
+| `reference_hummingbird` | 0,68 кг | Масса/инерция/плечо, thrust coefficient и Q/T статьи | Размеры/шаг; перенос постоянной времени тяги на RPM является приближением |
+| `bench_apc_10x47_static` / `bench_apc_10x47_axial` | Условный носитель | Стендовые характеристики винта UIUC | Носитель синтетический; это не дополнительные реальные модели аппаратов |
+| `quad_test_descent_wind` + `environment_dryden_frozen` | Синтетический профиль | Совместная проверка реализованных модулей | Коэффициенты не являются измеренными свойствами конкретного FPV |
+
+`parameterProvenance` каждого профиля различает измерение, опубликованную модель,
+расчёт и оценку. Источники и закреплённые commits:
+[reference-source-manifest.json](Data/reference-source-manifest.json),
+[THIRD_PARTY](THIRD_PARTY.md).
+
+Общая масса уже включает привод; роторы второй раз не добавляются. ROS-оси преобразованы
+в Unity `(-y,z,x)`. У Hummingbird принят коэффициент статьи 5,7e−8 Н/RPM² с переводом
+в рад/с; отличающийся коэффициент RotorS не используется. Ток общего стенда Bitcraze
+не интерпретируется как измеренный ток одного мотора или сопротивление батареи.
+
+## Текущие ограничения
+
+Reference-профили являются частичными: неизвестные сопротивление, батарея и тепло
+выключены. При сохранённом наклоне и отсутствии drag горизонтальная тяга продолжает
+разгонять аппарат. Это известное ограничение этих профилей; они не предназначены
+для оценки максимальной скорости или длительности полёта.
+
+За измеренным диапазоном точность не подтверждена; применяются Clamp/Reject/stop
+политики. APC axial содержит один измеренный RPM и синтетический J=0 anchor из
+статической таблицы. Статические сравнения не подтверждают манёвры, VRS или погоду.
+Полный полёт требует калиброванных aero/power параметров, измерений состояния и условий
+эксперимента. Дождь/снег сейчас представлены metadata/VFX, без дополнительных сил.
+
+## Автоматические проверки
+
+[Проверенный CI выпуска 0.3.3](https://github.com/ElecTriKusX/DroneLab/actions/runs/37478323667):
+
+| Проверка | Windows | Ubuntu |
+|---|---|---|
+| Pure C#/EditMode через .NET 8 | 482 passed, 0 failed, 0 skipped | 482 passed, 0 failed, 0 skipped |
+| Python анализатор/упаковка | 18 passed | 18 passed |
+| UPM / GUID / SHA-256 / локальные ссылки | Прошло | Прошло |
+| Повторная генерация DTO/схем/PARAMETERS | Без изменений | Без изменений |
+
+Python-регрессии проверяют Windows-пути, кириллицу/пробелы, BOM/CRLF и обнаружение
+устаревшего экспорта. Новая редакция документации дополнительно проверяется текущим
+package/links suite. Результат CI выше относится к указанному commit/run.
+Unity import, PlayMode и EXE этим CI не выполняются.
+
+## Воспроизведение
+
+```console
+python Tools/build_reference_profiles.py
+dotnet run --project Tools/ReferenceValidation/ReferenceValidation.csproj -- Assets/DronePhysics/Resources/DronePhysics Docs/Physics/Data/reference-validation-results.json
+dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj --configuration Release
+python -m unittest discover -s Tests/Python -v
+```
+
+`ReferenceProfileTests` проверяет holdout/единицы/ограничения; Unity
+`ReferenceProfileRigidbodyTests` проверяет изолированный стенд зависания.
+Benchmark JSON имеет отдельный formatVersion и не является drone profile.
+Запуск стендов и установка тестов описаны в [DEVELOPMENT](DEVELOPMENT.md).
