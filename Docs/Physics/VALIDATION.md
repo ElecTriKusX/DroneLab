@@ -68,12 +68,13 @@ Reference-профили являются частичными: неизвест
 
 ## Автоматические проверки
 
-[Проверенный CI выпуска 0.3.3](https://github.com/ElecTriKusX/DroneLab/actions/runs/37478323667):
+[Проверенный CI Physics/Demo 0.3.4 и Environment 0.2.0](https://github.com/ElecTriKusX/DroneLab/actions/runs/37526457977):
 
 | Проверка | Windows | Ubuntu |
 |---|---|---|
-| Pure C#/EditMode через .NET 8 | 482 passed, 0 failed, 0 skipped | 482 passed, 0 failed, 0 skipped |
-| Python анализатор/упаковка | 18 passed | 18 passed |
+| Physics pure C#/EditMode через .NET 8 | 505 passed, 0 failed, 0 skipped | 505 passed, 0 failed, 0 skipped |
+| Environment pure C# | 21 passed, 0 failed, 0 skipped | 21 passed, 0 failed, 0 skipped |
+| Python анализатор/упаковка | 21 passed | 21 passed |
 | UPM / GUID / SHA-256 / локальные ссылки | Прошло | Прошло |
 | Повторная генерация DTO/схем/PARAMETERS | Без изменений | Без изменений |
 
@@ -105,10 +106,8 @@ Environment 0.2.0 использует единый снимок ветра, л�
 `LiveAirRigidbodyTests` подготовлен для Unity: изменение воздуха без пересоздания
 Parameters/Power/Drive, сохранение заряда/тепла и соответствие телеметрии. Здесь не запускался.
 
-[Проверенный CI погодного адаптера 0.1.0](https://github.com/ElecTriKusX/DroneLab/actions/runs/37519897021):
-на Windows и Ubuntu прошли 482 теста ядра, 17 тестов погодных преобразований
-и 21 Python-тест, проверка всех трёх пакетов и регенерация контракта без изменений.
-Эти проверки не запускают сторонний Enviro или Unity.
-В актуальном коде добавлен live-air provider; JSON остаётся fallback до первого снимка.
-Результат CI выше относится к выпуску 0.1.0, до добавления live-air provider. Запуск Enviro/Rigidbody, сохранение SOC и температур при смене профиля
+Результаты live-air suite включены в CI выше. Проверяются вычисления и состояние ядра;
+сторонний Enviro, Unity import и Play Mode этим CI не запускаются.
+JSON остаётся fallback до первого снимка, затем применяются данные провайдера.
+Запуск Enviro/Rigidbody, сохранение SOC и температур при смене профиля
 требуют проверки в Play Mode. Подключение: [README адаптера](https://github.com/ElecTriKusX/DroneLab/blob/envieroment-packages/Assets/DroneEnvironment/README.md).
