@@ -1,0 +1,45 @@
+.stage {
+    position: absolute;
+    width: 1920px;
+    height: 1080px;
+    transform-origin: 0% 0%;
+    background-color: rgb(20, 21, 22);
+    -unity-background-scale-mode: scale-to-fit;
+    color: rgb(235, 235, 233);
+    font-size: 22px;
+}
+.menu-stack { position: absolute; left: 650px; top: 382px; width: 620px; }
+.menu-button {
+    height: 70px;
+    margin: 0 0 18px 0;
+    padding: 0 20px;
+    border-width: 1px;
+    border-color: rgba(225, 225, 222, 0.65);
+    border-radius: 0;
+    background-color: rgba(22, 23, 24, 0.90);
+    color: rgb(230, 230, 227);
+    font-size: 23px;
+    -unity-font-style: normal;
+    -unity-text-align: middle-center;
+    letter-spacing: 3px;
+    transition-property: background-color, border-color, color;
+    transition-duration: 0.12s;
+}
+.menu-button.primary { border-color: rgb(243, 243, 240); border-width: 2px; }
+.menu-button:hover, .menu-button:focus {
+    background-color: rgba(69, 70, 71, 0.95);
+    border-color: rgb(255, 255, 250);
+    color: white;
+}
+.menu-button:active { background-color: rgb(219, 219, 216); color: rgb(18, 19, 20); }
+.menu-button:disabled { opacity: 0.4; }
+.status { position: absolute; left: 650px; top: 850px; width: 620px; font-size: 17px; white-space: normal; -unity-text-align: upper-center; }
+.footer { position: absolute; bottom: 26px; left: 650px; width: 620px; font-size: 14px; letter-spacing: 2px; color: rgb(150, 150, 149); -unity-text-align: middle-center; }
+.fallback-logo { position: absolute; top: 100px; left: 430px; width: 1060px; -unity-text-align: middle-center; }
+.logo-title { font-size: 110px; -unity-font-style: bold; }
+.modal-overlay { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.88); align-items: center; justify-content: center; }
+.modal-card { width: 700px; padding: 36px; border-width: 1px; border-color: rgb(185, 185, 181); background-color: rgb(25, 26, 27); }
+.modal-title { font-size: 28px; letter-spacing: 3px; margin-bottom: 30px; }
+.modal-card > Label { margin-bottom: 24px; }
+.modal-card > Toggle, .modal-card > Slider, .modal-card > DropdownField { margin-bottom: 28px; }
+.modal-card .menu-button { margin-top: 12px; margin-bottom: 0; }
