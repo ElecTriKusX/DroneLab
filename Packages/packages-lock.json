@@ -1,5 +1,29 @@
 {
   "dependencies": {
+    "com.dronelab.demo": {
+      "version": "https://github.com/ElecTriKusX/DroneLab.git?path=/Distribution/Packages/com.dronelab.demo#codex/physics-foundation",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.dronelab.physics": "0.3.2",
+        "com.unity.inputsystem": "1.20.0"
+      },
+      "hash": "f2f3803053370d72cfc742747e0bd2d6ab337dbd"
+    },
+    "com.dronelab.physics": {
+      "version": "https://github.com/ElecTriKusX/DroneLab.git?path=/Distribution/Packages/com.dronelab.physics#codex/physics-foundation",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.terrain": "1.0.0",
+        "com.unity.modules.terrainphysics": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.imgui": "1.0.0"
+      },
+      "hash": "f2f3803053370d72cfc742747e0bd2d6ab337dbd"
+    },
     "com.unity.burst": {
       "version": "1.8.30",
       "depth": 2,
@@ -101,6 +125,13 @@
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.6",
       "depth": 3,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.nuget.newtonsoft-json": {
+      "version": "3.2.2",
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
