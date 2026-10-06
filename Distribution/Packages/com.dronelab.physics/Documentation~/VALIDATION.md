@@ -102,8 +102,12 @@ Benchmark JSON имеет отдельный formatVersion и не являет�
 `Tests/Environment/DroneLab.Environment.Tests.csproj`: 17 случаев для осей/знака,
 метеорологических направлений, шкалы ветра, обратного преобразования и температуры.
 Python suite дополнен тремя проверками воспроизводимости погодного пакета,
-метаданных и UTF-8/BOM/CRLF. Локально на Linux прошёл полный Python suite: 21 тест.
-Погодный C# suite добавлен в CI Windows/Ubuntu. Эти проверки не запускают сторонний Enviro или Unity.
+метаданных и UTF-8/BOM/CRLF.
+
+[Проверенный CI погодного адаптера 0.1.0](https://github.com/ElecTriKusX/DroneLab/actions/runs/37519897021):
+на Windows и Ubuntu прошли 482 теста ядра, 17 тестов погодных преобразований
+и 21 Python-тест, проверка всех трёх пакетов и регенерация контракта без изменений.
+Эти проверки не запускают сторонний Enviro или Unity.
 Изменяется только источник ветра `CustomField`; воздушное состояние физики остаётся
 в JSON. Запуск Enviro/Rigidbody, сохранение SOC и температур при смене профиля
 требуют проверки в Play Mode. Подключение: [README адаптера](https://github.com/ElecTriKusX/DroneLab/blob/envieroment-packages/Assets/DroneEnvironment/README.md).
