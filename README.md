@@ -1,85 +1,88 @@
-# DroneLab Physics Packages
+# DroneLab Environment Packages
 
-Параметризованная физика мультироторных аппаратов для Unity: силы и моменты роторов,
-аэродинамика, ветер, питание, нагрев и телеметрия. Движение корпуса и столкновения
-интегрирует Rigidbody/PhysX; параметры аппарата и среды задаются отдельными JSON.
-
-**SDK 0.3.3 · JSON 1.0.0 · CSV 1.4.0 · Unity 6000.3.25f1 · Python 3.10+ · .NET 8.**
-Windows — основная платформа разработки, Linux поддерживается инструментами и CI.
-Разработческий проект использует HDRP; Physics/Demo не зависят от HDRP.
+Ветка `envieroment-packages` предназначена для интеграции окружения с физикой дронов.
+Добавлен адаптер Enviro 3: выбор погодного профиля и ветер в м/с для DroneLab Physics.
+Windows — основная платформа разработки; сборщики и математические тесты поддерживают Linux.
+Unity 6000.3.25f1, HDRP, Python 3.10+, .NET 8.
 
 ## Состав
 
-| Пакет | Реализовано |
+| Компонент | Ответственность |
 |---|---|
-| `com.dronelab.physics` | Pure C# ядро, Rigidbody-адаптер, JSON-валидация, authoring/import, атмосфера/ветер, питание/тепло, CSV/fault, EditMode-тесты |
-| `com.dronelab.demo` | Angle/Acro/H, каскадные PID, QuadAllocator, клавиатура/геймпад, HUD/камера, стенды и PlayMode-тесты |
+| `Assets/Enviro 3 - Sky and Weather` | Импортированный сторонний продукт: небо, освещение, облака, погодные профили, сезон/время, эффекты |
+| `Assets/DroneEnvironment` | Код DroneLab: неизменяемое состояние среды, перевод единиц, адаптер ветра, API управления и окно диагностики |
+| `Assets/DronePhysics` | Силы/моменты, аэродинамика, ветер, привод, аккумулятор, тепло, телеметрия; SDK 0.3.3 |
+| Demo | Контроллер Angle/Acro/H, управление, HUD, камера и стенды; SDK 0.3.3 |
+| `Distribution/Packages` | Экспорт Physics, Demo и Environment; Enviro в экспорт не включается |
 
-Physics поддерживает произвольное число роторов и их оси. Demo поддерживает четыре
-параллельных ротора +Y. Источник SDK — `Assets/DronePhysics`; UPM-экспорт —
-`Distribution/Packages`. В одном Unity-проекте используется одна копия SDK.
+Разработка силового ядра продолжается в `physics-packages`. Адаптер среды находится
+в этой ветке, отдельно от чужих исходников. Изменения ядра для живой атмосферы должны
+попадать в Physics и переноситься сюда. Контроллер остаётся отдельным Demo-пакетом,
+доступным для совместной проверки полёта в этой ветке.
 
-## Реализованная физика
+## Реализовано
 
-| Область | Модели |
-|---|---|
-| Механика | Масса/COM, AutoBox/ManualPrincipal/CAD-тензор, плечи сил, реактивные моменты, гравитация |
-| Винт/привод | OmegaSquared, CtCq, RPM-таблицы, RPM/J-карты, FirstOrder, RotorInertia, выбег, энергия вращения и гироскопические моменты |
-| Аэродинамика | Квадратичный drag корпуса, Box/manual/mesh projected area, pressure surfaces, rotor drag, bounded ground effect, axial/lateral corrections и blade flapping |
-| Среда | Constant/StandardAtmosphere, местный ветер, Gust, Turbulence, CustomField, DrydenFrozen, диагностика снижения и дискретизации |
-| Питание/тепло | SOC/OCV, просадка напряжения, Simple/Electrical motor/ESC, governor токов/мощности/RPM, тепловые узлы, обдув и derating |
-| Диагностика | Моторные отказы, CSV 1.4.0, энергетические балансы, operating envelope, weather/VFX metadata |
+- `WeatherSnapshot`: ветер в мировых осях, температура K, доли wetness/snow и время снимка.
+- `EnviroWeatherController`: профили, плавный/мгновенный переход, ручной ветер, время суток,
+  передача ветра через `IWindProvider` без переинициализации дрона.
+- Меню **DroneLab → Environment → Connect Selected Drone to Enviro**: проверка профиля,
+  копия JSON с `CustomField`, назначение провайдера и сохранение остальных параметров среды.
+- UPM `com.dronelab.environment` 0.1.0, исходные `.meta`, проверка SHA-256,
+  тесты осей/единиц/границ и переносимости экспорта.
 
-Дополнительные эффекты активируются профилем. Единицы SI; +X вправо, +Y вверх,
-+Z вперёд; root/parents scale=1. Motor command — доля RPM, manual throttle — доля тяги.
+Enviro `windSpeed` — число 0…1, а не м/с. Полная шкала по умолчанию 20 м/с задаётся
+адаптером и требует осознанной настройки. Передаётся однородный горизонтальный ветер.
+Температура Enviro пока диагностическая: давление, плотность, температура для сил
+и тепла берутся из JSON физики. Реальная погода и дополнительные силы осадков ещё отсутствуют.
 
-## Документация
+## Запуск
 
-| Документ | Назначение |
-|---|---|
-| [PHYSICS_REFERENCE](Docs/Physics/PHYSICS_REFERENCE.md) | Все реализованные формулы, ограничения и возможные расширения физики |
-| [PHYSICAL_QUANTITIES](Docs/Physics/PHYSICAL_QUANTITIES.md) | Величины, единицы, коэффициенты и связь с JSON |
-| [PARAMETERS](Docs/Physics/PARAMETERS.md) | Полный генерируемый реестр JSON-полей |
-| [DEVELOPMENT](Docs/Physics/DEVELOPMENT.md) | Установка, запуск, API, authoring, диагностика, Windows/Linux, границы погодной интеграции |
-| [VALIDATION](Docs/Physics/VALIDATION.md) | Профили, контрольные сравнения, точность и результаты тестов |
-| [THIRD_PARTY](Docs/Physics/THIRD_PARTY.md) | Источники и атрибуция внешних данных |
+1. Добавить настроенный Enviro prefab, назначить камеру, включить Weather/Environment.
+2. **DroneLab → Test Bench → Combined Physics Drone**.
+3. Выделить дрон → **DroneLab → Environment → Connect Selected Drone to Enviro** →
+   сохранить новую копию JSON и сцену.
+4. Play → окно **DroneLab Weather / Wind** → профиль или Manual wind override.
+   Для полёта: Game View → F → H; WASD — наклон, Q/E — yaw, Space/Ctrl — высота.
 
-## Контрольные сравнения и текущие ограничения
+Подробные единицы, API, порядок исполнения, ограничения и установка UPM:
+[README адаптера](Assets/DroneEnvironment/README.md).
 
-**Статический APC 10×4.7: среднее согласование по тяге 99,64% на семи независимых
-контрольных точках.** Метрика — `100% × (1 − средняя относительная ошибка)`.
-Для осевого APC — 99,17% на положительной ветви; для CF2 — 96,69%.
-Это характеристики винта в условиях стенда, а не точность полной траектории.
-Подробные условия, максимальные ошибки и источники — в VALIDATION.
-
-Reference-профили содержат известные параметры открытых источников. Неизвестные
-body-drag/power/thermal параметры отключены. Известное ограничение: наклонённый
-reference-дрон без сопротивления продолжает горизонтальный разгон; H удерживает
-только высоту. Для совместной проверки модулей предназначен Combined Physics Drone.
-
-CFD/BEMT, wake interaction, dynamic inflow/VRS forces, гибкость/разрушение, электрохимия,
-датчики/EKF и маршрутный автопилот отсутствуют. Точность полного реального полёта
-пока не подтверждена синхронизированными измерениями.
-
-## Запуск и пересборка
-
-Unity: создать сцену с поверхностью/collider → **DroneLab → Test Bench → Combined
-Physics Drone** → назначить дрон камере → Play → Game View → F → H.
-WASD — наклон, Q/E — yaw, Space/Ctrl — высота, Z — Angle/Acro, Backspace — reset.
-
-Из корня репозитория:
+## Проверки и пересборка
 
 ```console
 python Tools/build_unity_packages.py
+python Tools/build_environment_package.py
 python Tools/build_unity_packages.py --check
+python Tools/build_environment_package.py --check
 python -m unittest discover -s Tests/Python -v
 dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj --configuration Release
+dotnet test Tests/Environment/DroneLab.Environment.Tests.csproj --configuration Release
 ```
 
-На Linux допускается `python3`. Проверенный выпуск 0.3.3: на Windows и Ubuntu прошли
-18 Python и 482 C# теста, package verification и генерация контракта.
-Unity import/PlayMode/EXE требуют отдельного запуска в Unity.
+На Linux допускается `python3`. CI выполняет эти проверки на Windows и Ubuntu.
+Математические тесты не запускают Unity: импорт, визуальные переходы и влияние ветра
+на Rigidbody требуют отдельной проверки в редакторе.
 
-Разработка Physics/Demo — `physics-packages`; погодная интеграция —
-`envieroment-packages`. Границы ответственности описаны в DEVELOPMENT.
-Лицензия кода: [GPL-3.0](LICENSE). Изменения выпуска: [CHANGELOG](CHANGELOG.md).
+## Дальнейшая разработка
+
+1. Единый живой источник температуры, давления и плотности для сил, привода и тепла,
+   с сохранением SOC/нагрева/состояния роторов при изменении условий.
+2. Реальные метеоданные: координаты, единицы, обновление, кэш и работа без сети.
+3. Полное меню условий, физические порывы, запись состояния среды и Unity-проверки.
+
+## Документация физики
+
+| Документ | Содержание |
+|---|---|
+| [PHYSICS_REFERENCE](Docs/Physics/PHYSICS_REFERENCE.md) | Законы, реализованные модели, ограничения и возможные расширения |
+| [PHYSICAL_QUANTITIES](Docs/Physics/PHYSICAL_QUANTITIES.md) | Величины, единицы и коэффициенты |
+| [PARAMETERS](Docs/Physics/PARAMETERS.md) | Генерируемый JSON-контракт |
+| [DEVELOPMENT](Docs/Physics/DEVELOPMENT.md) | Установка, API физики, контроллер, стенды и диагностика |
+| [VALIDATION](Docs/Physics/VALIDATION.md) | Проверки, профили и контрольные сравнения |
+| [THIRD_PARTY](Docs/Physics/THIRD_PARTY.md) | Источники физических данных |
+
+Статический APC 10×4.7: **99,64% среднего согласования тяги на семи независимых
+контрольных точках**. Это стендовая характеристика винта; точность полной траектории
+и погодного адаптера этой метрикой не подтверждается.
+
+Код DroneLab: [GPL-3.0](LICENSE). Enviro — отдельный сторонний продукт со своей лицензией.

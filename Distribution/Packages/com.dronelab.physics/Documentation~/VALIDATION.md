@@ -95,3 +95,15 @@ python -m unittest discover -s Tests/Python -v
 `ReferenceProfileRigidbodyTests` проверяет изолированный стенд зависания.
 Benchmark JSON имеет отдельный formatVersion и не является drone profile.
 Запуск стендов и установка тестов описаны в [DEVELOPMENT](DEVELOPMENT.md).
+
+## Интеграция Enviro
+
+В `envieroment-packages` добавлен отдельный suite
+`Tests/Environment/DroneLab.Environment.Tests.csproj`: 17 случаев для осей/знака,
+метеорологических направлений, шкалы ветра, обратного преобразования и температуры.
+Python suite дополнен тремя проверками воспроизводимости погодного пакета,
+метаданных и UTF-8/BOM/CRLF. Локально на Linux прошёл полный Python suite: 21 тест.
+Погодный C# suite добавлен в CI Windows/Ubuntu. Эти проверки не запускают сторонний Enviro или Unity.
+Изменяется только источник ветра `CustomField`; воздушное состояние физики остаётся
+в JSON. Запуск Enviro/Rigidbody, сохранение SOC и температур при смене профиля
+требуют проверки в Play Mode. Подключение: [README адаптера](https://github.com/ElecTriKusX/DroneLab/blob/envieroment-packages/Assets/DroneEnvironment/README.md).

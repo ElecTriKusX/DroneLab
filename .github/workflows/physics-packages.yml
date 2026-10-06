@@ -27,10 +27,14 @@ jobs:
           dotnet-version: '8.0.x'
       - name: Verify committed packages
         run: python Tools/build_unity_packages.py --check
+      - name: Verify environment package
+        run: python Tools/build_environment_package.py --check
       - name: Python regression tests
         run: python -m unittest discover -s Tests/Python -v
       - name: Mathematical core tests (not Unity PlayMode)
         run: dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj --configuration Release
+      - name: Weather units and direction tests (not Unity PlayMode)
+        run: dotnet test Tests/Environment/DroneLab.Environment.Tests.csproj --configuration Release
       - name: Verify regenerated contract
         run: |
           python Tools/generate_physics_contract.py

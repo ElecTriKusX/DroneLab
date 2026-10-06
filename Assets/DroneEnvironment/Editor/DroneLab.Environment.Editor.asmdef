@@ -1,0 +1,7 @@
+{
+  "name": "DroneLab.Environment.Editor",
+  "references": ["DroneLab.Environment", "DroneLab.Environment.Enviro", "DroneLab.Physics", "DroneLab.Simulation", "Enviro3.Runtime"],
+  "includePlatforms": ["Editor"],
+  "overrideReferences": true,
+  "precompiledReferences": ["Newtonsoft.Json.dll"]
+}
