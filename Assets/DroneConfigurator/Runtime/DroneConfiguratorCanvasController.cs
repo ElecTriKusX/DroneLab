@@ -1022,7 +1022,7 @@ namespace DroneLab.Configurator
 
         private void RecalculateRotorPreviewVisualScale()
         {
-            Bounds bounds;
+            Bounds bounds = default;
             bool hasBounds = modelLoader != null
                 && modelLoader.LoadedRoot != null
                 && RuntimeGltfModelLoader.TryGetWorldBounds(modelLoader.LoadedRoot, out bounds);
