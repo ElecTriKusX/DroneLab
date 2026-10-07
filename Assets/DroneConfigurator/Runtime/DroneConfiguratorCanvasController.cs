@@ -379,7 +379,7 @@ namespace DroneLab.Configurator
             // Current hand-authored Canvas exposes a complete editor only for these branches.
             EnsureDropdownOptions(dropdownPerformanceModel, new[] { "OmegaSquared" }, "OmegaSquared");
             EnsureDropdownOptions(dropdownAeroModel, new[] { "AxisApproximation" }, "AxisApproximation");
-            EnsureDropdownOptions(dropdownBatteryMode, new[] { "None" }, "None");
+            EnsureDropdownOptions(dropdownBatteryMode, new[] { "None", "Simple", "Electrical" }, "None");
             EnsureDropdownOptions(dropdownFidelity, new[] { "Basic", "Advanced" }, draft != null ? draft.fidelity : "Basic");
         }
 

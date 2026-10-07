@@ -72,13 +72,13 @@ Battery:
 - `Параметры батареи` -> `Page_Battery`;
 - `Кривая OCV` -> runtime `Page_BatteryOcvCurve`.
 
-Variable-length rows are intentionally generated at runtime by `DroneConfiguratorAdvancedEditors`, while the navigation and stable inspector shell remain scene-authored.
+All editor pages and row slots are authored directly in `Assets/Scenes/DroneConfigurator 1.unity`, so they are visible and editable in the Unity Hierarchy. `DroneConfiguratorAdvancedEditors` only binds those existing objects; it does not create UI GameObjects at runtime.
 
-`RpmTable` edits RPM / thrust / torque and optional current. The required zero-RPM origin is seeded automatically, while measured non-zero values remain empty until entered by the user.
+`RpmTable` edits RPM / thrust / torque and optional current. Eight `RpmTableRow_*` slots are authored in the scene. The zero-RPM origin is seeded in data; measured non-zero values remain empty until entered by the user.
 
-`PerformanceMap` edits RPM / advance ratio J / Ct / Cq rows. Validation still requires a complete rectangular RPM x J grid, at least two J values and a J=0 column.
+`PerformanceMap` edits RPM / advance ratio J / Ct / Cq rows. Sixteen `PerformanceMapRow_*` slots are authored in the scene. Validation still requires a complete rectangular RPM x J grid, at least two J values and a J=0 column.
 
-The OCV editor uses SOC in percent in the UI and exports SOC as 0..1. Endpoint SOC values 0% and 100% are seeded structurally; voltage is never invented.
+The OCV editor uses eight scene-authored `OcvPointRow_*` slots. SOC is shown in percent and exported as 0..1. Endpoint SOC values 0% and 100% are seeded structurally; voltage is never invented.
 
 For `OmegaSquared`, kT/kQ/reference-density remain direct numeric inputs; no graph is required.
 
