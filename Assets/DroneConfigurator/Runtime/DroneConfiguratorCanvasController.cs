@@ -8,6 +8,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.HighDefinition;
 
 namespace DroneLab.Configurator
 {
@@ -29,6 +31,16 @@ namespace DroneLab.Configurator
         [Header("Navigation")]
         [SerializeField] private string backScene = "DimaScene";
         [SerializeField] private bool autoFindByName = true;
+
+        [Header("HDRP preview")]
+        [Tooltip("Fixed EV used only by PreviewCamera. This prevents HDRP auto exposure from blowing out dark preview scenes.")]
+        [SerializeField, Range(-10f, 10f)] private float previewFixedExposure = 0f;
+        [SerializeField] private Color previewBackgroundColor = new Color(0.0157f, 0.0275f, 0.0353f, 1f);
+        [Tooltip("Dedicated volume layer used only by PreviewCamera.")]
+        [SerializeField, Range(0, 31)] private int previewVolumeLayer = 31;
+
+        private GameObject previewVolumeObject;
+        private VolumeProfile previewVolumeProfile;
 
         private readonly CultureInfo invariant = CultureInfo.InvariantCulture;
 
@@ -114,6 +126,8 @@ namespace DroneLab.Configurator
             bindings = new DroneAssetBindings();
             manifest = new DronePackageManifest();
 
+            ConfigureIsolatedHdrpPreview();
+
             InitializeDropdowns();
             BindButtons();
             BindInputs();
@@ -127,6 +141,56 @@ namespace DroneLab.Configurator
             FramePreview();
 
             SetStatus("Готово. Загрузите GLB или заполните профиль вручную.");
+        }
+
+        private void ConfigureIsolatedHdrpPreview()
+        {
+            if (previewCamera == null)
+                return;
+
+            // The main scene may use Enviro / auto exposure / bright HDRP skies.
+            // A RenderTexture preview must not inherit those exposure decisions,
+            // otherwise a dark background can make a PBR GLB look completely blown out.
+            HDAdditionalCameraData hdCamera = previewCamera.GetComponent<HDAdditionalCameraData>();
+            if (hdCamera == null)
+                hdCamera = previewCamera.gameObject.AddComponent<HDAdditionalCameraData>();
+
+            int layer = Mathf.Clamp(previewVolumeLayer, 0, 31);
+            int layerMask = 1 << layer;
+
+            hdCamera.clearColorMode = HDAdditionalCameraData.ClearColorMode.Color;
+            hdCamera.backgroundColorHDR = previewBackgroundColor;
+            hdCamera.volumeLayerMask = layerMask;
+
+            previewCamera.clearFlags = CameraClearFlags.SolidColor;
+            previewCamera.backgroundColor = previewBackgroundColor;
+
+            if (previewVolumeObject != null)
+                Destroy(previewVolumeObject);
+
+            previewVolumeObject = new GameObject("PreviewVolumeRuntime");
+            previewVolumeObject.hideFlags = HideFlags.DontSave;
+            previewVolumeObject.layer = layer;
+            previewVolumeObject.transform.SetParent(previewCamera.transform.parent, false);
+
+            Volume volume = previewVolumeObject.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 10000f;
+            volume.weight = 1f;
+
+            previewVolumeProfile = ScriptableObject.CreateInstance<VolumeProfile>();
+            previewVolumeProfile.hideFlags = HideFlags.DontSave;
+            volume.profile = previewVolumeProfile;
+
+            Exposure exposure = previewVolumeProfile.Add<Exposure>();
+            exposure.active = true;
+            exposure.mode.Override(ExposureMode.Fixed);
+            exposure.fixedExposure.Override(previewFixedExposure);
+            exposure.compensation.Override(0f);
+
+            Tonemapping tonemapping = previewVolumeProfile.Add<Tonemapping>();
+            tonemapping.active = true;
+            tonemapping.mode.Override(TonemappingMode.Neutral);
         }
 
         private void FindSceneObjects()
