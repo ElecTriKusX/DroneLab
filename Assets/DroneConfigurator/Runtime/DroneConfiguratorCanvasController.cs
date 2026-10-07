@@ -56,6 +56,24 @@ namespace DroneLab.Configurator
         private readonly List<Button> rotorButtons = new();
         private readonly List<Transform> rotorMarkers = new();
 
+        private sealed class RotorPreviewVisual
+        {
+            public Transform markerDot;
+            public Renderer markerRenderer;
+            public LineRenderer shaft;
+            public LineRenderer headA;
+            public LineRenderer headB;
+        }
+
+        private readonly List<RotorPreviewVisual> rotorPreviewVisuals = new();
+        private Material rotorMarkerMaterial;
+        private Material selectedRotorMarkerMaterial;
+        private Material thrustVectorMaterial;
+        private float rotorMarkerDiameter = 0.04f;
+        private float thrustVectorLength = 0.18f;
+        private float thrustVectorWidth = 0.008f;
+        private bool markerMoveMode;
+
         private int selectedRotorIndex;
         private Transform selectedModelNode;
 
@@ -134,8 +152,9 @@ namespace DroneLab.Configurator
             BindPreviewEvents();
 
             SelectPage(pageModel);
-            SelectRotor(0);
             SyncDraftPositionsFromSceneMarkers();
+            InitializeRotorPreviewVisuals();
+            SelectRotor(0);
             ApplyPreviewView(PreviewView.Perspective);
             RefreshAllUi();
             FramePreview();
@@ -313,14 +332,15 @@ namespace DroneLab.Configurator
         private static void EnsureDropdownOptions(TMP_Dropdown dropdown, IEnumerable<string> options, string defaultValue)
         {
             if (dropdown == null) return;
-            if (dropdown.options == null || dropdown.options.Count == 0)
-            {
-                dropdown.ClearOptions();
-                dropdown.AddOptions(options.ToList());
-            }
+
+            // The scene only contains the visual dropdown. The controller owns the actual choices
+            // so they cannot accidentally remain as "Option A / Option B" in a prefab.
+            dropdown.ClearOptions();
+            dropdown.AddOptions(options.ToList());
 
             int index = dropdown.options.FindIndex(x => string.Equals(x.text.Trim(), defaultValue, StringComparison.OrdinalIgnoreCase));
-            if (index >= 0) dropdown.SetValueWithoutNotify(index);
+            dropdown.SetValueWithoutNotify(index >= 0 ? index : 0);
+            dropdown.RefreshShownValue();
         }
 
         private void BindButtons()
@@ -353,8 +373,12 @@ namespace DroneLab.Configurator
             Bind(btnAssignVisualNode, AssignSelectedNodeAsVisualPropeller);
             Bind(btnPositionFromNode, MoveRotorToSelectedNodePivot);
 
-            Bind(btnMove, () => SetStatus("Режим: перемещение физической точки ротора. Перетащите маркер в preview."));
-            Bind(btnThrustAxis, () => SetStatus("Ось тяги редактируется в Axis X/Y/Z; «На модели» берёт local up выбранного узла."));
+            Bind(btnMove, ToggleMarkerMoveMode);
+            Bind(btnThrustAxis, () =>
+            {
+                markerMoveMode = false;
+                SetStatus("Векторы тяги показаны стрелками. Ось редактируется через Axis X/Y/Z или «На модели».");
+            });
             Bind(btnTop, () => ApplyPreviewView(PreviewView.Top));
             Bind(btnFront, () => ApplyPreviewView(PreviewView.Front));
             Bind(btnSide, () => ApplyPreviewView(PreviewView.Side));
@@ -550,6 +574,8 @@ namespace DroneLab.Configurator
             selectedModelNode = modelLoader.LoadedRoot;
             ApplyModelTransform();
             UpdateDimensionsFromLoadedModel();
+            RecalculateRotorPreviewVisualScale();
+            UpdateAllRotorPreviewVisuals();
             FramePreview();
             RefreshSelectedNodeText();
 
@@ -708,6 +734,7 @@ namespace DroneLab.Configurator
             Write(inputAxisX, axis.x);
             Write(inputAxisY, axis.y);
             Write(inputAxisZ, axis.z);
+            UpdateRotorPreviewVisual(selectedRotorIndex);
         }
 
         private void UseSelectedNodeAxis()
@@ -721,6 +748,7 @@ namespace DroneLab.Configurator
             Vector3 axis = physicalMarkerRoot.InverseTransformDirection(selectedModelNode.up).normalized;
             CurrentRotor().thrustAxisLocal = new[] { (double)axis.x, (double)axis.y, (double)axis.z };
             RefreshRotorUi();
+            UpdateRotorPreviewVisual(selectedRotorIndex);
         }
 
         private void AssignSelectedNodeAsVisualPropeller()
@@ -764,7 +792,16 @@ namespace DroneLab.Configurator
             if (eventData.button != PointerEventData.InputButton.Left)
                 return;
 
-            int marker = FindNearestMarker(eventData.position, 34f);
+            if (markerMoveMode && selectedRotorIndex >= 0 && selectedRotorIndex < rotorMarkers.Count)
+            {
+                draggedMarkerIndex = selectedRotorIndex;
+                draggingMarker = true;
+                SetupDragPlane(rotorMarkers[selectedRotorIndex].position);
+                MoveDraggedMarkerToPointer(eventData.position);
+                return;
+            }
+
+            int marker = FindNearestMarker(eventData.position, 42f);
             if (marker >= 0)
             {
                 draggedMarkerIndex = marker;
@@ -793,25 +830,7 @@ namespace DroneLab.Configurator
             if (!draggingMarker || draggedMarkerIndex < 0 || draggedMarkerIndex >= rotorMarkers.Count)
                 return;
 
-            Ray ray = PreviewRay(eventData.position);
-            if (!dragPlane.Raycast(ray, out float distance))
-                return;
-
-            Vector3 candidateWorld = ray.GetPoint(distance);
-            Vector3 candidateLocal = physicalMarkerRoot.InverseTransformPoint(candidateWorld);
-            ConfiguratorRotor rotor = draft.rotors[draggedMarkerIndex];
-            Vector3 old = rotor.positionLocalM.hasValue ? rotor.positionLocalM.ToUnity() : Vector3.zero;
-
-            switch (previewView)
-            {
-                case PreviewView.Front: candidateLocal.z = old.z; break;
-                case PreviewView.Side: candidateLocal.x = old.x; break;
-                default: candidateLocal.y = old.y; break;
-            }
-
-            rotor.positionLocalM = OptionalVector.From(candidateLocal);
-            rotorMarkers[draggedMarkerIndex].localPosition = candidateLocal;
-            RefreshRotorPositionFieldsOnly();
+            MoveDraggedMarkerToPointer(eventData.position);
         }
 
         private void PreviewPointerUp(PointerEventData eventData)
@@ -862,6 +881,221 @@ namespace DroneLab.Configurator
             }
 
             return best;
+        }
+
+        private void ToggleMarkerMoveMode()
+        {
+            markerMoveMode = !markerMoveMode;
+            SetStatus(markerMoveMode
+                ? $"MOVE включён: M{selectedRotorIndex + 1}. Кликните или перетащите точку в preview."
+                : "MOVE выключен. ЛКМ по модели снова выбирает GLB-узел.");
+        }
+
+        private void MoveDraggedMarkerToPointer(Vector2 screenPosition)
+        {
+            if (draggedMarkerIndex < 0 || draggedMarkerIndex >= rotorMarkers.Count || draggedMarkerIndex >= draft.rotors.Count)
+                return;
+
+            Ray ray = PreviewRay(screenPosition);
+            if (!dragPlane.Raycast(ray, out float distance))
+                return;
+
+            Vector3 candidateWorld = ray.GetPoint(distance);
+            Vector3 candidateLocal = physicalMarkerRoot.InverseTransformPoint(candidateWorld);
+            ConfiguratorRotor rotor = draft.rotors[draggedMarkerIndex];
+            Vector3 old = rotor.positionLocalM.hasValue ? rotor.positionLocalM.ToUnity() : Vector3.zero;
+
+            switch (previewView)
+            {
+                case PreviewView.Front:
+                    candidateLocal.z = old.z;
+                    break;
+                case PreviewView.Side:
+                    candidateLocal.x = old.x;
+                    break;
+                default:
+                    candidateLocal.y = old.y;
+                    break;
+            }
+
+            rotor.positionLocalM = OptionalVector.From(candidateLocal);
+            rotorMarkers[draggedMarkerIndex].localPosition = candidateLocal;
+
+            if (draggedMarkerIndex == selectedRotorIndex)
+                RefreshRotorPositionFieldsOnly();
+
+            UpdateRotorPreviewVisual(draggedMarkerIndex);
+        }
+
+        private void InitializeRotorPreviewVisuals()
+        {
+            DestroyRotorPreviewVisuals();
+
+            rotorMarkerMaterial = CreatePreviewMaterial("RotorMarker", new Color(0.1f, 0.75f, 1f, 1f));
+            selectedRotorMarkerMaterial = CreatePreviewMaterial("RotorMarkerSelected", new Color(1f, 0.72f, 0.12f, 1f));
+            thrustVectorMaterial = CreatePreviewMaterial("ThrustVector", new Color(0.25f, 1f, 0.45f, 1f));
+
+            RecalculateRotorPreviewVisualScale();
+
+            for (int i = 0; i < rotorMarkers.Count; i++)
+            {
+                Transform marker = rotorMarkers[i];
+
+                GameObject dot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                dot.name = "RuntimeMarkerDot";
+                dot.hideFlags = HideFlags.DontSave;
+                dot.transform.SetParent(marker, false);
+                dot.transform.localPosition = Vector3.zero;
+                dot.transform.localRotation = Quaternion.identity;
+                dot.transform.localScale = Vector3.one * rotorMarkerDiameter;
+
+                Collider collider = dot.GetComponent<Collider>();
+                if (collider != null) Destroy(collider);
+
+                Renderer renderer = dot.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    renderer.sharedMaterial = rotorMarkerMaterial;
+                    renderer.shadowCastingMode = ShadowCastingMode.Off;
+                    renderer.receiveShadows = false;
+                }
+
+                GameObject vectorRoot = new GameObject("RuntimeThrustVector");
+                vectorRoot.hideFlags = HideFlags.DontSave;
+                vectorRoot.transform.SetParent(marker, false);
+                vectorRoot.transform.localPosition = Vector3.zero;
+                vectorRoot.transform.localRotation = Quaternion.identity;
+
+                RotorPreviewVisual visual = new RotorPreviewVisual
+                {
+                    markerDot = dot.transform,
+                    markerRenderer = renderer,
+                    shaft = CreatePreviewLine(vectorRoot.transform, "Shaft"),
+                    headA = CreatePreviewLine(vectorRoot.transform, "HeadA"),
+                    headB = CreatePreviewLine(vectorRoot.transform, "HeadB")
+                };
+
+                rotorPreviewVisuals.Add(visual);
+            }
+
+            UpdateAllRotorPreviewVisuals();
+            HighlightSelectedMarker();
+        }
+
+        private Material CreatePreviewMaterial(string materialName, Color color)
+        {
+            Shader shader = Shader.Find("HDRP/Unlit");
+            if (shader == null) shader = Shader.Find("Unlit/Color");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
+
+            Material material = new Material(shader)
+            {
+                name = materialName,
+                hideFlags = HideFlags.DontSave
+            };
+
+            if (material.HasProperty("_UnlitColor")) material.SetColor("_UnlitColor", color);
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
+            if (material.HasProperty("_Color")) material.SetColor("_Color", color);
+            return material;
+        }
+
+        private LineRenderer CreatePreviewLine(Transform parent, string lineName)
+        {
+            GameObject lineObject = new GameObject(lineName);
+            lineObject.hideFlags = HideFlags.DontSave;
+            lineObject.transform.SetParent(parent, false);
+
+            LineRenderer line = lineObject.AddComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            line.alignment = LineAlignment.View;
+            line.textureMode = LineTextureMode.Stretch;
+            line.numCapVertices = 3;
+            line.numCornerVertices = 2;
+            line.shadowCastingMode = ShadowCastingMode.Off;
+            line.receiveShadows = false;
+            line.sharedMaterial = thrustVectorMaterial;
+            line.positionCount = 2;
+            line.widthMultiplier = thrustVectorWidth;
+            return line;
+        }
+
+        private void RecalculateRotorPreviewVisualScale()
+        {
+            Bounds bounds;
+            bool hasBounds = modelLoader != null
+                && modelLoader.LoadedRoot != null
+                && RuntimeGltfModelLoader.TryGetWorldBounds(modelLoader.LoadedRoot, out bounds);
+
+            float size = hasBounds
+                ? Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z))
+                : 0.6f;
+
+            rotorMarkerDiameter = Mathf.Clamp(size * 0.045f, 0.018f, 0.10f);
+            thrustVectorLength = Mathf.Clamp(size * 0.28f, 0.10f, 0.60f);
+            thrustVectorWidth = Mathf.Clamp(rotorMarkerDiameter * 0.22f, 0.003f, 0.025f);
+        }
+
+        private void UpdateAllRotorPreviewVisuals()
+        {
+            for (int i = 0; i < rotorPreviewVisuals.Count; i++)
+                UpdateRotorPreviewVisual(i);
+            HighlightSelectedMarker();
+        }
+
+        private void UpdateRotorPreviewVisual(int index)
+        {
+            if (index < 0 || index >= rotorPreviewVisuals.Count || index >= draft.rotors.Count)
+                return;
+
+            RotorPreviewVisual visual = rotorPreviewVisuals[index];
+            if (visual == null) return;
+
+            ConfiguratorRotor rotor = draft.rotors[index];
+            double[] raw = rotor.thrustAxisLocal ?? new[] { 0.0, 1.0, 0.0 };
+            Vector3 axis = new Vector3((float)raw[0], (float)raw[1], (float)raw[2]);
+            if (axis.sqrMagnitude < 1e-8f) axis = Vector3.up;
+            axis.Normalize();
+
+            Vector3 tip = axis * thrustVectorLength;
+            Vector3 helper = Mathf.Abs(Vector3.Dot(axis, Vector3.up)) < 0.9f ? Vector3.up : Vector3.right;
+            Vector3 side = Vector3.Cross(axis, helper).normalized;
+            Vector3 back = tip - axis * (thrustVectorLength * 0.24f);
+            Vector3 headA = back + side * (thrustVectorLength * 0.10f);
+            Vector3 headB = back - side * (thrustVectorLength * 0.10f);
+
+            SetLine(visual.shaft, Vector3.zero, tip);
+            SetLine(visual.headA, tip, headA);
+            SetLine(visual.headB, tip, headB);
+
+            if (visual.shaft != null) visual.shaft.widthMultiplier = thrustVectorWidth;
+            if (visual.headA != null) visual.headA.widthMultiplier = thrustVectorWidth;
+            if (visual.headB != null) visual.headB.widthMultiplier = thrustVectorWidth;
+            if (visual.markerDot != null)
+                visual.markerDot.localScale = Vector3.one * rotorMarkerDiameter * (index == selectedRotorIndex ? 1.35f : 1f);
+        }
+
+        private static void SetLine(LineRenderer line, Vector3 from, Vector3 to)
+        {
+            if (line == null) return;
+            line.positionCount = 2;
+            line.SetPosition(0, from);
+            line.SetPosition(1, to);
+        }
+
+        private void DestroyRotorPreviewVisuals()
+        {
+            foreach (RotorPreviewVisual visual in rotorPreviewVisuals)
+            {
+                if (visual?.markerDot != null) Destroy(visual.markerDot.gameObject);
+                if (visual?.shaft != null && visual.shaft.transform.parent != null)
+                    Destroy(visual.shaft.transform.parent.gameObject);
+            }
+            rotorPreviewVisuals.Clear();
+
+            if (rotorMarkerMaterial != null) Destroy(rotorMarkerMaterial);
+            if (selectedRotorMarkerMaterial != null) Destroy(selectedRotorMarkerMaterial);
+            if (thrustVectorMaterial != null) Destroy(thrustVectorMaterial);
         }
 
         private void SelectModelNodeAtScreenPoint(Vector2 screenPosition)
@@ -1037,8 +1271,30 @@ namespace DroneLab.Configurator
 
         private void SyncDraftPositionsFromSceneMarkers()
         {
-            for (int i = 0; i < Mathf.Min(rotorMarkers.Count, draft.rotors.Count); i++)
-                draft.rotors[i].positionLocalM = OptionalVector.From(rotorMarkers[i].localPosition);
+            int count = Mathf.Min(rotorMarkers.Count, draft.rotors.Count);
+            bool allAtOrigin = true;
+
+            for (int i = 0; i < count; i++)
+            {
+                if (rotorMarkers[i].localPosition.sqrMagnitude > 1e-8f)
+                {
+                    allAtOrigin = false;
+                    break;
+                }
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                if (allAtOrigin)
+                {
+                    if (draft.rotors[i].positionLocalM.hasValue)
+                        rotorMarkers[i].localPosition = draft.rotors[i].positionLocalM.ToUnity();
+                }
+                else
+                {
+                    draft.rotors[i].positionLocalM = OptionalVector.From(rotorMarkers[i].localPosition);
+                }
+            }
         }
 
         private void UpdateMarkerFromRotor(int index)
@@ -1051,7 +1307,19 @@ namespace DroneLab.Configurator
         private void HighlightSelectedMarker()
         {
             for (int i = 0; i < rotorMarkers.Count; i++)
-                rotorMarkers[i].localScale = Vector3.one * (i == selectedRotorIndex ? 1.25f : 1f);
+                rotorMarkers[i].localScale = Vector3.one;
+
+            for (int i = 0; i < rotorPreviewVisuals.Count; i++)
+            {
+                RotorPreviewVisual visual = rotorPreviewVisuals[i];
+                if (visual?.markerRenderer != null)
+                    visual.markerRenderer.sharedMaterial = i == selectedRotorIndex
+                        ? selectedRotorMarkerMaterial
+                        : rotorMarkerMaterial;
+
+                if (visual?.markerDot != null)
+                    visual.markerDot.localScale = Vector3.one * rotorMarkerDiameter * (i == selectedRotorIndex ? 1.35f : 1f);
+            }
         }
 
         private void SelectPage(GameObject page)
@@ -1187,6 +1455,14 @@ namespace DroneLab.Configurator
                 Debug.LogException(ex);
                 SetStatus("Ошибка сохранения профиля: " + ex.Message);
             }
+        }
+
+        private void OnDestroy()
+        {
+            DestroyRotorPreviewVisuals();
+
+            if (previewVolumeObject != null) Destroy(previewVolumeObject);
+            if (previewVolumeProfile != null) Destroy(previewVolumeProfile);
         }
 
         private void Back()
