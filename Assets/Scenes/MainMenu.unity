@@ -148,13 +148,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: faec514c6cca4936bccd17e98c846571, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DroneLab.UI.DroneMainMenu
-  background: {fileID: 2800000, guid: bb329fff425a7e44d88d3520514277cf, type: 3}
+  background: {fileID: 2800000, guid: 7c3a62320ea28cb40bf874e5918a90bf, type: 3}
   menuFont: {fileID: 0}
   flightScene: PhysTest
-  developers: "\u0420\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u0438:
-    \u041C\u0430\u0442\u0432\u0438\u0435\u043D\u043A\u043E, \u042F\u043A\u0443\u0431\u043E\u0432\u0441\u043A\u0438\u0439,
-    \u041D\u0438\u043A\u043E\u043B\u0430\u0435\u0432, \u041F\u043E\u043B\u044F\u043A\u043E\u0432"
+  version: 0.1.2
+  developerLinks:
+  - name: Матвиенко А. В.
+    url:
+  - name: Якубовский Д. А.
+    url:
+  - name: Поляков И. М.
+    url:
+  - name: Николаев С. Н.
+    url:
   configureDrone:
+    m_PersistentCalls:
+      m_Calls: []
+  scenarios:
+    m_PersistentCalls:
+      m_Calls: []
+  laboratory:
     m_PersistentCalls:
       m_Calls: []
 --- !u!4 &250566053

@@ -1,36 +1,56 @@
+using System;
+using System.Collections.Generic;
+using DroneLab.Simulation;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 namespace DroneLab.UI
 {
-    /// <summary>Reference-aligned main menu. Does not change physics or flight input.</summary>
+    [Serializable]
+    public sealed class DroneDeveloperLink
+    {
+        public string name;
+        [Tooltip("Optional https:// link. Leave empty to show a plain name.")]
+        public string url;
+        public DroneDeveloperLink(string name) { this.name = name; url = ""; }
+    }
+
     [DisallowMultipleComponent]
     public sealed class DroneMainMenu : MonoBehaviour
     {
-        [Tooltip("Full reference without central buttons, including the baked logo and drawings.")]
         [SerializeField] private Texture2D background;
-        [Tooltip("Optional Cyrillic-capable font. Leave empty to use Unity's default font.")]
         [SerializeField] private Font menuFont;
         [SerializeField] private string flightScene = "PhysTest";
-        [SerializeField, TextArea] private string developers = "Разработчики: Матвиенко, Якубовский, Николаев, Поляков";
+        [SerializeField] private string version = "0.1.2";
+        [SerializeField] private DroneDeveloperLink[] developerLinks =
+        {
+            new DroneDeveloperLink("Матвиенко А. В."), new DroneDeveloperLink("Якубовский Д. А."),
+            new DroneDeveloperLink("Поляков И. М."), new DroneDeveloperLink("Николаев С. Н.")
+        };
+        [Header("Future screens")]
         [SerializeField] private UnityEvent configureDrone = new UnityEvent();
+        [SerializeField] private UnityEvent scenarios = new UnityEvent();
+        [SerializeField] private UnityEvent laboratory = new UnityEvent();
         private UIDocument document;
         private PanelSettings panel;
-        private VisualElement root, stage, modal;
+        private VisualElement root, stage, modal, stack;
         private Label status;
-        private Button firstButton;
+        private Button firstButton, returnFocus;
         private bool loading;
 
         private void OnEnable()
         {
+            DroneApplicationSettings.EnsureInitialized();
             panel = ScriptableObject.CreateInstance<PanelSettings>();
             panel.scaleMode = PanelScaleMode.ConstantPixelSize;
             panel.sortingOrder = 100;
             panel.themeStyleSheet = Resources.Load<ThemeStyleSheet>("DroneLab/MainMenuTheme");
             UnityEngine.Cursor.lockState = CursorLockMode.None;
             UnityEngine.Cursor.visible = true;
+            loading = false;
             document = gameObject.AddComponent<UIDocument>();
             document.panelSettings = panel;
             root = document.rootVisualElement;
@@ -45,39 +65,49 @@ namespace DroneLab.UI
             root.RegisterCallback<GeometryChangedEvent>(Resize);
             root.RegisterCallback<KeyDownEvent>(OnKeyDown);
             SetBackground(background);
-            var stack = new VisualElement();
-            stack.AddToClassList("menu-stack");
-            stage.Add(stack);
-            firstButton = AddButton(stack, "НАЧАТЬ ИСПЫТАНИЕ", StartFlight, true);
-            AddButton(stack, "КОНФИГУРАТОР ДРОНА", ConfigureDrone);
-            AddButton(stack, "НАСТРОЙКИ", Settings);
-            AddButton(stack, "О ПРОЕКТЕ", About);
-            AddButton(stack, "ВЫХОД", ConfirmExit);
-            status = new Label();
-            status.AddToClassList("status");
-            stage.Add(status);
-            var footer = new Label("DRONELAB  /  " + Application.version);
-            footer.AddToClassList("footer");
-            stage.Add(footer);
+            stack = new VisualElement(); stack.AddToClassList("menu-stack"); stage.Add(stack);
+            firstButton = AddMenuButton("НОВАЯ СИМУЛЯЦИЯ", MenuIconKind.Play, StartFlight, true);
+            AddMenuButton("КАТАЛОГ ДРОНОВ", MenuIconKind.Drone, () => OpenScreen(configureDrone, "Каталог дронов"));
+            AddMenuButton("СЦЕНАРИИ И ОКРУЖЕНИЕ", MenuIconKind.Landscape, () => OpenScreen(scenarios, "Сценарии и окружение"));
+            AddMenuButton("ЛАБОРАТОРИЯ", MenuIconKind.Laboratory, () => OpenScreen(laboratory, "Лаборатория"));
+            var divider = new VisualElement(); divider.AddToClassList("menu-divider"); stack.Add(divider);
+            AddMenuButton("НАСТРОЙКИ", MenuIconKind.Settings, Settings, compact: true);
+            AddMenuButton("СПРАВКА / О ПРОГРАММЕ", MenuIconKind.Book, About, compact: true);
+            AddMenuButton("ВЫХОД", MenuIconKind.Exit, ConfirmExit, compact: true);
+            status = Text(stage, "", "status");
+            Text(stage, "ДРОНЛАБ  /  " + version, "footer");
             stage.schedule.Execute(() => firstButton.Focus());
         }
 
-        /// <summary>Can also be called by a future theme/background selector.</summary>
+        private Button AddMenuButton(string caption, MenuIconKind icon, Action action, bool primary = false, bool compact = false)
+        {
+            var button = new Button();
+            button.AddToClassList("menu-button");
+            if (primary) button.AddToClassList("primary");
+            if (compact) button.AddToClassList("compact");
+            var glyph = new DroneMenuIcon(icon); glyph.AddToClassList("menu-icon"); button.Add(glyph);
+            var text = new Label(caption) { pickingMode = PickingMode.Ignore }; text.AddToClassList("menu-caption"); button.Add(text);
+            var arrow = new DroneMenuIcon(MenuIconKind.Chevron); arrow.AddToClassList("menu-arrow"); button.Add(arrow);
+            button.clicked += () => { returnFocus = button; action(); };
+            stack.Add(button); return button;
+        }
+
+        private static Label Text(VisualElement parent, string text, string className)
+        {
+            var label = new Label(text); label.AddToClassList(className); parent.Add(label); return label;
+        }
+
         public void SetBackground(Texture2D texture)
         {
             background = texture;
             if (stage == null) return;
             stage.style.backgroundImage = texture == null ? new StyleBackground(StyleKeyword.None) : new StyleBackground(texture);
-            var fallback = stage.Q<VisualElement>("fallback-logo");
-            if (fallback != null) fallback.RemoveFromHierarchy();
+            var fallback = stage.Q<VisualElement>("fallback-logo"); fallback?.RemoveFromHierarchy();
             if (texture == null)
             {
-                fallback = new VisualElement { name = "fallback-logo" };
-                fallback.AddToClassList("fallback-logo");
-                var title = new Label("DRONELAB");
-                title.AddToClassList("logo-title");
-                fallback.Add(title);
-                fallback.Add(new Label("U A V   S I M U L A T O R   L A B O R A T O R Y"));
+                fallback = new VisualElement { name = "fallback-logo" }; fallback.AddToClassList("fallback-logo");
+                Text(fallback, "ДРОНЛАБ", "logo-title");
+                Text(fallback, "ЛАБОРАТОРИЯ СИМУЛЯЦИИ БПЛА", "logo-subtitle");
                 stage.Insert(0, fallback);
             }
         }
@@ -85,11 +115,9 @@ namespace DroneLab.UI
         private void OnKeyDown(KeyDownEvent evt)
         {
             if (evt.keyCode != KeyCode.Escape) return;
-            if (modal != null) CloseModal();
-            else ConfirmExit();
+            if (modal != null) CloseModal(); else ConfirmExit();
             evt.StopPropagation();
         }
-
         private void Resize(GeometryChangedEvent evt)
         {
             float scale = Mathf.Min(evt.newRect.width / 1920f, evt.newRect.height / 1080f);
@@ -98,92 +126,131 @@ namespace DroneLab.UI
             stage.style.scale = new Scale(new Vector3(scale, scale, 1));
         }
 
-        private static Button AddButton(VisualElement parent, string caption, System.Action action, bool primary = false)
-        {
-            var button = new Button(action) { text = caption };
-            button.AddToClassList("menu-button");
-            if (primary) button.AddToClassList("primary");
-            parent.Add(button);
-            return button;
-        }
-
         public void StartFlight()
         {
             if (loading) return;
             if (string.IsNullOrWhiteSpace(flightScene) || !Application.CanStreamedLevelBeLoaded(flightScene))
+            { status.text = "Сцена полёта недоступна. Проверьте Flight Scene и список сцен сборки."; return; }
+            loading = true; stack.SetEnabled(false); status.text = "Загрузка симуляции…";
+            try
             {
-                status.text = "Добавьте сцену полёта в Build Profiles → Scene List и укажите Flight Scene.";
-                return;
+                if (SceneManager.LoadSceneAsync(flightScene) != null) return;
             }
-            loading = true;
-            status.text = "Загрузка испытания…";
-            var operation = SceneManager.LoadSceneAsync(flightScene);
-            if (operation == null) { loading = false; status.text = "Не удалось загрузить сцену."; }
+            catch (ArgumentException ex) { Debug.LogError(ex.Message, this); }
+            loading = false; stack.SetEnabled(true); status.text = "Не удалось загрузить сцену.";
+        }
+        private void OpenScreen(UnityEvent handler, string title)
+        {
+            if (handler.GetPersistentEventCount() > 0) handler.Invoke();
+            else status.text = title + ": экран находится в разработке.";
         }
 
-        private void ConfigureDrone()
+        private VisualElement OpenModal(string title, string className)
         {
-            if (configureDrone.GetPersistentEventCount() > 0) configureDrone.Invoke();
-            else status.text = "Конфигуратор ещё не подключён. Назначьте обработчик Configure Drone в Inspector.";
-        }
-
-        private VisualElement OpenModal(string title)
-        {
-            CloseModal();
-            modal = new VisualElement();
-            modal.AddToClassList("modal-overlay");
-            stage.Add(modal);
-            var card = new VisualElement();
-            card.AddToClassList("modal-card");
-            modal.Add(card);
-            var heading = new Label(title);
-            heading.AddToClassList("modal-title");
-            card.Add(heading);
+            modal?.RemoveFromHierarchy();
+            stack.SetEnabled(false);
+            modal = new VisualElement(); modal.AddToClassList("modal-overlay"); stage.Add(modal);
+            var card = new VisualElement(); card.AddToClassList("modal-card"); card.AddToClassList(className); modal.Add(card);
+            Text(card, title, "modal-title");
             return card;
         }
-
         private void CloseModal()
         {
-            if (modal != null) modal.RemoveFromHierarchy();
-            modal = null;
-            firstButton?.Focus();
+            modal?.RemoveFromHierarchy(); modal = null;
+            stack.SetEnabled(!loading); (returnFocus ?? firstButton)?.Focus();
         }
+        private static Button ActionButton(VisualElement parent, string text, Action action)
+        {
+            var b = new Button(action) { text = text }; b.AddToClassList("action-button");
+            if (parent.childCount > 0) b.AddToClassList("spaced-action");
+            parent.Add(b); return b;
+        }
+        private static VisualElement Actions(VisualElement card)
+        {
+            var row = new VisualElement(); row.AddToClassList("actions-row"); card.Add(row); return row;
+        }
+        private static void InitialFocus(Button button) => button.schedule.Execute(() => button.Focus());
 
         private void Settings()
         {
-            var card = OpenModal("НАСТРОЙКИ");
-            var fullscreen = new Toggle("Полный экран") { value = Screen.fullScreen };
-            card.Add(fullscreen);
-            var volume = new Slider("Громкость", 0, 1) { value = AudioListener.volume };
-            card.Add(volume);
-            var names = new System.Collections.Generic.List<string>(QualitySettings.names);
-            var quality = new DropdownField("Качество", names, QualitySettings.GetQualityLevel());
-            card.Add(quality);
-            AddButton(card, "ПРИМЕНИТЬ", () =>
+            var draft = DroneApplicationSettings.Current.Copy();
+            var card = OpenModal("НАСТРОЙКИ", "settings-card");
+            var scroll = new ScrollView(ScrollViewMode.Vertical); scroll.AddToClassList("modal-scroll"); card.Add(scroll);
+            Text(scroll, "ЗВУК", "section-title");
+            VolumeSlider(scroll, "Окружающая среда", draft.environmentVolume, value => draft.environmentVolume = value);
+            VolumeSlider(scroll, "Дрон / лопасти", draft.droneVolume, value => draft.droneVolume = value);
+            Text(scroll, "ИЗОБРАЖЕНИЕ", "section-title");
+            var fullscreen = new Toggle("Полный экран") { value = draft.fullscreen }; fullscreen.AddToClassList("settings-control"); scroll.Add(fullscreen);
+            var names = new List<string>();
+            foreach (var name in QualitySettings.names)
+                names.Add(name == "High Fidelity" ? "Высокое качество" : name == "Balanced" ? "Сбалансированное" : name == "Performant" ? "Производительность" : name);
+            var quality = new DropdownField("Пресет качества", names, draft.quality); quality.AddToClassList("settings-control"); scroll.Add(quality);
+            var vsync = new Toggle("Вертикальная синхронизация (VSync)") { value = draft.vSync }; vsync.AddToClassList("settings-control"); scroll.Add(vsync);
+            Text(scroll, "УПРАВЛЕНИЕ", "section-title");
+            var device = new DropdownField("Устройство", new List<string> { "Клавиатура", "Геймпад" }, draft.inputDevice == PilotDevice.Gamepad ? 1 : 0);
+            device.AddToClassList("settings-control"); scroll.Add(device);
+            var deviceHint = Text(scroll, "", "muted-text");
+            void DeviceHint()
             {
-                Screen.fullScreen = fullscreen.value;
-                AudioListener.volume = volume.value;
-                QualitySettings.SetQualityLevel(quality.index, true);
-                PlayerPrefs.SetFloat("DroneLab.Volume", volume.value);
-                PlayerPrefs.Save();
-                CloseModal();
+                deviceHint.text = device.index == 1
+                    ? (Gamepad.current == null ? "Геймпад не подключён. Подключите его перед полётом." : "Геймпад: " + Gamepad.current.displayName)
+                    : "W/S — тангаж, A/D — крен, Q/E — рыскание. F — запуск двигателей.";
+            }
+            device.RegisterValueChangedCallback(evt => DeviceHint()); DeviceHint();
+            deviceHint.schedule.Execute(DeviceHint).Every(1000);
+            var row = Actions(card);
+            var back = ActionButton(row, "НАЗАД", CloseModal);
+            ActionButton(row, "ПРИМЕНИТЬ", () =>
+            {
+                draft.fullscreen = fullscreen.value; draft.quality = quality.index; draft.vSync = vsync.value;
+                draft.inputDevice = device.index == 1 ? PilotDevice.Gamepad : PilotDevice.Keyboard;
+                DroneApplicationSettings.Save(draft); CloseModal(); status.text = "Настройки сохранены.";
             });
-            AddButton(card, "НАЗАД", CloseModal);
+            InitialFocus(back);
+        }
+        private static void VolumeSlider(VisualElement parent, string title, float initial, Action<float> changed)
+        {
+            var row = new VisualElement(); row.AddToClassList("volume-row"); parent.Add(row);
+            var slider = new Slider(title, 0, 1) { value = initial }; slider.AddToClassList("volume-slider"); row.Add(slider);
+            var number = Text(row, Mathf.RoundToInt(initial * 100) + "%", "volume-value");
+            slider.RegisterValueChangedCallback(evt => { number.text = Mathf.RoundToInt(evt.newValue * 100) + "%"; changed(evt.newValue); });
         }
 
         private void About()
         {
-            var card = OpenModal("О ПРОЕКТЕ");
-            var body = new Label("DRONELAB\nUAV SIMULATOR LABORATORY\n\n" + developers + "\n\nВерсия " + Application.version);
-            body.style.whiteSpace = WhiteSpace.Normal;
-            card.Add(body);
-            AddButton(card, "НАЗАД", CloseModal);
+            var card = OpenModal("СПРАВКА / О ПРОГРАММЕ", "about-card");
+            var scroll = new ScrollView(ScrollViewMode.Vertical); scroll.AddToClassList("modal-scroll"); card.Add(scroll);
+            Text(scroll, "ДРОНЛАБ", "about-logo");
+            Text(scroll, "Лаборатория симуляции БПЛА", "about-subtitle");
+            Text(scroll, "Дронлаб — платформа для демонстрации возможностей беспилотной техники потенциальным покупателям и предварительных инженерных испытаний. Виртуальные полёты позволяют исследовать поведение аппарата без риска потери дорогостоящего оборудования и сокращают число повторных натурных испытаний.", "body-text");
+            Text(scroll, "ВОЗМОЖНОСТИ ПЛАТФОРМЫ", "section-title");
+            Text(scroll, "• Наглядная демонстрация техники: реалистичная графика и кинематографический режим для рекламных материалов.\n• Инженерные испытания: имитация физических свойств и явлений для оценки поведения и качества полёта.\n• Наблюдение за состоянием аппарата: телеметрия и мониторинг датчиков.\n• Подготовка данных: запись полётов и формирование датасетов для анализа.", "body-text");
+            Text(scroll, "РАЗРАБОТЧИКИ", "section-title");
+            if (developerLinks != null) foreach (var developer in developerLinks)
+            {
+                if (developer == null) continue;
+                if (TryLink(developer.url, out var uri))
+                {
+                    string url = uri.AbsoluteUri;
+                    var link = new Button(() => Application.OpenURL(url)) { text = developer.name }; link.AddToClassList("developer-link"); scroll.Add(link);
+                }
+                else Text(scroll, developer.name, "developer-name");
+            }
+            Text(scroll, "Версия " + version, "version-label");
+            var row = Actions(card); InitialFocus(ActionButton(row, "НАЗАД", CloseModal));
+        }
+        private static bool TryLink(string url, out Uri uri)
+        {
+            return Uri.TryCreate(url, UriKind.Absolute, out uri) && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp);
         }
 
         private void ConfirmExit()
         {
-            var card = OpenModal("ЗАВЕРШИТЬ РАБОТУ?");
-            AddButton(card, "ВЫЙТИ", () =>
+            var card = OpenModal("Вы точно хотите выйти?", "exit-card");
+            Text(card, "Работа приложения будет завершена.", "muted-text");
+            var row = Actions(card);
+            var back = ActionButton(row, "НАЗАД", CloseModal);
+            var quit = ActionButton(row, "ВЫЙТИ", () =>
             {
 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.isPlaying = false;
@@ -191,18 +258,18 @@ namespace DroneLab.UI
                 Application.Quit();
 #endif
             });
-            AddButton(card, "НАЗАД", CloseModal);
+            quit.AddToClassList("exit-action"); InitialFocus(back);
         }
-
-        private void Start() => AudioListener.volume = PlayerPrefs.GetFloat("DroneLab.Volume", AudioListener.volume);
-
         private void OnDisable()
         {
-            if (root != null) root.UnregisterCallback<GeometryChangedEvent>(Resize);
+            if (root != null)
+            {
+                root.UnregisterCallback<GeometryChangedEvent>(Resize);
+                root.UnregisterCallback<KeyDownEvent>(OnKeyDown);
+            }
             if (document != null) Destroy(document);
             if (panel != null) Destroy(panel);
-            root = null;
-            stage = null;
+            root = null; stage = null; modal = null;
         }
     }
 }
