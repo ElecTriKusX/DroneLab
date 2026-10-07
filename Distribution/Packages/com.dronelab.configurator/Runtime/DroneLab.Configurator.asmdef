@@ -1,0 +1,14 @@
+{
+  "name": "DroneLab.Configurator",
+  "rootNamespace": "DroneLab.Configurator",
+  "references": [
+    "DroneLab.Physics",
+    "glTFast",
+    "Unity.TextMeshPro",
+    "Unity.ugui",
+    "Unity.RenderPipelines.HighDefinition.Runtime"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "noEngineReferences": false
+}
