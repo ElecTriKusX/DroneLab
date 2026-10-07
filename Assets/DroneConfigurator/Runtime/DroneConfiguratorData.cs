@@ -85,6 +85,24 @@ namespace DroneLab.Configurator
     }
 
     [Serializable]
+    public sealed class ConfiguratorRpmPoint
+    {
+        public OptionalNumber rpm = OptionalNumber.Missing();
+        public OptionalNumber thrustN = OptionalNumber.Missing();
+        public OptionalNumber torqueNm = OptionalNumber.Missing();
+        public OptionalNumber currentA = OptionalNumber.Missing();
+    }
+
+    [Serializable]
+    public sealed class ConfiguratorPerformanceMapPoint
+    {
+        public OptionalNumber rpm = OptionalNumber.Missing();
+        public OptionalNumber advanceRatio = OptionalNumber.Missing();
+        public OptionalNumber ct = OptionalNumber.Missing();
+        public OptionalNumber cq = OptionalNumber.Missing();
+    }
+
+    [Serializable]
     public sealed class ConfiguratorPerformance
     {
         public string model = "OmegaSquared";
@@ -94,6 +112,8 @@ namespace DroneLab.Configurator
         public OptionalNumber ct = OptionalNumber.Missing();
         public OptionalNumber cq = OptionalNumber.Missing();
         public string outOfRangePolicy = "Reject";
+        public List<ConfiguratorRpmPoint> rpmTable = new List<ConfiguratorRpmPoint>();
+        public List<ConfiguratorPerformanceMapPoint> performanceMap = new List<ConfiguratorPerformanceMapPoint>();
     }
 
     [Serializable]
@@ -118,6 +138,13 @@ namespace DroneLab.Configurator
     }
 
     [Serializable]
+    public sealed class ConfiguratorOcvPoint
+    {
+        public OptionalNumber soc = OptionalNumber.Missing();
+        public OptionalNumber voltageV = OptionalNumber.Missing();
+    }
+
+    [Serializable]
     public sealed class ConfiguratorBattery
     {
         public string mode = "None";
@@ -127,6 +154,7 @@ namespace DroneLab.Configurator
         public OptionalNumber initialSoc = OptionalNumber.Missing();
         public OptionalNumber internalResistanceOhm = OptionalNumber.Missing();
         public OptionalNumber maxDischargeCurrentA = OptionalNumber.Missing();
+        public List<ConfiguratorOcvPoint> ocvCurve = new List<ConfiguratorOcvPoint>();
     }
 
     [Serializable]
@@ -408,6 +436,35 @@ namespace DroneLab.Configurator
                     AddOptional(performance, "ct", rotor.performance.ct);
                     AddOptional(performance, "cq", rotor.performance.cq);
                 }
+                else if (rotor.performance.model == "RpmTable")
+                {
+                    AddOptional(performance, "referenceAirDensityKgM3", rotor.performance.referenceAirDensityKgM3);
+                    var table = new JArray();
+                    foreach (var point in rotor.performance.rpmTable ?? new List<ConfiguratorRpmPoint>())
+                    {
+                        var row = new JObject();
+                        AddOptional(row, "rpm", point.rpm);
+                        AddOptional(row, "thrustN", point.thrustN);
+                        AddOptional(row, "torqueNm", point.torqueNm);
+                        AddOptional(row, "currentA", point.currentA);
+                        table.Add(row);
+                    }
+                    performance["rpmTable"] = table;
+                }
+                else if (rotor.performance.model == "PerformanceMap")
+                {
+                    var map = new JArray();
+                    foreach (var point in rotor.performance.performanceMap ?? new List<ConfiguratorPerformanceMapPoint>())
+                    {
+                        var row = new JObject();
+                        AddOptional(row, "rpm", point.rpm);
+                        AddOptional(row, "advanceRatio", point.advanceRatio);
+                        AddOptional(row, "ct", point.ct);
+                        AddOptional(row, "cq", point.cq);
+                        map.Add(row);
+                    }
+                    performance["performanceMap"] = map;
+                }
 
                 rotors.Add(new JObject
                 {
@@ -438,6 +495,16 @@ namespace DroneLab.Configurator
                 AddOptional(battery, "initialSoc", draft.battery.initialSoc);
                 AddOptional(battery, "internalResistanceOhm", draft.battery.internalResistanceOhm);
                 AddOptional(battery, "maxDischargeCurrentA", draft.battery.maxDischargeCurrentA);
+
+                var ocv = new JArray();
+                foreach (var point in draft.battery.ocvCurve ?? new List<ConfiguratorOcvPoint>())
+                {
+                    var row = new JObject();
+                    AddOptional(row, "soc", point.soc);
+                    AddOptional(row, "voltageV", point.voltageV);
+                    ocv.Add(row);
+                }
+                battery["ocvCurve"] = ocv;
             }
             root["powerSystem"] = new JObject
             {
