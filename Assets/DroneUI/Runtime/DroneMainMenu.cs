@@ -14,6 +14,7 @@ namespace DroneLab.UI
         [Tooltip("Optional Cyrillic-capable font. Leave empty to use Unity's default font.")]
         [SerializeField] private Font menuFont;
         [SerializeField] private string flightScene = "PhysTest";
+        [SerializeField] private string configuratorScene = "DroneConfigurator";
         [SerializeField, TextArea] private string developers = "Разработчики: Матвиенко, Якубовский, Николаев, Поляков";
         [SerializeField] private UnityEvent configureDrone = new UnityEvent();
         private UIDocument document;
@@ -123,8 +124,20 @@ namespace DroneLab.UI
 
         private void ConfigureDrone()
         {
-            if (configureDrone.GetPersistentEventCount() > 0) configureDrone.Invoke();
-            else status.text = "Конфигуратор ещё не подключён. Назначьте обработчик Configure Drone в Inspector.";
+            if (configureDrone.GetPersistentEventCount() > 0)
+            {
+                configureDrone.Invoke();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(configuratorScene) || !Application.CanStreamedLevelBeLoaded(configuratorScene))
+            {
+                status.text = "Добавьте DroneConfigurator в Build Profiles → Scene List.";
+                return;
+            }
+
+            status.text = "Открываю конфигуратор…";
+            SceneManager.LoadScene(configuratorScene);
         }
 
         private VisualElement OpenModal(string title)
