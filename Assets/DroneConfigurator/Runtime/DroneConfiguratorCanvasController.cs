@@ -51,7 +51,11 @@ namespace DroneLab.Configurator
         private GameObject pageModel;
         private GameObject pageMass;
         private GameObject pageRotor;
+        private GameObject pageAerodynamics;
+        private GameObject pageBattery;
+        private GameObject pageModules;
         private GameObject manualInertiaPanel;
+        private bool advancedUi;
 
         private readonly List<Button> rotorButtons = new();
         private readonly List<Transform> rotorMarkers = new();
@@ -103,6 +107,16 @@ namespace DroneLab.Configurator
         private TMP_InputField inputI1, inputI2, inputI3, inputQx, inputQy, inputQz, inputQw;
         private Button btnEstimateCom;
         private TMP_Dropdown dropdownInertiaMode;
+
+        // Required profile pages
+        private TMP_Dropdown dropdownAeroModel;
+        private TMP_InputField inputDragCdX, inputDragCdY, inputDragCdZ;
+        private TMP_InputField inputReferenceAreaX, inputReferenceAreaY, inputReferenceAreaZ;
+        private TMP_Dropdown dropdownBatteryMode;
+        private TMP_Dropdown dropdownFidelity;
+        private Button toggleMotorResponse, toggleBodyDrag, toggleWindInteraction, toggleGroundEffect;
+        private Button toggleRotorAerodynamics, toggleBladeFlapping, toggleInducedDrag;
+        private Button toggleBatteryDischarge, toggleBatteryVoltageSag, toggleMotorElectrical, toggleGyroscopicRotorEffects;
 
         // Rotor page
         private TMP_Text textRotorName, textVisualNode;
@@ -225,6 +239,9 @@ namespace DroneLab.Configurator
             pageModel = FindObject("Page_Model");
             pageMass = FindObject("Page_Mass");
             pageRotor = FindObject("PageRotor") ?? FindObject("Page_Rotor");
+            pageAerodynamics = FindObject("Page_Aerodynamics");
+            pageBattery = FindObject("Page_Battery");
+            pageModules = FindObject("Page_Modules");
             manualInertiaPanel = FindObject("ManualInertiaPanel");
 
             btnModel = FindButton("Btn_Model");
@@ -291,6 +308,28 @@ namespace DroneLab.Configurator
             btnEstimateCom = FindButton("Btn_EstimateCOM");
             dropdownInertiaMode = FindDropdown("Dropdown_InertiaMode");
 
+            dropdownAeroModel = FindDropdown("Dropdown_AeroModel");
+            inputDragCdX = FindInput("Input_DragCdX");
+            inputDragCdY = FindInput("Input_DragCdY");
+            inputDragCdZ = FindInput("Input_DragCdZ");
+            inputReferenceAreaX = FindInput("Input_ReferenceAreaX");
+            inputReferenceAreaY = FindInput("Input_ReferenceAreaY");
+            inputReferenceAreaZ = FindInput("Input_ReferenceAreaZ");
+            dropdownBatteryMode = FindDropdown("Dropdown_BatteryMode");
+            dropdownFidelity = FindDropdown("Dropdown_Fidelity");
+
+            toggleMotorResponse = FindButton("Toggle_MotorResponse");
+            toggleBodyDrag = FindButton("Toggle_BodyDrag");
+            toggleWindInteraction = FindButton("Toggle_WindInteraction");
+            toggleGroundEffect = FindButton("Toggle_GroundEffect");
+            toggleRotorAerodynamics = FindButton("Toggle_RotorAerodynamics");
+            toggleBladeFlapping = FindButton("Toggle_BladeFlapping");
+            toggleInducedDrag = FindButton("Toggle_InducedDrag");
+            toggleBatteryDischarge = FindButton("Toggle_BatteryDischarge");
+            toggleBatteryVoltageSag = FindButton("Toggle_BatteryVoltageSag");
+            toggleMotorElectrical = FindButton("Toggle_MotorElectrical");
+            toggleGyroscopicRotorEffects = FindButton("Toggle_GyroscopicRotorEffects");
+
             textRotorName = FindTmpText("Text_RotorName");
             inputPosX = FindInput("Input_PosX");
             inputPosY = FindInput("Input_PosY");
@@ -326,7 +365,11 @@ namespace DroneLab.Configurator
             EnsureDropdownOptions(dropdownForwardAxis, new[] { "+Z", "-Z", "+X", "-X", "+Y", "-Y" }, "+Z");
             EnsureDropdownOptions(dropdownUpAxis, new[] { "+Y", "-Y", "+Z", "-Z", "+X", "-X" }, "+Y");
             EnsureDropdownOptions(dropdownInertiaMode, new[] { "Автоматически", "Ручной ввод" }, "Автоматически");
-            EnsureDropdownOptions(dropdownPerformanceModel, new[] { "OmegaSquared", "CtCq" }, "OmegaSquared");
+            // Current hand-authored Canvas exposes a complete editor only for these branches.
+            EnsureDropdownOptions(dropdownPerformanceModel, new[] { "OmegaSquared" }, "OmegaSquared");
+            EnsureDropdownOptions(dropdownAeroModel, new[] { "AxisApproximation" }, "AxisApproximation");
+            EnsureDropdownOptions(dropdownBatteryMode, new[] { "None" }, "None");
+            EnsureDropdownOptions(dropdownFidelity, new[] { "Basic", "Advanced" }, draft != null ? draft.fidelity : "Basic");
         }
 
         private static void EnsureDropdownOptions(TMP_Dropdown dropdown, IEnumerable<string> options, string defaultValue)
@@ -348,6 +391,9 @@ namespace DroneLab.Configurator
             Bind(btnModel, () => SelectPage(pageModel));
             Bind(btnMass, () => SelectPage(pageMass));
             Bind(btnRotors, () => { SelectPage(pageRotor); SelectRotor(selectedRotorIndex); });
+            Bind(btnAerodynamics, () => SelectPage(pageAerodynamics));
+            Bind(btnBattery, () => SelectPage(pageBattery));
+            Bind(btnModules, () => SelectPage(pageModules));
 
             for (int i = 0; i < rotorButtons.Count; i++)
             {
@@ -359,8 +405,9 @@ namespace DroneLab.Configurator
                 });
             }
 
-            Bind(btnBasic, () => { draft.fidelity = "Basic"; SetStatus("Fidelity: Basic."); });
-            Bind(btnAdvanced, () => { draft.fidelity = "Advanced"; SetStatus("Fidelity: Advanced."); });
+            // Header Basic/Advanced changes UI presentation only.
+            Bind(btnBasic, () => SetUiMode(false));
+            Bind(btnAdvanced, () => SetUiMode(true));
 
             Bind(btnPasteModelPath, PasteModelPath);
             Bind(btnLoadModel, () => _ = LoadModelFromUiAsync());
@@ -396,10 +443,7 @@ namespace DroneLab.Configurator
 
             Bind(btnValidation, ValidateProfile);
             Bind(btnPropeller, () => { SelectPage(pageRotor); SetStatus("Характеристики винта редактируются на странице ротора."); });
-            Bind(btnAerodynamics, () => SetStatus("Страница аэродинамики ещё не свёрстана в ручной Canvas."));
-            Bind(btnBattery, () => SetStatus("Страница батареи ещё не свёрстана в ручной Canvas."));
-            Bind(btnTemperature, () => SetStatus("Температура относится к расширенному профилю и пока не свёрстана."));
-            Bind(btnModules, () => SetStatus("Страница модулей ещё не свёрстана в ручной Canvas."));
+            Bind(btnTemperature, () => SetStatus("Тепловая модель не входит в текущий MVP конфигуратора."));
 
             Button addRotor = FindButton("Btn_AddRotor");
             Bind(addRotor, () =>
