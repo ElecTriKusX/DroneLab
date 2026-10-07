@@ -59,19 +59,28 @@ The current complete MVP intentionally exposes only branches for which the hand-
 
 Other schema branches remain supported by the physics contract, but must not be offered as editable choices until their required fields are present in the Canvas.
 
-## Graphs and table-driven parameters
+## Table-driven performance and battery editors
 
-The lower graph area is currently only a visualization shell. It does not yet edit profile data.
+The old bottom graph panel is no longer used. Selection happens in the left navigation and editing happens in the right inspector.
 
-The physics contract has branches where graph/table UI is appropriate:
+Propeller performance:
+- `Ω² Коэффициенты` -> existing `Page_PerformanceOmegaSquared`;
+- `RPM-таблица` -> runtime `Page_PerformanceRpmTable`;
+- `Карта характеристик` -> runtime `Page_PerformanceMap`.
 
-- `RpmTable`: editable RPM -> thrust / torque rows, optional current;
-- `PerformanceMap`: RPM x advance-ratio grid with Ct/Cq;
-- battery OCV curve: SOC -> pack voltage.
+Battery:
+- `Параметры батареи` -> `Page_Battery`;
+- `Кривая OCV` -> runtime `Page_BatteryOcvCurve`.
 
-For `OmegaSquared`, thrust and torque graphs are derived read-only plots from kT/kQ and RPM; the graph itself is not an independent input.
+Variable-length rows are intentionally generated at runtime by `DroneConfiguratorAdvancedEditors`, while the navigation and stable inspector shell remain scene-authored.
 
-Current graph buttons can therefore remain display-only until RpmTable / PerformanceMap / OCV editors are implemented.
+`RpmTable` edits RPM / thrust / torque and optional current. The required zero-RPM origin is seeded automatically, while measured non-zero values remain empty until entered by the user.
+
+`PerformanceMap` edits RPM / advance ratio J / Ct / Cq rows. Validation still requires a complete rectangular RPM x J grid, at least two J values and a J=0 column.
+
+The OCV editor uses SOC in percent in the UI and exports SOC as 0..1. Endpoint SOC values 0% and 100% are seeded structurally; voltage is never invented.
+
+For `OmegaSquared`, kT/kQ/reference-density remain direct numeric inputs; no graph is required.
 
 ## Important separation
 
