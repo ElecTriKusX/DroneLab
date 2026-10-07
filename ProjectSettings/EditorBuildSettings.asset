@@ -9,9 +9,6 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
     guid: 8c243a97d571755409ea43a2a7f210a0
   - enabled: 1
-    path: Assets/Scenes/DimaScene.unity
-    guid: 8124e5870f4fd4c779e7a5f994e84ad1
-  - enabled: 1
     path: Assets/Scenes/PhysTest.unity
     guid: 1e964141e745b4d4da52fcf98fcaedb0
   m_configObjects:

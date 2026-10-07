@@ -37,7 +37,7 @@ namespace DroneLab.UI.Editor
             }
             scenes.Add(new EditorBuildSettingsScene(menu, true));
             foreach (var scene in EditorBuildSettings.scenes)
-                if (scene.path != menu && scene.path != flight) scenes.Add(scene);
+                if (scene.path != menu && scene.path != flight && System.IO.File.Exists(scene.path)) scenes.Add(scene);
             if (System.IO.File.Exists(flight)) scenes.Add(new EditorBuildSettingsScene(flight, true));
             EditorBuildSettings.scenes = scenes.ToArray();
         }
