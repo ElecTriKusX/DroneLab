@@ -131,6 +131,17 @@ namespace DroneLab.Configurator
             if (pageMap != null && pageMap.activeSelf) RefreshMapRows();
         }
 
+        public void OpenDefaultPerformancePage()
+        {
+            if (!initialized || Rotor == null || pageOmega == null)
+                return;
+
+            Rotor.performance.model = "OmegaSquared";
+            ShowOnly(pageOmega);
+            RefreshOmega();
+            owner.SetConfiguratorStatus($"Ротор {Rotor.rotorId}: Ω² коэффициенты.");
+        }
+
         private void BindNavigation()
         {
             Bind(btnOmega, () =>
@@ -402,7 +413,10 @@ namespace DroneLab.Configurator
             batteryInternalResistance = FindIn<TMP_InputField>(pageBattery.transform, "Input_BatteryInternalResistanceOhm");
             batteryMaxDischargeCurrent = FindIn<TMP_InputField>(pageBattery.transform, "Input_BatteryMaxDischargeCurrentA");
 
-            SetupDropdown(batteryMode, new[] { "None", "Simple", "Electrical" });
+            // Current README/MVP supports a complete battery profile only in None mode.
+            // Simple/Electrical additionally require per-motor electrical inputs that are
+            // intentionally not exposed by the current hand-authored Canvas yet.
+            SetupDropdown(batteryMode, new[] { "None" });
 
             if (batteryMode != null)
             {

@@ -114,9 +114,9 @@ namespace DroneLab.Configurator
         private TMP_InputField inputReferenceAreaX, inputReferenceAreaY, inputReferenceAreaZ;
         private TMP_Dropdown dropdownBatteryMode;
         private TMP_Dropdown dropdownFidelity;
-        private Button toggleMotorResponse, toggleBodyDrag, toggleWindInteraction, toggleGroundEffect;
-        private Button toggleRotorAerodynamics, toggleBladeFlapping, toggleInducedDrag;
-        private Button toggleBatteryDischarge, toggleBatteryVoltageSag, toggleMotorElectrical, toggleGyroscopicRotorEffects;
+        private Toggle toggleMotorResponse, toggleBodyDrag, toggleWindInteraction, toggleGroundEffect;
+        private Toggle toggleRotorAerodynamics, toggleBladeFlapping, toggleInducedDrag;
+        private Toggle toggleBatteryDischarge, toggleBatteryVoltageSag, toggleMotorElectrical, toggleGyroscopicRotorEffects;
 
         // Rotor page
         private TMP_Text textRotorName, textVisualNode;
@@ -258,7 +258,7 @@ namespace DroneLab.Configurator
             btnModel = FindButton("Btn_Model");
             btnMass = FindButton("Btn_Mass");
             btnRotors = FindButton("Btn_Rotors");
-            btnPropeller = FindButton("Btn_Propeller");
+            btnPropeller = FindButton("Btn_Propellers") ?? FindButton("Btn_Propeller");
             btnAerodynamics = FindButton("Btn_Aerodynamics");
             btnBattery = FindButton("Btn_Battery");
             btnTemperature = FindButton("Btn_Temperature");
@@ -329,17 +329,17 @@ namespace DroneLab.Configurator
             dropdownBatteryMode = FindDropdown("Dropdown_BatteryMode");
             dropdownFidelity = FindDropdown("Dropdown_Fidelity");
 
-            toggleMotorResponse = FindButton("Toggle_MotorResponse");
-            toggleBodyDrag = FindButton("Toggle_BodyDrag");
-            toggleWindInteraction = FindButton("Toggle_WindInteraction");
-            toggleGroundEffect = FindButton("Toggle_GroundEffect");
-            toggleRotorAerodynamics = FindButton("Toggle_RotorAerodynamics");
-            toggleBladeFlapping = FindButton("Toggle_BladeFlapping");
-            toggleInducedDrag = FindButton("Toggle_InducedDrag");
-            toggleBatteryDischarge = FindButton("Toggle_BatteryDischarge");
-            toggleBatteryVoltageSag = FindButton("Toggle_BatteryVoltageSag");
-            toggleMotorElectrical = FindButton("Toggle_MotorElectrical");
-            toggleGyroscopicRotorEffects = FindButton("Toggle_GyroscopicRotorEffects");
+            toggleMotorResponse = FindToggle("Toggle_MotorResponse");
+            toggleBodyDrag = FindToggle("Toggle_BodyDrag");
+            toggleWindInteraction = FindToggle("Toggle_WindInteraction");
+            toggleGroundEffect = FindToggle("Toggle_GroundEffect");
+            toggleRotorAerodynamics = FindToggle("Toggle_RotorAerodynamics");
+            toggleBladeFlapping = FindToggle("Toggle_BladeFlapping");
+            toggleInducedDrag = FindToggle("Toggle_InducedDrag");
+            toggleBatteryDischarge = FindToggle("Toggle_BatteryDischarge");
+            toggleBatteryVoltageSag = FindToggle("Toggle_BatteryVoltageSag");
+            toggleMotorElectrical = FindToggle("Toggle_MotorElectrical");
+            toggleGyroscopicRotorEffects = FindToggle("Toggle_GyroscopicRotorEffects");
 
             textRotorName = FindTmpText("Text_RotorName");
             inputPosX = FindInput("Input_PosX");
@@ -359,10 +359,13 @@ namespace DroneLab.Configurator
             inputDiameterMm = FindInput("Input_DiameterMm");
             inputPitchMm = FindInput("Input_PitchMm");
             inputBladeCount = FindInput("Input_BladeCount");
-            dropdownPerformanceModel = FindDropdown("Dropdown_PerformanceModel");
-            inputKThrust = FindInput("Input_KThrust");
-            inputKTorque = FindInput("Input_KTorque");
-            inputReferenceDensity = FindInput("Input_ReferenceDensity");
+            // Performance pages are owned by DroneConfiguratorAdvancedEditors.
+            // Do not use global FindInput here because Input_K* exists both in the legacy
+            // rotor section and in Page_PerformanceOmegaSquared.
+            dropdownPerformanceModel = null;
+            inputKThrust = null;
+            inputKTorque = null;
+            inputReferenceDensity = null;
             textVisualNode = FindTmpText("Text_VisualNode");
             btnAssignVisualNode = FindButton("Btn_AssignVisualNode");
             btnPositionFromNode = FindButton("Btn_PositionFromNode");
@@ -379,7 +382,7 @@ namespace DroneLab.Configurator
             // Current hand-authored Canvas exposes a complete editor only for these branches.
             EnsureDropdownOptions(dropdownPerformanceModel, new[] { "OmegaSquared" }, "OmegaSquared");
             EnsureDropdownOptions(dropdownAeroModel, new[] { "AxisApproximation" }, "AxisApproximation");
-            EnsureDropdownOptions(dropdownBatteryMode, new[] { "None", "Simple", "Electrical" }, "None");
+            EnsureDropdownOptions(dropdownBatteryMode, new[] { "None" }, "None");
             EnsureDropdownOptions(dropdownFidelity, new[] { "Basic", "Advanced" }, draft != null ? draft.fidelity : "Basic");
         }
 
@@ -453,20 +456,26 @@ namespace DroneLab.Configurator
             Bind(btnSaveProfile, SaveReadyProfile);
 
             Bind(btnValidation, ValidateProfile);
-            Bind(btnPropeller, () => { SelectPage(pageRotor); SetStatus("Характеристики винта редактируются на странице ротора."); });
+            Bind(btnPropeller, () =>
+            {
+                if (advancedEditors != null)
+                    advancedEditors.OpenDefaultPerformancePage();
+                else
+                    SetStatus("Выберите Ω² коэффициенты, RPM-таблицу или карту характеристик.");
+            });
             Bind(btnTemperature, () => SetStatus("Тепловая модель не входит в текущий MVP конфигуратора."));
 
-            BindModuleButton(toggleMotorResponse, () => draft.modules.motorResponse, v => draft.modules.motorResponse = v, "Инерционность двигателей");
-            BindModuleButton(toggleBodyDrag, () => draft.modules.bodyDrag, v => draft.modules.bodyDrag = v, "Сопротивление корпуса");
-            BindModuleButton(toggleWindInteraction, () => draft.modules.windInteraction, v => draft.modules.windInteraction = v, "Взаимодействие с воздушной средой");
-            BindModuleButton(toggleGroundEffect, () => draft.modules.groundEffect, v => draft.modules.groundEffect = v, "Экранный эффект");
-            BindModuleButton(toggleRotorAerodynamics, () => draft.modules.rotorAerodynamics, v => draft.modules.rotorAerodynamics = v, "Аэродинамика роторов");
-            BindModuleButton(toggleBladeFlapping, () => draft.modules.bladeFlapping, v => draft.modules.bladeFlapping = v, "Взмах лопастей");
-            BindModuleButton(toggleInducedDrag, () => draft.modules.inducedDrag, v => draft.modules.inducedDrag = v, "Индуктивное сопротивление");
-            BindModuleButton(toggleBatteryDischarge, () => draft.modules.batteryDischarge, v => draft.modules.batteryDischarge = v, "Разряд аккумулятора");
-            BindModuleButton(toggleBatteryVoltageSag, () => draft.modules.batteryVoltageSag, v => draft.modules.batteryVoltageSag = v, "Просадка напряжения");
-            BindModuleButton(toggleMotorElectrical, () => draft.modules.motorElectrical, v => draft.modules.motorElectrical = v, "Электрическая модель двигателя");
-            BindModuleButton(toggleGyroscopicRotorEffects, () => draft.modules.gyroscopicRotorEffects, v => draft.modules.gyroscopicRotorEffects = v, "Гироскопические эффекты роторов");
+            BindModuleToggle(toggleMotorResponse, () => draft.modules.motorResponse, v => draft.modules.motorResponse = v, "Инерционность двигателей");
+            BindModuleToggle(toggleBodyDrag, () => draft.modules.bodyDrag, v => draft.modules.bodyDrag = v, "Сопротивление корпуса");
+            BindModuleToggle(toggleWindInteraction, () => draft.modules.windInteraction, v => draft.modules.windInteraction = v, "Взаимодействие с воздушной средой");
+            BindModuleToggle(toggleGroundEffect, () => draft.modules.groundEffect, v => draft.modules.groundEffect = v, "Экранный эффект");
+            BindModuleToggle(toggleRotorAerodynamics, () => draft.modules.rotorAerodynamics, v => draft.modules.rotorAerodynamics = v, "Аэродинамика роторов");
+            BindModuleToggle(toggleBladeFlapping, () => draft.modules.bladeFlapping, v => draft.modules.bladeFlapping = v, "Взмах лопастей");
+            BindModuleToggle(toggleInducedDrag, () => draft.modules.inducedDrag, v => draft.modules.inducedDrag = v, "Индуктивное сопротивление");
+            BindModuleToggle(toggleBatteryDischarge, () => draft.modules.batteryDischarge, v => draft.modules.batteryDischarge = v, "Разряд аккумулятора");
+            BindModuleToggle(toggleBatteryVoltageSag, () => draft.modules.batteryVoltageSag, v => draft.modules.batteryVoltageSag = v, "Просадка напряжения");
+            BindModuleToggle(toggleMotorElectrical, () => draft.modules.motorElectrical, v => draft.modules.motorElectrical = v, "Электрическая модель двигателя");
+            BindModuleToggle(toggleGyroscopicRotorEffects, () => draft.modules.gyroscopicRotorEffects, v => draft.modules.gyroscopicRotorEffects = v, "Гироскопические эффекты роторов");
 
             Button addRotor = FindButton("Btn_AddRotor");
             Bind(addRotor, () =>
@@ -606,42 +615,38 @@ namespace DroneLab.Configurator
                 draft.bodyAerodynamics.referenceAreaM2.hasValue = false;
         }
 
-        private void BindModuleButton(Button button, Func<bool> getter, Action<bool> setter, string label)
+        private void BindModuleToggle(Toggle toggle, Func<bool> getter, Action<bool> setter, string label)
         {
-            if (button == null) return;
+            if (toggle == null) return;
 
-            button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() =>
+            toggle.onValueChanged.RemoveAllListeners();
+            toggle.SetIsOnWithoutNotify(getter());
+            toggle.onValueChanged.AddListener(value =>
             {
-                setter(!getter());
-                RefreshModuleButton(button, label, getter());
-                SetStatus(label + ": " + (getter() ? "включено" : "выключено") + ".");
+                setter(value);
+                SetStatus(label + ": " + (value ? "включено" : "выключено") + ".");
             });
-
-            RefreshModuleButton(button, label, getter());
         }
 
-        private static void RefreshModuleButton(Button button, string label, bool enabled)
+        private static void RefreshModuleToggle(Toggle toggle, bool enabled)
         {
-            if (button == null) return;
-            TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
-            if (text != null)
-                text.text = label + ": " + (enabled ? "ВКЛ" : "ВЫКЛ");
+            if (toggle != null)
+                toggle.SetIsOnWithoutNotify(enabled);
         }
 
         private void RefreshModuleButtons()
         {
-            RefreshModuleButton(toggleMotorResponse, "Инерционность двигателей", draft.modules.motorResponse);
-            RefreshModuleButton(toggleBodyDrag, "Сопротивление корпуса", draft.modules.bodyDrag);
-            RefreshModuleButton(toggleWindInteraction, "Взаимодействие с воздушной средой", draft.modules.windInteraction);
-            RefreshModuleButton(toggleGroundEffect, "Экранный эффект", draft.modules.groundEffect);
-            RefreshModuleButton(toggleRotorAerodynamics, "Аэродинамика роторов", draft.modules.rotorAerodynamics);
-            RefreshModuleButton(toggleBladeFlapping, "Взмах лопастей", draft.modules.bladeFlapping);
-            RefreshModuleButton(toggleInducedDrag, "Индуктивное сопротивление", draft.modules.inducedDrag);
-            RefreshModuleButton(toggleBatteryDischarge, "Разряд аккумулятора", draft.modules.batteryDischarge);
-            RefreshModuleButton(toggleBatteryVoltageSag, "Просадка напряжения", draft.modules.batteryVoltageSag);
-            RefreshModuleButton(toggleMotorElectrical, "Электрическая модель двигателя", draft.modules.motorElectrical);
-            RefreshModuleButton(toggleGyroscopicRotorEffects, "Гироскопические эффекты роторов", draft.modules.gyroscopicRotorEffects);
+            RefreshModuleToggle(toggleMotorResponse, draft.modules.motorResponse);
+            RefreshModuleToggle(toggleBodyDrag, draft.modules.bodyDrag);
+            RefreshModuleToggle(toggleWindInteraction, draft.modules.windInteraction);
+            RefreshModuleToggle(toggleGroundEffect, draft.modules.groundEffect);
+            RefreshModuleToggle(toggleRotorAerodynamics, draft.modules.rotorAerodynamics);
+            RefreshModuleToggle(toggleBladeFlapping, draft.modules.bladeFlapping);
+            RefreshModuleToggle(toggleInducedDrag, draft.modules.inducedDrag);
+            RefreshModuleToggle(toggleBatteryDischarge, draft.modules.batteryDischarge);
+            RefreshModuleToggle(toggleBatteryVoltageSag, draft.modules.batteryVoltageSag);
+            RefreshModuleToggle(toggleMotorElectrical, draft.modules.motorElectrical);
+            RefreshModuleToggle(toggleGyroscopicRotorEffects, draft.modules.gyroscopicRotorEffects);
         }
 
         private void SetUiMode(bool advanced)
@@ -1796,6 +1801,7 @@ namespace DroneLab.Configurator
         private Transform FindTransform(string name) => FindObject(name)?.transform;
         private T FindComponent<T>(string name) where T : Component => FindObject(name)?.GetComponent<T>();
         private Button FindButton(string name) => FindComponent<Button>(name);
+        private Toggle FindToggle(string name) => FindComponent<Toggle>(name);
         private TMP_InputField FindInput(string name) => FindComponent<TMP_InputField>(name);
         private TMP_Dropdown FindDropdown(string name) => FindComponent<TMP_Dropdown>(name);
         private TMP_Text FindTmpText(string name) => FindComponent<TMP_Text>(name);
