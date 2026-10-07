@@ -445,6 +445,18 @@ namespace DroneLab.Configurator
             Bind(btnPropeller, () => { SelectPage(pageRotor); SetStatus("Характеристики винта редактируются на странице ротора."); });
             Bind(btnTemperature, () => SetStatus("Тепловая модель не входит в текущий MVP конфигуратора."));
 
+            BindModuleButton(toggleMotorResponse, () => draft.modules.motorResponse, v => draft.modules.motorResponse = v, "Инерционность двигателей");
+            BindModuleButton(toggleBodyDrag, () => draft.modules.bodyDrag, v => draft.modules.bodyDrag = v, "Сопротивление корпуса");
+            BindModuleButton(toggleWindInteraction, () => draft.modules.windInteraction, v => draft.modules.windInteraction = v, "Взаимодействие с воздушной средой");
+            BindModuleButton(toggleGroundEffect, () => draft.modules.groundEffect, v => draft.modules.groundEffect = v, "Экранный эффект");
+            BindModuleButton(toggleRotorAerodynamics, () => draft.modules.rotorAerodynamics, v => draft.modules.rotorAerodynamics = v, "Аэродинамика роторов");
+            BindModuleButton(toggleBladeFlapping, () => draft.modules.bladeFlapping, v => draft.modules.bladeFlapping = v, "Взмах лопастей");
+            BindModuleButton(toggleInducedDrag, () => draft.modules.inducedDrag, v => draft.modules.inducedDrag = v, "Индуктивное сопротивление");
+            BindModuleButton(toggleBatteryDischarge, () => draft.modules.batteryDischarge, v => draft.modules.batteryDischarge = v, "Разряд аккумулятора");
+            BindModuleButton(toggleBatteryVoltageSag, () => draft.modules.batteryVoltageSag, v => draft.modules.batteryVoltageSag = v, "Просадка напряжения");
+            BindModuleButton(toggleMotorElectrical, () => draft.modules.motorElectrical, v => draft.modules.motorElectrical = v, "Электрическая модель двигателя");
+            BindModuleButton(toggleGyroscopicRotorEffects, () => draft.modules.gyroscopicRotorEffects, v => draft.modules.gyroscopicRotorEffects = v, "Гироскопические эффекты роторов");
+
             Button addRotor = FindButton("Btn_AddRotor");
             Bind(addRotor, () =>
             {
@@ -506,6 +518,34 @@ namespace DroneLab.Configurator
             BindEnd(inputQz, _ => ReadManualInertia());
             BindEnd(inputQw, _ => ReadManualInertia());
 
+            if (dropdownAeroModel != null)
+            {
+                dropdownAeroModel.onValueChanged.RemoveAllListeners();
+                dropdownAeroModel.onValueChanged.AddListener(_ =>
+                    draft.bodyAerodynamics.model = dropdownAeroModel.options[dropdownAeroModel.value].text.Trim());
+            }
+
+            BindEnd(inputDragCdX, _ => ReadBodyDrag());
+            BindEnd(inputDragCdY, _ => ReadBodyDrag());
+            BindEnd(inputDragCdZ, _ => ReadBodyDrag());
+            BindEnd(inputReferenceAreaX, _ => ReadBodyDrag());
+            BindEnd(inputReferenceAreaY, _ => ReadBodyDrag());
+            BindEnd(inputReferenceAreaZ, _ => ReadBodyDrag());
+
+            if (dropdownBatteryMode != null)
+            {
+                dropdownBatteryMode.onValueChanged.RemoveAllListeners();
+                dropdownBatteryMode.onValueChanged.AddListener(_ =>
+                    draft.battery.mode = dropdownBatteryMode.options[dropdownBatteryMode.value].text.Trim());
+            }
+
+            if (dropdownFidelity != null)
+            {
+                dropdownFidelity.onValueChanged.RemoveAllListeners();
+                dropdownFidelity.onValueChanged.AddListener(_ =>
+                    draft.fidelity = dropdownFidelity.options[dropdownFidelity.value].text.Trim());
+            }
+
             BindEnd(inputPosX, _ => ReadRotorPosition());
             BindEnd(inputPosY, _ => ReadRotorPosition());
             BindEnd(inputPosZ, _ => ReadRotorPosition());
@@ -540,6 +580,65 @@ namespace DroneLab.Configurator
             BindOptionalNumber(inputKThrust, v => CurrentRotor().performance.kThrustNPerRadPerSecSquared = v);
             BindOptionalNumber(inputKTorque, v => CurrentRotor().performance.kTorqueNmPerRadPerSecSquared = v);
             BindOptionalNumber(inputReferenceDensity, v => CurrentRotor().performance.referenceAirDensityKgM3 = v);
+        }
+
+        private void ReadBodyDrag()
+        {
+            if (TryVector(inputDragCdX, inputDragCdY, inputDragCdZ, out Vector3 cd))
+                draft.bodyAerodynamics.dragCd = OptionalVector.From(cd);
+            else
+                draft.bodyAerodynamics.dragCd.hasValue = false;
+
+            if (TryVector(inputReferenceAreaX, inputReferenceAreaY, inputReferenceAreaZ, out Vector3 area))
+                draft.bodyAerodynamics.referenceAreaM2 = OptionalVector.From(area);
+            else
+                draft.bodyAerodynamics.referenceAreaM2.hasValue = false;
+        }
+
+        private void BindModuleButton(Button button, Func<bool> getter, Action<bool> setter, string label)
+        {
+            if (button == null) return;
+
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() =>
+            {
+                setter(!getter());
+                RefreshModuleButton(button, label, getter());
+                SetStatus(label + ": " + (getter() ? "включено" : "выключено") + ".");
+            });
+
+            RefreshModuleButton(button, label, getter());
+        }
+
+        private static void RefreshModuleButton(Button button, string label, bool enabled)
+        {
+            if (button == null) return;
+            TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
+            if (text != null)
+                text.text = label + ": " + (enabled ? "ВКЛ" : "ВЫКЛ");
+        }
+
+        private void RefreshModuleButtons()
+        {
+            RefreshModuleButton(toggleMotorResponse, "Инерционность двигателей", draft.modules.motorResponse);
+            RefreshModuleButton(toggleBodyDrag, "Сопротивление корпуса", draft.modules.bodyDrag);
+            RefreshModuleButton(toggleWindInteraction, "Взаимодействие с воздушной средой", draft.modules.windInteraction);
+            RefreshModuleButton(toggleGroundEffect, "Экранный эффект", draft.modules.groundEffect);
+            RefreshModuleButton(toggleRotorAerodynamics, "Аэродинамика роторов", draft.modules.rotorAerodynamics);
+            RefreshModuleButton(toggleBladeFlapping, "Взмах лопастей", draft.modules.bladeFlapping);
+            RefreshModuleButton(toggleInducedDrag, "Индуктивное сопротивление", draft.modules.inducedDrag);
+            RefreshModuleButton(toggleBatteryDischarge, "Разряд аккумулятора", draft.modules.batteryDischarge);
+            RefreshModuleButton(toggleBatteryVoltageSag, "Просадка напряжения", draft.modules.batteryVoltageSag);
+            RefreshModuleButton(toggleMotorElectrical, "Электрическая модель двигателя", draft.modules.motorElectrical);
+            RefreshModuleButton(toggleGyroscopicRotorEffects, "Гироскопические эффекты роторов", draft.modules.gyroscopicRotorEffects);
+        }
+
+        private void SetUiMode(bool advanced)
+        {
+            advancedUi = advanced;
+            SetStatus(advanced
+                ? "Интерфейс: расширенный. Физическая fidelity не изменена."
+                : "Интерфейс: базовый. Физическая fidelity не изменена.");
         }
 
         private void BindPreviewEvents()
@@ -1257,6 +1356,44 @@ namespace DroneLab.Configurator
             if (manualInertiaPanel != null)
                 manualInertiaPanel.SetActive(draft.inertiaMode == "ManualPrincipal");
 
+            if (dropdownFidelity != null)
+            {
+                int index = dropdownFidelity.options.FindIndex(x =>
+                    string.Equals(x.text.Trim(), draft.fidelity, StringComparison.OrdinalIgnoreCase));
+                if (index >= 0) dropdownFidelity.SetValueWithoutNotify(index);
+            }
+
+            if (dropdownAeroModel != null)
+            {
+                int index = dropdownAeroModel.options.FindIndex(x =>
+                    string.Equals(x.text.Trim(), draft.bodyAerodynamics.model, StringComparison.OrdinalIgnoreCase));
+                if (index >= 0) dropdownAeroModel.SetValueWithoutNotify(index);
+            }
+
+            if (draft.bodyAerodynamics.dragCd.hasValue)
+            {
+                Vector3 cd = draft.bodyAerodynamics.dragCd.ToUnity();
+                Write(inputDragCdX, cd.x);
+                Write(inputDragCdY, cd.y);
+                Write(inputDragCdZ, cd.z);
+            }
+
+            if (draft.bodyAerodynamics.referenceAreaM2.hasValue)
+            {
+                Vector3 area = draft.bodyAerodynamics.referenceAreaM2.ToUnity();
+                Write(inputReferenceAreaX, area.x);
+                Write(inputReferenceAreaY, area.y);
+                Write(inputReferenceAreaZ, area.z);
+            }
+
+            if (dropdownBatteryMode != null)
+            {
+                int index = dropdownBatteryMode.options.FindIndex(x =>
+                    string.Equals(x.text.Trim(), draft.battery.mode, StringComparison.OrdinalIgnoreCase));
+                if (index >= 0) dropdownBatteryMode.SetValueWithoutNotify(index);
+            }
+
+            RefreshModuleButtons();
             RefreshRotorUi();
         }
 
@@ -1371,6 +1508,9 @@ namespace DroneLab.Configurator
             if (pageModel != null) pageModel.SetActive(page == pageModel);
             if (pageMass != null) pageMass.SetActive(page == pageMass);
             if (pageRotor != null) pageRotor.SetActive(page == pageRotor);
+            if (pageAerodynamics != null) pageAerodynamics.SetActive(page == pageAerodynamics);
+            if (pageBattery != null) pageBattery.SetActive(page == pageBattery);
+            if (pageModules != null) pageModules.SetActive(page == pageModules);
         }
 
         private void ApplyPreviewView(PreviewView view)
