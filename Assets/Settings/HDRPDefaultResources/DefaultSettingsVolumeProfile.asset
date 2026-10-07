@@ -913,6 +913,7 @@ MonoBehaviour:
   - {fileID: 2044197306030878128}
   - {fileID: 7914189710646098005}
   - {fileID: -3099569470802391968}
+  - {fileID: 4361260139661217601}
 --- !u!114 &448115243408767295
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -2048,6 +2049,49 @@ MonoBehaviour:
     m_OverrideState: 1
     m_Value: 1
   writeDepthAlphaThreshold:
+    m_OverrideState: 1
+    m_Value: 0
+--- !u!114 &4361260139661217601
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e23fe585513df7b448c20370fa8a8671, type: 3}
+  m_Name: EnviroHDRPSky
+  m_EditorClassIdentifier: Enviro3.Runtime::UnityEngine.Rendering.HighDefinition.EnviroHDRPSky
+  active: 1
+  rotation:
+    m_OverrideState: 1
+    m_Value: 0
+  skyIntensityMode:
+    m_OverrideState: 1
+    m_Value: 0
+  exposure:
+    m_OverrideState: 1
+    m_Value: 0
+  multiplier:
+    m_OverrideState: 1
+    m_Value: 1
+  upperHemisphereLuxValue:
+    m_OverrideState: 1
+    m_Value: 1
+  upperHemisphereLuxColor:
+    m_OverrideState: 1
+    m_Value: {x: 0, y: 0, z: 0}
+  desiredLuxValue:
+    m_OverrideState: 1
+    m_Value: 20000
+  updateMode:
+    m_OverrideState: 1
+    m_Value: 0
+  updatePeriod:
+    m_OverrideState: 1
+    m_Value: 0
+  includeSunInBaking:
     m_OverrideState: 1
     m_Value: 0
 --- !u!114 &5187653951205467227
