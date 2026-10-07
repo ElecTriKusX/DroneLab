@@ -87,6 +87,11 @@ namespace DroneLab.Configurator
         private Button btnBack, btnValidateProfile, btnSaveDraft, btnSaveProfile;
         private TMP_Text statusText, rotorCountText;
 
+        [SerializeField] private Color statusErrorColor = new Color(0.95f, 0.2f, 0.2f, 1f);
+        private Color statusNormalColor = Color.white;
+        private string lastValidationErrorSignature = "";
+        private int validationErrorCursor;
+
         // Preview
         private Button btnMove, btnThrustAxis, btnTop, btnFront, btnSide, btn3D, btnFrame;
         private Button btnThrustGraph, btnTorqueGraph, btnCurrentGraph;
@@ -151,6 +156,9 @@ namespace DroneLab.Configurator
         {
             if (autoFindByName)
                 FindSceneObjects();
+
+            if (statusText != null)
+                statusNormalColor = statusText.color;
 
             if (modelLoader == null || visualModelRoot == null || physicalMarkerRoot == null || previewCamera == null || previewRawImage == null)
             {
@@ -720,7 +728,7 @@ namespace DroneLab.Configurator
 
             if (!success)
             {
-                SetStatus("Ошибка загрузки: " + error);
+                SetErrorStatus("Ошибка загрузки: " + error);
                 return;
             }
 
@@ -1611,15 +1619,58 @@ namespace DroneLab.Configurator
         private void ValidateProfile()
         {
             List<ConfiguratorIssue> issues = DroneConfiguratorProfileAdapter.Validate(draft, out _);
-            int errors = issues.Count(x => string.Equals(x.Severity, "Error", StringComparison.OrdinalIgnoreCase));
-            int warnings = issues.Count(x => string.Equals(x.Severity, "Warning", StringComparison.OrdinalIgnoreCase));
 
             foreach (ConfiguratorIssue issue in issues)
                 Debug.Log("[DroneConfigurator validation] " + issue);
 
-            SetStatus(errors == 0
-                ? $"Профиль валиден. Предупреждений: {warnings}."
-                : $"Ошибок: {errors}, предупреждений: {warnings}. Подробности — Console.");
+            List<ConfiguratorIssue> errors = issues
+                .Where(x => string.Equals(x.Severity, "Error", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (errors.Count > 0)
+            {
+                ShowNextValidationError(errors);
+                return;
+            }
+
+            lastValidationErrorSignature = "";
+            validationErrorCursor = 0;
+
+            int warnings = issues.Count(x =>
+                string.Equals(x.Severity, "Warning", StringComparison.OrdinalIgnoreCase));
+
+            SetStatus(warnings == 0
+                ? "Профиль валиден."
+                : $"Профиль валиден. Предупреждений: {warnings}.");
+        }
+
+        private void ShowNextValidationError(IReadOnlyList<ConfiguratorIssue> errors)
+        {
+            if (errors == null || errors.Count == 0)
+                return;
+
+            string signature = string.Join("\n", errors.Select(x =>
+                (x.Path ?? "") + "|" + (x.Message ?? "")));
+
+            if (!string.Equals(signature, lastValidationErrorSignature, StringComparison.Ordinal))
+            {
+                lastValidationErrorSignature = signature;
+                validationErrorCursor = 0;
+            }
+
+            if (validationErrorCursor >= errors.Count)
+                validationErrorCursor = 0;
+
+            int shownIndex = validationErrorCursor;
+            ConfiguratorIssue issue = errors[shownIndex];
+            validationErrorCursor = (validationErrorCursor + 1) % errors.Count;
+
+            string location = string.IsNullOrWhiteSpace(issue.Path)
+                ? ""
+                : issue.Path + ": ";
+
+            SetErrorStatus(
+                $"Ошибка {shownIndex + 1}/{errors.Count}: {location}{issue.Message}");
         }
 
         private void SaveDraft()
@@ -1633,7 +1684,7 @@ namespace DroneLab.Configurator
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-                SetStatus("Ошибка сохранения черновика: " + ex.Message);
+                SetErrorStatus("Ошибка сохранения черновика: " + ex.Message);
             }
         }
 
@@ -1644,8 +1695,14 @@ namespace DroneLab.Configurator
                 List<ConfiguratorIssue> issues = DroneConfiguratorProfileAdapter.Validate(draft, out string strictJson);
                 if (DroneConfiguratorProfileAdapter.HasErrors(issues))
                 {
-                    SetStatus("profile.json не сохранён: исправьте ошибки проверки.");
-                    foreach (ConfiguratorIssue issue in issues) Debug.Log("[DroneConfigurator validation] " + issue);
+                    foreach (ConfiguratorIssue issue in issues)
+                        Debug.Log("[DroneConfigurator validation] " + issue);
+
+                    List<ConfiguratorIssue> errors = issues
+                        .Where(x => string.Equals(x.Severity, "Error", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+
+                    ShowNextValidationError(errors);
                     return;
                 }
 
@@ -1656,7 +1713,7 @@ namespace DroneLab.Configurator
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-                SetStatus("Ошибка сохранения профиля: " + ex.Message);
+                SetErrorStatus("Ошибка сохранения профиля: " + ex.Message);
             }
         }
 
@@ -1673,7 +1730,7 @@ namespace DroneLab.Configurator
             if (!string.IsNullOrWhiteSpace(backScene) && Application.CanStreamedLevelBeLoaded(backScene))
                 SceneManager.LoadScene(backScene);
             else
-                SetStatus("Сцена возврата не найдена в Build Profiles: " + backScene);
+                SetErrorStatus("Сцена возврата не найдена в Build Profiles: " + backScene);
         }
 
         private void CacheRotorButtons()
@@ -1699,8 +1756,24 @@ namespace DroneLab.Configurator
 
         private void SetStatus(string message)
         {
-            if (statusText != null) statusText.text = message;
+            if (statusText != null)
+            {
+                statusText.color = statusNormalColor;
+                statusText.text = message;
+            }
+
             Debug.Log("[DroneConfiguratorCanvas] " + message);
+        }
+
+        private void SetErrorStatus(string message)
+        {
+            if (statusText != null)
+            {
+                statusText.color = statusErrorColor;
+                statusText.text = message;
+            }
+
+            Debug.LogError("[DroneConfiguratorCanvas] " + message);
         }
 
         private static void Bind(Button button, Action action)
