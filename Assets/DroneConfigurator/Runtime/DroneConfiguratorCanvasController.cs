@@ -1665,12 +1665,235 @@ namespace DroneLab.Configurator
             ConfiguratorIssue issue = errors[shownIndex];
             validationErrorCursor = (validationErrorCursor + 1) % errors.Count;
 
-            string location = string.IsNullOrWhiteSpace(issue.Path)
-                ? ""
-                : issue.Path + ": ";
+            string location = LocalizeValidationPath(issue.Path);
+            string message = LocalizeValidationMessage(issue.Message);
 
             SetErrorStatus(
-                $"Ошибка {shownIndex + 1}/{errors.Count}: {location}{issue.Message}");
+                string.IsNullOrWhiteSpace(location)
+                    ? $"Ошибка {shownIndex + 1}/{errors.Count}: {message}"
+                    : $"Ошибка {shownIndex + 1}/{errors.Count}: {location}: {message}");
+        }
+
+        private static string LocalizeValidationPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || path == "$")
+                return "Профиль";
+
+            string normalized = path.Trim();
+            if (normalized.StartsWith("$", StringComparison.Ordinal))
+                normalized = normalized.Substring(1);
+            if (normalized.StartsWith(".", StringComparison.Ordinal))
+                normalized = normalized.Substring(1);
+
+            string[] parts = normalized.Split('.');
+            var localized = new List<string>();
+
+            foreach (string rawPart in parts)
+            {
+                if (string.IsNullOrWhiteSpace(rawPart))
+                    continue;
+
+                string part = rawPart;
+
+                if (part.StartsWith("rotors[", StringComparison.Ordinal))
+                {
+                    int start = part.IndexOf('[');
+                    int end = part.IndexOf(']');
+                    if (start >= 0 && end > start &&
+                        int.TryParse(part.Substring(start + 1, end - start - 1), out int rotorIndex))
+                    {
+                        localized.Add($"Ротор M{rotorIndex + 1}");
+                        continue;
+                    }
+                }
+
+                localized.Add(part switch
+                {
+                    "metadata" => "Метаданные",
+                    "name" => "название",
+                    "manufacturer" => "производитель",
+                    "model" => "модель",
+                    "coordinateSystem" => "Система координат",
+                    "modelScaleMetersPerUnit" => "масштаб модели",
+                    "massProperties" => "Масса и инерция",
+                    "massKg" => "масса",
+                    "dimensionsM" => "габариты",
+                    "centerOfMassLocalM" => "центр масс",
+                    "inertia" => "инерция",
+                    "mode" => "режим",
+                    "principalMomentsKgM2" => "главные моменты инерции",
+                    "principalAxesRotationXyzw" => "ориентация главных осей",
+                    "rotorId" => "ID ротора",
+                    "geometry" => "геометрия",
+                    "positionLocalM" => "позиция",
+                    "thrustAxisLocal" => "ось тяги",
+                    "spinDirection" => "направление вращения",
+                    "motor" => "двигатель",
+                    "minRpm" => "минимальные обороты",
+                    "idleRpm" => "обороты холостого хода",
+                    "maxRpm" => "максимальные обороты",
+                    "dynamicsModel" => "модель динамики двигателя",
+                    "timeConstantUpS" => "время разгона",
+                    "timeConstantDownS" => "время снижения оборотов",
+                    "rotatingInertiaKgM2" => "момент инерции ротора",
+                    "electrical" => "электрические параметры двигателя",
+                    "motorKvRpmPerVolt" => "Kv двигателя",
+                    "motorResistanceOhm" => "сопротивление двигателя",
+                    "noLoadCurrentA" => "ток холостого хода",
+                    "maxCurrentA" => "максимальный ток двигателя",
+                    "motorEfficiency" => "КПД двигателя",
+                    "escEfficiency" => "КПД ESC",
+                    "escMaxCurrentA" => "максимальный ток ESC",
+                    "propeller" => "воздушный винт",
+                    "diameterM" => "диаметр винта",
+                    "pitchM" => "шаг винта",
+                    "bladeCount" => "количество лопастей",
+                    "performance" => "характеристика винта",
+                    "kThrustNPerRadPerSecSquared" => "коэффициент тяги kT",
+                    "kTorqueNmPerRadPerSecSquared" => "коэффициент момента kQ",
+                    "referenceAirDensityKgM3" => "опорная плотность воздуха",
+                    "ct" => "коэффициент Ct",
+                    "cq" => "коэффициент Cq",
+                    "rpmTable" => "RPM-таблица",
+                    "performanceMap" => "карта характеристик",
+                    "outOfRangePolicy" => "поведение за пределами таблицы",
+                    "advancedAerodynamics" => "расширенная аэродинамика ротора",
+                    "bodyAerodynamics" => "Аэродинамика корпуса",
+                    "dragCd" => "коэффициенты сопротивления Cd",
+                    "referenceAreaM2" => "опорные площади",
+                    "projectedArea" => "проекционная площадь",
+                    "surfaces" => "аэродинамические поверхности",
+                    "groundEffect" => "Экранный эффект",
+                    "powerSystem" => "Питание",
+                    "battery" => "батарея",
+                    "cellCount" => "количество ячеек",
+                    "nominalVoltageV" => "номинальное напряжение",
+                    "capacityAh" => "ёмкость",
+                    "initialSoc" => "начальный заряд",
+                    "internalResistanceOhm" => "внутреннее сопротивление",
+                    "maxDischargeCurrentA" => "максимальный ток разряда",
+                    "ocvCurve" => "кривая OCV",
+                    "thermalEnabled" => "тепловая модель",
+                    "physicsConfiguration" => "Настройки физики",
+                    "fidelity" => "уровень физической модели",
+                    "modules" => "модули физики",
+                    "motorResponse" => "инерционность двигателей",
+                    "bodyDrag" => "сопротивление корпуса",
+                    "windInteraction" => "взаимодействие с воздушной средой",
+                    "groundEffect" => "экранный эффект",
+                    "rotorAerodynamics" => "аэродинамика роторов",
+                    "bladeFlapping" => "взмах лопастей",
+                    "inducedDrag" => "индуктивное сопротивление",
+                    "batteryDischarge" => "разряд аккумулятора",
+                    "batteryVoltageSag" => "просадка напряжения",
+                    "motorElectrical" => "электрическая модель двигателя",
+                    "gyroscopicRotorEffects" => "гироскопические эффекты роторов",
+                    "environment" => "Окружение",
+                    _ => part
+                });
+            }
+
+            return string.Join(" → ", localized);
+        }
+
+        private static string LocalizeValidationMessage(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return "Параметр не прошёл проверку.";
+
+            string trimmed = message.Trim();
+
+            if (trimmed.StartsWith("Expected ", StringComparison.OrdinalIgnoreCase))
+            {
+                string type = trimmed.Substring("Expected ".Length).Trim();
+                string localizedType = type switch
+                {
+                    "object" => "объект",
+                    "array" => "массив",
+                    "string" => "строка",
+                    "boolean" => "логическое значение",
+                    "integer" => "целое число",
+                    "number" => "число",
+                    _ => "значение нужного типа"
+                };
+                return "Ожидался тип: " + localizedType + ".";
+            }
+
+            if (trimmed.StartsWith("Unknown value:", StringComparison.OrdinalIgnoreCase))
+                return "Недопустимое значение: " + trimmed.Substring("Unknown value:".Length).Trim();
+
+            if (trimmed.StartsWith("Cannot load profile:", StringComparison.OrdinalIgnoreCase))
+                return "Не удалось загрузить профиль: данные имеют неверный формат или не соответствуют схеме.";
+
+            if (trimmed.StartsWith("Parameter source:", StringComparison.OrdinalIgnoreCase))
+                return "Источник параметра требует проверки.";
+
+            return trimmed switch
+            {
+                "Required field is missing." => "Обязательное поле не заполнено.",
+                "Unknown field." => "Поле не поддерживается текущей версией профиля.",
+                "Invalid array length." => "Недопустимое количество элементов.",
+                "Number is not finite or is outside the allowed range." => "Число находится вне допустимого диапазона.",
+                "String must not be empty." => "Поле не должно быть пустым.",
+                "Required for the selected model." => "Поле обязательно для выбранной модели.",
+                "Three positive components are required." => "Необходимо указать три положительных значения.",
+                "Value exceeds runtime numerical safety limit (1e12 SI)." => "Значение превышает безопасный числовой предел симулятора.",
+                "Principal moments must satisfy triangle inequalities." => "Главные моменты инерции должны удовлетворять неравенствам треугольника.",
+                "A unit quaternion is required." => "Необходимо указать нормированный кватернион.",
+                "Ground effect settings are required when the module is enabled." => "Для включённого экранного эффекта необходимо заполнить его параметры.",
+                "Duplicate rotor ID." => "ID роторов не должны повторяться.",
+                "Axis must be normalized and nonzero." => "Ось тяги должна быть ненулевой и нормированной.",
+                "Aerodynamic settings are required for every rotor when its module is enabled." => "Для каждого ротора необходимо заполнить параметры расширенной аэродинамики.",
+                "Require 0 <= minRpm <= idleRpm < maxRpm." => "Обороты должны удовлетворять условию: 0 ≤ минимальные ≤ холостой ход < максимальные.",
+                "Measured kT/kQ require their reference density. Use CtCq for density scaling." => "Для измеренных kT/kQ опорная плотность воздуха должна совпадать с плотностью среды.",
+                "Measured thrust/torque/current tables require their reference density; no implicit scaling." => "Для таблицы тяги, момента и тока необходимо указать соответствующую опорную плотность воздуха.",
+                "Reject table must cover motor maxRpm." => "При режиме Reject RPM-таблица должна покрывать максимальные обороты двигателя.",
+                "Reject map must cover motor maxRpm." => "При режиме Reject карта характеристик должна покрывать максимальные обороты двигателя.",
+                "Explicit outOfRangePolicy Clamp or Reject is required." => "Необходимо выбрать поведение за границами данных: Clamp или Reject.",
+                "rpmTable requires 2..4096 rows." => "RPM-таблица должна содержать от 2 до 4096 строк.",
+                "RPM, thrust, torque and current must be finite and nonnegative." => "Обороты, тяга, момент и ток должны быть конечными и неотрицательными.",
+                "Duplicate RPM rows are not allowed." => "В RPM-таблице не должно быть строк с одинаковыми оборотами.",
+                "An explicit zero RPM / zero thrust / zero torque (and zero current if supplied) origin is required." => "RPM-таблица должна содержать начальную точку: 0 об/мин, 0 Н тяги, 0 Н·м момента и 0 А тока, если ток указан.",
+                "currentA must be supplied for all rows or omitted for all rows." => "Ток должен быть указан во всех строках RPM-таблицы либо не указан ни в одной.",
+                "performanceMap requires 2..4096 rows." => "Карта характеристик должна содержать от 2 до 4096 точек.",
+                "Map RPM must be positive; RPM/J/Ct/Cq must be finite." => "В карте RPM должны быть положительными, а RPM, J, Ct и Cq — конечными числами.",
+                "Map requires a complete rectangular RPM x J grid with at least two J values and no duplicate cells." => "Карта должна образовывать полную прямоугольную сетку RPM × J, содержать минимум два значения J и не иметь дубликатов.",
+                "Map must include a J=0 column for static capacity/reference calculations." => "Карта должна содержать столбец J = 0 для статических расчётов.",
+                "Nonnegative drag coefficients are required." => "Коэффициенты аэродинамического сопротивления должны быть неотрицательными.",
+                "Nonnegative axis areas, with at least one positive area, are required." => "Площади по осям должны быть неотрицательными, и хотя бы одна площадь должна быть больше нуля.",
+                "Require 1..256 directional samples." => "Необходимо указать от 1 до 256 направлений.",
+                "A unit direction is required." => "Необходимо указать единичный вектор направления.",
+                "Duplicate projection axis, including opposite directions." => "Оси проекции не должны повторяться, включая противоположные направления.",
+                "Require 1..256 surfaces." => "Необходимо указать от 1 до 256 аэродинамических поверхностей.",
+                "Duplicate surface ID." => "ID аэродинамических поверхностей не должны повторяться.",
+                "A unit normal is required." => "Нормаль поверхности должна быть единичным вектором.",
+                "RotorInertia requires Electrical battery mode and motorResponse." => "RotorInertia требует режим батареи Electrical и включённую инерционность двигателя.",
+                "All rotors must select RotorInertia with positive rotatingInertiaKgM2; mixed dynamic models are unsupported." => "Для всех роторов необходимо выбрать RotorInertia и указать положительный момент инерции; смешивание моделей динамики не поддерживается.",
+                "Spin inertia exceeds the weak-coupling envelope: sum Jr must be <=5% of the smallest locked-body principal moment. Full body/shaft acceleration coupling is outside this model." => "Суммарная инерция вращающихся частей слишком велика: она должна быть не более 5% минимального главного момента инерции корпуса.",
+                "Gyroscopic rotor effects require RotorInertia dynamics with spin inertia." => "Гироскопические эффекты роторов требуют модели RotorInertia с заданным моментом инерции вращения.",
+                "Battery modules require Simple or Electrical battery mode." => "Модули батареи требуют режима батареи Simple или Electrical.",
+                "Enable exactly for Electrical battery mode; disable for Simple." => "Электрическую модель двигателя нужно включать только для режима батареи Electrical.",
+                "Required for an enabled battery." => "Поле обязательно при включённой модели батареи.",
+                "Require 2..256 sorted points covering SOC 0 and 1." => "Кривая OCV должна содержать 2–256 отсортированных точек и покрывать SOC от 0 до 100%.",
+                "SOC must strictly increase and pack voltage must not decrease." => "SOC должен строго возрастать, а напряжение батареи не должно уменьшаться.",
+                "Motor power settings required for every rotor with battery enabled." => "При включённой батарее необходимо заполнить электрические параметры двигателя для каждого ротора.",
+                "No-load current must be below both current limits." => "Ток холостого хода должен быть меньше максимального тока двигателя и ESC.",
+                "Load-dependent efficiencies await a validated governor; use constant motorEfficiency for now." => "Зависимость КПД от нагрузки пока не поддерживается; используйте постоянный КПД двигателя.",
+                "Battery maps require Clamp for startup and solver trial RPM/J values; Reject is unsupported." => "Для карты характеристик с батареей требуется режим Clamp; Reject не поддерживается.",
+                "Invalid RPM/J map for battery load solving." => "Карта RPM/J некорректна для расчёта нагрузки батареи.",
+                "Battery maps require nonnegative Cq; windmilling/regeneration is unsupported." => "Для расчёта батареи Cq должен быть неотрицательным; рекуперация не поддерживается.",
+                "Battery map torque must be nondecreasing in RPM at fixed axial flow, including Clamp boundaries; supplied Cq gradients violate this envelope." => "Момент на карте батареи не должен уменьшаться с ростом RPM при фиксированном осевом потоке.",
+                "Battery governor requires nondecreasing torque over sorted RPM." => "В RPM-таблице момент не должен уменьшаться при увеличении оборотов.",
+                "Thermal model requires Electrical mode for explicit motor, ESC and battery losses." => "Тепловая модель требует режим батареи Electrical.",
+                "Thermal mode requires explicit resistance reference temperature and coefficient (0 disables the temperature dependence)." => "Для тепловой модели необходимо указать опорную температуру сопротивления и температурный коэффициент.",
+                "Winding resistance must remain positive throughout ambient envelope 100..500 K." => "Сопротивление обмотки должно оставаться положительным во всём диапазоне температур 100–500 К.",
+                "Explicit thermal node required; no silent defaults." => "Необходимо явно заполнить параметры тепловой модели.",
+                "cutoffTemperatureK must exceed derateStartTemperatureK." => "Температура отключения должна быть выше температуры начала ограничения мощности.",
+                "This mode is reserved in contract 1.0.0 but not implemented by this runtime." => "Этот режим предусмотрен форматом профиля, но пока не реализован в симуляторе.",
+                "Axial inflow is already represented by the RPM/J map; inducedDrag must be disabled." => "Осевой поток уже учтён картой RPM/J; индуктивное сопротивление необходимо отключить.",
+                "This empirical lift bundle requires static base performance; do not stack it on an RPM/J map." => "Эту эмпирическую модель подъёмной силы нельзя одновременно использовать с картой RPM/J.",
+                _ => "Параметр не прошёл проверку. Проверьте введённое значение и выбранную модель."
+            };
         }
 
         private void SaveDraft()
