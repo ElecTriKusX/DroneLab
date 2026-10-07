@@ -86,7 +86,7 @@ namespace DroneLab.UI
             if (primary) button.AddToClassList("primary");
             if (compact) button.AddToClassList("compact");
             var glyph = new DroneMenuIcon(icon); glyph.AddToClassList("menu-icon"); button.Add(glyph);
-            var text = new Label(caption) { pickingMode = PickingMode.Ignore }; text.AddToClassList("menu-caption"); button.Add(text);
+            var text = new Label(caption); MakeReadOnly(text); text.AddToClassList("menu-caption"); button.Add(text);
             var arrow = new DroneMenuIcon(MenuIconKind.Chevron); arrow.AddToClassList("menu-arrow"); button.Add(arrow);
             button.clicked += () => { returnFocus = button; action(); };
             stack.Add(button); return button;
@@ -94,7 +94,33 @@ namespace DroneLab.UI
 
         private static Label Text(VisualElement parent, string text, string className)
         {
-            var label = new Label(text); label.AddToClassList(className); parent.Add(label); return label;
+            var label = new Label(text); MakeReadOnly(label); label.AddToClassList(className); parent.Add(label); return label;
+        }
+
+        private static void MakeReadOnly(Label label)
+        {
+            label.selection.isSelectable = false;
+            label.focusable = false;
+            label.pickingMode = PickingMode.Ignore;
+        }
+        private static DropdownField Dropdown(VisualElement parent, string title, List<string> choices, int index)
+        {
+            var field = new DropdownField(title, choices, index);
+            field.AddToClassList("settings-control");
+            field.Query<Label>().ForEach(MakeReadOnly);
+            parent.Add(field);
+            return field;
+        }
+        private static ScrollView ModalScroll(VisualElement card)
+        {
+            var scroll = new ScrollView(ScrollViewMode.Vertical);
+            scroll.AddToClassList("modal-scroll");
+            scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroll.verticalScroller.AddToClassList("graphite-scroller");
+            scroll.verticalScroller.lowButton.style.display = DisplayStyle.None;
+            scroll.verticalScroller.highButton.style.display = DisplayStyle.None;
+            card.Add(scroll);
+            return scroll;
         }
 
         public void SetBackground(Texture2D texture)
@@ -175,20 +201,19 @@ namespace DroneLab.UI
         {
             var draft = DroneApplicationSettings.Current.Copy();
             var card = OpenModal("НАСТРОЙКИ", "settings-card");
-            var scroll = new ScrollView(ScrollViewMode.Vertical); scroll.AddToClassList("modal-scroll"); card.Add(scroll);
+            var scroll = ModalScroll(card);
             Text(scroll, "ЗВУК", "section-title");
             VolumeSlider(scroll, "Окружающая среда", draft.environmentVolume, value => draft.environmentVolume = value);
             VolumeSlider(scroll, "Дрон / лопасти", draft.droneVolume, value => draft.droneVolume = value);
             Text(scroll, "ИЗОБРАЖЕНИЕ", "section-title");
-            var fullscreen = new Toggle("Полный экран") { value = draft.fullscreen }; fullscreen.AddToClassList("settings-control"); scroll.Add(fullscreen);
+            var fullscreen = Dropdown(scroll, "Полный экран", new List<string> { "Включено", "Выключено" }, draft.fullscreen ? 0 : 1);
             var names = new List<string>();
             foreach (var name in QualitySettings.names)
                 names.Add(name == "High Fidelity" ? "Высокое качество" : name == "Balanced" ? "Сбалансированное" : name == "Performant" ? "Производительность" : name);
-            var quality = new DropdownField("Пресет качества", names, draft.quality); quality.AddToClassList("settings-control"); scroll.Add(quality);
-            var vsync = new Toggle("Вертикальная синхронизация (VSync)") { value = draft.vSync }; vsync.AddToClassList("settings-control"); scroll.Add(vsync);
+            var quality = Dropdown(scroll, "Пресет качества", names, draft.quality);
+            var vsync = Dropdown(scroll, "Вертикальная синхронизация", new List<string> { "Включено", "Выключено" }, draft.vSync ? 0 : 1);
             Text(scroll, "УПРАВЛЕНИЕ", "section-title");
-            var device = new DropdownField("Устройство", new List<string> { "Клавиатура", "Геймпад" }, draft.inputDevice == PilotDevice.Gamepad ? 1 : 0);
-            device.AddToClassList("settings-control"); scroll.Add(device);
+            var device = Dropdown(scroll, "Устройство", new List<string> { "Клавиатура", "Геймпад" }, draft.inputDevice == PilotDevice.Gamepad ? 1 : 0);
             var deviceHint = Text(scroll, "", "muted-text");
             void DeviceHint()
             {
@@ -202,7 +227,7 @@ namespace DroneLab.UI
             var back = ActionButton(row, "НАЗАД", CloseModal);
             ActionButton(row, "ПРИМЕНИТЬ", () =>
             {
-                draft.fullscreen = fullscreen.value; draft.quality = quality.index; draft.vSync = vsync.value;
+                draft.fullscreen = fullscreen.index == 0; draft.quality = quality.index; draft.vSync = vsync.index == 0;
                 draft.inputDevice = device.index == 1 ? PilotDevice.Gamepad : PilotDevice.Keyboard;
                 DroneApplicationSettings.Save(draft); CloseModal(); status.text = "Настройки сохранены.";
             });
@@ -211,7 +236,7 @@ namespace DroneLab.UI
         private static void VolumeSlider(VisualElement parent, string title, float initial, Action<float> changed)
         {
             var row = new VisualElement(); row.AddToClassList("volume-row"); parent.Add(row);
-            var slider = new Slider(title, 0, 1) { value = initial }; slider.AddToClassList("volume-slider"); row.Add(slider);
+            var slider = new Slider(title, 0, 1) { value = initial }; slider.AddToClassList("volume-slider"); MakeReadOnly(slider.labelElement); row.Add(slider);
             var number = Text(row, Mathf.RoundToInt(initial * 100) + "%", "volume-value");
             slider.RegisterValueChangedCallback(evt => { number.text = Mathf.RoundToInt(evt.newValue * 100) + "%"; changed(evt.newValue); });
         }
@@ -219,7 +244,7 @@ namespace DroneLab.UI
         private void About()
         {
             var card = OpenModal("СПРАВКА / О ПРОГРАММЕ", "about-card");
-            var scroll = new ScrollView(ScrollViewMode.Vertical); scroll.AddToClassList("modal-scroll"); card.Add(scroll);
+            var scroll = ModalScroll(card);
             Text(scroll, "ДРОНЛАБ", "about-logo");
             Text(scroll, "Лаборатория симуляции БПЛА", "about-subtitle");
             Text(scroll, "Дронлаб — платформа для демонстрации возможностей беспилотной техники потенциальным покупателям и предварительных инженерных испытаний. Виртуальные полёты позволяют исследовать поведение аппарата без риска потери дорогостоящего оборудования и сокращают число реальных испытательных полётов.", "body-text");
