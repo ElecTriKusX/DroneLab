@@ -48,6 +48,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 5
       m_NumAlphaKeys: 2
     cirrusCloudsWindIntensity: 0.5
@@ -81,6 +82,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 5
       m_NumAlphaKeys: 2
     flatCloudsAmbientColor:
@@ -110,6 +112,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 4
       m_NumAlphaKeys: 2
     flatCloudsLightIntensity: 1.014
@@ -128,9 +131,9 @@ MonoBehaviour:
   preset: {fileID: 11400000, guid: 0fcdd472bd6a8ec429fc1e9bc978c4fa, type: 2}
   showCirrusCloudsControls: 0
   show2DCloudsControls: 0
-  cloudFlatBaseAnim: {x: -0.45774108, y: -0.35202405}
-  cloudFlatDetailAnim: {x: -0.5011771, y: 0.7554102}
-  cirrusAnim: {x: 0.61211836, y: 0.95929813}
+  cloudFlatBaseAnim: {x: -0.4065554, y: -0.39219964}
+  cloudFlatDetailAnim: {x: -0.25926384, y: 0.5697561}
+  cirrusAnim: {x: -0.36299506, y: -0.06105761}
 --- !u!114 &-6613759932185320841
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -230,7 +233,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 375eef0084d44344ebf50cbba7c1eadb, type: 3}
   m_Name: Sky Module
   m_EditorClassIdentifier: 
-  showModuleInspector: 0
+  showModuleInspector: 1
   showSaveLoad: 0
   active: 1
   Settings:
@@ -264,6 +267,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 3
       m_NumAlphaKeys: 2
     frontColorGradient1:
@@ -293,6 +297,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 6
       m_NumAlphaKeys: 2
     frontColorGradient2:
@@ -322,6 +327,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 6
       m_NumAlphaKeys: 2
     frontColorGradient3:
@@ -351,6 +357,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 6
       m_NumAlphaKeys: 2
     frontColorGradient4:
@@ -380,6 +387,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 6
       m_NumAlphaKeys: 2
     frontColorGradient5:
@@ -409,6 +417,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 6
       m_NumAlphaKeys: 2
     backColorGradient0:
@@ -438,6 +447,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 3
       m_NumAlphaKeys: 2
     backColorGradient1:
@@ -467,6 +477,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 6
       m_NumAlphaKeys: 2
     backColorGradient2:
@@ -496,6 +507,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 6
       m_NumAlphaKeys: 2
     backColorGradient3:
@@ -525,6 +537,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 6
       m_NumAlphaKeys: 2
     backColorGradient4:
@@ -554,6 +567,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 6
       m_NumAlphaKeys: 2
     backColorGradient5:
@@ -583,6 +597,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 6
       m_NumAlphaKeys: 2
     sunDiscColorGradient:
@@ -612,6 +627,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 5
       m_NumAlphaKeys: 2
     moonColorGradient:
@@ -641,6 +657,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 3
       m_NumAlphaKeys: 2
     moonGlowColorGradient:
@@ -670,6 +687,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
     starsTex: {fileID: 8900000, guid: b5a7175da0f133b4d951c19c9c2cebfc, type: 3}
@@ -895,13 +913,14 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+    skyAmbientModeHDRP: 1
     skyColorTint: {r: 1, g: 1, b: 1, a: 1}
     skyColorExponent: 1.2
   preset: {fileID: 11400000, guid: 44f43418b8d8b8142863e38d1e49e174, type: 2}
   showSkyControls: 1
-  showSkySunControls: 0
-  showSkyMoonControls: 0
-  showSkyStarsControls: 0
+  showSkySunControls: 1
+  showSkyMoonControls: 1
+  showSkyStarsControls: 1
   mySkyboxMat: {fileID: 0}
 --- !u!114 &11400000
 MonoBehaviour:
@@ -942,7 +961,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b18a0693e95fd064e9d0a3b96e538236, type: 3}
   m_Name: Lighting Module
   m_EditorClassIdentifier: 
-  showModuleInspector: 0
+  showModuleInspector: 1
   showSaveLoad: 0
   active: 1
   Settings:
@@ -1060,6 +1079,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 5
       m_NumAlphaKeys: 2
     moonColorGradient:
@@ -1089,6 +1109,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 4
       m_NumAlphaKeys: 2
     sunIntensityCurveHDRP:
@@ -1271,9 +1292,10 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
-    lightIntensityHDRP: 350
+    lightIntensityHDRP: 10000
     controlExposure: 1
     sceneExposure:
       serializedVersion: 2
@@ -1378,6 +1400,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 5
       m_NumAlphaKeys: 2
     ambientEquatorColorGradient:
@@ -1407,6 +1430,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 5
       m_NumAlphaKeys: 2
     ambientGroundColorGradient:
@@ -1436,6 +1460,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 5
       m_NumAlphaKeys: 2
     ambientIntensityCurve:
@@ -1468,8 +1493,12 @@ MonoBehaviour:
     shadowIntensity: 1
   preset: {fileID: 11400000, guid: 81d8b109102443243bcb0894975c0718, type: 2}
   showDirectLightingControls: 1
-  showAmbientLightingControls: 0
+  showAmbientLightingControls: 1
   showReflectionControls: 0
+  directionalLightHDRP: {fileID: 0}
+  additionalLightHDRP: {fileID: 0}
+  exposureHDRP: {fileID: -4703332889699849288, guid: 52f158144a28a9e4c9a02b7856139c21, type: 2}
+  indirectLightingHDRP: {fileID: 2642261307547123297, guid: 52f158144a28a9e4c9a02b7856139c21, type: 2}
 --- !u!114 &1290233478698596523
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1482,18 +1511,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0081d4f9e5d6e0a4d9fe8e7a8d7256b6, type: 3}
   m_Name: Time Module
   m_EditorClassIdentifier: 
-  showModuleInspector: 0
+  showModuleInspector: 1
   showSaveLoad: 0
   active: 1
   Settings:
     simulate: 0
     secSerial: 0
     minSerial: 0
-    hourSerial: 7
+    hourSerial: 13
     daySerial: 15
     monthSerial: 11
     yearSerial: 2025
-    timeOfDay: 7
+    timeOfDay: 13
     latitude: 0
     longitude: 0
     utcOffset: 0
@@ -1508,7 +1537,7 @@ MonoBehaviour:
   preset: {fileID: 11400000, guid: 82acdd278499d74498ad37dd931734d1, type: 2}
   showTimeControls: 1
   showLocationControls: 0
-  LST: 159.62769
+  LST: 249.87476
 --- !u!114 &1310742743334959994
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1667,7 +1696,7 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    temperature: 3.2010436
+    temperature: 4.864409
     temperatureWeatherMod: 0
     temperatureCustomMod: 0
     temperatureChangingSpeed: 0.1
@@ -1701,7 +1730,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 456bf221b186fde4096dcf2c1841b35a, type: 3}
   m_Name: Quality Module
   m_EditorClassIdentifier: 
-  showModuleInspector: 1
+  showModuleInspector: 0
   showSaveLoad: 0
   active: 1
   Settings:
@@ -2009,7 +2038,7 @@ MonoBehaviour:
     defaultSkyReflectionTex: {fileID: 0}
   preset: {fileID: 11400000, guid: da668770e38694d49af97ecfd05fd7eb, type: 2}
   showReflectionControls: 1
-  lastReflectionUpdate: 7.025
+  lastReflectionUpdate: 13.025
   lastReflectionUpdatePos: {x: 0, y: 24.1, z: 0}
 --- !u!114 &3171557369469055653
 MonoBehaviour:
@@ -2097,6 +2126,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 5
       m_NumAlphaKeys: 2
     moonLightColorGradient:
@@ -2126,6 +2156,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 3
       m_NumAlphaKeys: 2
     ambientColorGradient:
@@ -2155,6 +2186,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 5
       m_NumAlphaKeys: 2
     sunLightColor: {r: 0, g: 0, b: 0, a: 0}
@@ -2193,9 +2225,9 @@ MonoBehaviour:
   showDensityControls: 0
   showTextureControls: 0
   showWindControls: 0
-  cloudAnimLayer1: {x: -0.15238605, y: -0.75173455, z: 0.5870752}
+  cloudAnimLayer1: {x: 0.09069101, y: -0.9310675, z: 0.11883012}
   cloudAnimLayer2: {x: -0.4793451, y: 0.47841242, z: 0.015471124}
-  cloudAnimNonScaledLayer1: {x: -0.31603515, y: -2.1525373, z: -66.53769}
+  cloudAnimNonScaledLayer1: {x: 0.08602261, y: -2.554244, z: -68.53602}
   cloudAnimNonScaledLayer2: {x: -0.001515836, y: 0.0009908647, z: -0.28406617}
   weatherMap: {fileID: 0}
 --- !u!114 &4011421771873438716
@@ -2276,7 +2308,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4eacb969ef7bfec4ba69d66b0a873f2f, type: 3}
   m_Name: Fog Module
   m_EditorClassIdentifier: 
-  showModuleInspector: 0
+  showModuleInspector: 1
   showSaveLoad: 1
   active: 1
   Settings:
@@ -2377,8 +2409,77 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 4
       m_NumAlphaKeys: 2
+    controlHDRPFog: 1
+    fogAttenuationDistance: 400
+    baseHeight: 0
+    maxHeight: 250
+    fogColorTint:
+      serializedVersion: 2
+      key0: {r: 1, g: 1, b: 1, a: 1}
+      key1: {r: 1, g: 1, b: 1, a: 1}
+      key2: {r: 0, g: 0, b: 0, a: 0}
+      key3: {r: 0, g: 0, b: 0, a: 0}
+      key4: {r: 0, g: 0, b: 0, a: 0}
+      key5: {r: 0, g: 0, b: 0, a: 0}
+      key6: {r: 0, g: 0, b: 0, a: 0}
+      key7: {r: 0, g: 0, b: 0, a: 0}
+      ctime0: 0
+      ctime1: 65535
+      ctime2: 0
+      ctime3: 0
+      ctime4: 0
+      ctime5: 0
+      ctime6: 0
+      ctime7: 0
+      atime0: 0
+      atime1: 65535
+      atime2: 0
+      atime3: 0
+      atime4: 0
+      atime5: 0
+      atime6: 0
+      atime7: 0
+      m_Mode: 0
+      m_ColorSpace: -1
+      m_NumColorKeys: 2
+      m_NumAlphaKeys: 2
+    controlHDRPVolumetrics: 0
+    volumetricsColorTint:
+      serializedVersion: 2
+      key0: {r: 1, g: 1, b: 1, a: 1}
+      key1: {r: 1, g: 1, b: 1, a: 1}
+      key2: {r: 0, g: 0, b: 0, a: 0}
+      key3: {r: 0, g: 0, b: 0, a: 0}
+      key4: {r: 0, g: 0, b: 0, a: 0}
+      key5: {r: 0, g: 0, b: 0, a: 0}
+      key6: {r: 0, g: 0, b: 0, a: 0}
+      key7: {r: 0, g: 0, b: 0, a: 0}
+      ctime0: 0
+      ctime1: 65535
+      ctime2: 0
+      ctime3: 0
+      ctime4: 0
+      ctime5: 0
+      ctime6: 0
+      ctime7: 0
+      atime0: 0
+      atime1: 65535
+      atime2: 0
+      atime3: 0
+      atime4: 0
+      atime5: 0
+      atime6: 0
+      atime7: 0
+      m_Mode: 0
+      m_ColorSpace: -1
+      m_NumColorKeys: 2
+      m_NumAlphaKeys: 2
+    ambientDimmer: 1
+    directLightMultiplier: 1
+    directLightShadowdimmer: 1
     unityFog: 0
     unityFogMode: 2
     unityFogDensity: 0.002
@@ -2411,11 +2512,13 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 6
       m_NumAlphaKeys: 2
-  preset: {fileID: 11400000, guid: 6625884995235d049bd7f2f1de182577, type: 2}
+  preset: {fileID: 11400000, guid: fba146c3373c931499beee4bacaac088, type: 2}
   showFogControls: 1
   showVolumetricsControls: 1
+  showHDRPFogControls: 1
   showUnityFogControls: 0
   fogLights:
   - {fileID: 0}
@@ -2874,6 +2977,7 @@ MonoBehaviour:
   blurMat: {fileID: 0}
   blurMat2: {fileID: 0}
   volumetricsRenderTexture: {fileID: 0}
+  fogHDRP: {fileID: 3994963388396277213, guid: 52f158144a28a9e4c9a02b7856139c21, type: 2}
 --- !u!114 &8141577898218642580
 MonoBehaviour:
   m_ObjectHideFlags: 0
