@@ -22,6 +22,15 @@ namespace DroneLab.Configurator
 
         [SerializeField] private string backScene = "DimaScene";
 
+        [Header("Scene-authored references")]
+        [Tooltip("These objects live in DroneConfigurator.unity and can be edited directly in the scene.")]
+        [SerializeField] private Transform previewWorld;
+        [SerializeField] private Transform visualFrame;
+        [SerializeField] private Transform markerFrame;
+        [SerializeField] private Camera previewCamera;
+        [SerializeField] private Light previewLight;
+        [SerializeField] private RuntimeGltfModelLoader modelLoader;
+
         private readonly CultureInfo invariant = CultureInfo.InvariantCulture;
         private readonly List<ConfiguratorIssue> issues = new List<ConfiguratorIssue>();
 
@@ -42,12 +51,6 @@ namespace DroneLab.Configurator
         private Label selectedNodeHud;
         private Label validationBadge;
 
-        private RuntimeGltfModelLoader modelLoader;
-        private Transform previewWorld;
-        private Transform visualFrame;
-        private Transform markerFrame;
-        private Camera previewCamera;
-        private Light previewLight;
         private Material markerMaterial;
         private Material comMaterial;
         private Material axisMaterial;
@@ -80,7 +83,7 @@ namespace DroneLab.Configurator
             bindings = new DroneAssetBindings();
             manifest = new DronePackageManifest();
 
-            BuildPreviewWorld();
+            BindSceneObjects();
             BuildUi();
             RebuildRotorMarkers();
             RefreshNavigation();
@@ -92,42 +95,45 @@ namespace DroneLab.Configurator
         {
             if (document != null) Destroy(document);
             if (panel != null) Destroy(panel);
-            if (previewWorld != null) Destroy(previewWorld.gameObject);
             if (markerMaterial != null) Destroy(markerMaterial);
             if (comMaterial != null) Destroy(comMaterial);
             if (axisMaterial != null) Destroy(axisMaterial);
         }
 
-        private void BuildPreviewWorld()
+        private void BindSceneObjects()
         {
-            previewWorld = new GameObject("DroneConfiguratorPreviewWorld").transform;
-            previewWorld.position = Vector3.zero;
+            // The stable preview objects are authored in DroneConfigurator.unity.
+            // We deliberately do not create cameras/lights/roots from code so they stay editable in the Scene/Inspector.
+            if (previewWorld == null)
+            {
+                var found = GameObject.Find("PreviewWorld");
+                if (found != null) previewWorld = found.transform;
+            }
+            if (visualFrame == null && previewWorld != null)
+                visualFrame = previewWorld.Find("VisualModelRoot");
+            if (markerFrame == null && previewWorld != null)
+                markerFrame = previewWorld.Find("PhysicalMarkerRoot");
+            if (previewCamera == null && previewWorld != null)
+            {
+                var found = previewWorld.Find("PreviewCamera");
+                if (found != null) previewCamera = found.GetComponent<Camera>();
+            }
+            if (previewLight == null && previewWorld != null)
+            {
+                var found = previewWorld.Find("KeyLight");
+                if (found != null) previewLight = found.GetComponent<Light>();
+            }
+            if (modelLoader == null)
+                modelLoader = GetComponent<RuntimeGltfModelLoader>();
 
-            visualFrame = new GameObject("VisualModelRoot").transform;
-            visualFrame.SetParent(previewWorld, false);
-
-            markerFrame = new GameObject("PhysicalMarkerRoot").transform;
-            markerFrame.SetParent(previewWorld, false);
-
-            GameObject cameraObject = new GameObject("DroneConfiguratorPreviewCamera");
-            cameraObject.transform.SetParent(previewWorld, false);
-            previewCamera = cameraObject.AddComponent<Camera>();
-            previewCamera.clearFlags = CameraClearFlags.SolidColor;
-            previewCamera.backgroundColor = new Color(0.018f, 0.021f, 0.025f);
-            previewCamera.nearClipPlane = 0.01f;
-            previewCamera.farClipPlane = 2000f;
-            previewCamera.allowHDR = true;
-
-            GameObject lightObject = new GameObject("DroneConfiguratorKeyLight");
-            lightObject.transform.SetParent(previewWorld, false);
-            lightObject.transform.rotation = Quaternion.Euler(50f, -35f, 0f);
-            previewLight = lightObject.AddComponent<Light>();
-            previewLight.type = LightType.Directional;
-            previewLight.intensity = 12000f;
-            previewLight.shadows = LightShadows.Soft;
-
-            modelLoader = gameObject.GetComponent<RuntimeGltfModelLoader>();
-            if (modelLoader == null) modelLoader = gameObject.AddComponent<RuntimeGltfModelLoader>();
+            if (visualFrame == null || markerFrame == null || previewCamera == null || modelLoader == null)
+            {
+                Debug.LogError(
+                    "DroneConfigurator scene references are incomplete. Open Assets/Scenes/DroneConfigurator.unity and assign PreviewWorld, VisualModelRoot, PhysicalMarkerRoot, PreviewCamera and RuntimeGltfModelLoader.",
+                    this);
+                enabled = false;
+                return;
+            }
 
             markerMaterial = CreateUnlitMaterial(new Color(0.12f, 0.78f, 1f));
             comMaterial = CreateUnlitMaterial(new Color(1f, 0.72f, 0.1f));
@@ -155,98 +161,78 @@ namespace DroneLab.Configurator
             panel.sortingOrder = 200;
             panel.themeStyleSheet = Resources.Load<ThemeStyleSheet>("DroneLab/MainMenuTheme");
 
-            document = gameObject.AddComponent<UIDocument>();
+            document = gameObject.GetComponent<UIDocument>();
+            if (document == null) document = gameObject.AddComponent<UIDocument>();
             document.panelSettings = panel;
-            root = document.rootVisualElement;
-            root.name = "drone-configurator-root";
-            root.AddToClassList("dc-root");
+
+            VisualElement documentRoot = document.rootVisualElement;
+            documentRoot.Clear();
+
+            var layout = Resources.Load<VisualTreeAsset>("DroneLab/Configurator");
+            if (layout == null)
+            {
+                Debug.LogError("Missing Resources/DroneLab/Configurator.uxml", this);
+                enabled = false;
+                return;
+            }
+
+            layout.CloneTree(documentRoot);
+            root = documentRoot.Q<VisualElement>("root-layout");
+            if (root == null)
+            {
+                Debug.LogError("Configurator.uxml has no root-layout element.", this);
+                enabled = false;
+                return;
+            }
 
             StyleSheet styleSheet = Resources.Load<StyleSheet>("DroneLab/Configurator");
             if (styleSheet != null) root.styleSheets.Add(styleSheet);
 
-            VisualElement header = new VisualElement();
-            header.AddToClassList("dc-header");
-            root.Add(header);
+            inspector = root.Q<VisualElement>("inspector");
+            hierarchyRoot = root.Q<VisualElement>("hierarchy-root");
+            rotorNav = root.Q<VisualElement>("rotor-nav");
+            previewPane = root.Q<VisualElement>("preview-pane");
+            issueList = root.Q<ScrollView>("issue-list");
+            statusLabel = root.Q<Label>("status-label");
+            previewHud = root.Q<Label>("preview-hud");
+            selectedNodeHud = root.Q<Label>("selected-node-hud");
+            validationBadge = root.Q<Label>("validation-badge");
 
-            VisualElement titleGroup = new VisualElement();
-            titleGroup.AddToClassList("dc-title-group");
-            header.Add(titleGroup);
+            RequireUiReference(inspector, "inspector");
+            RequireUiReference(hierarchyRoot, "hierarchy-root");
+            RequireUiReference(rotorNav, "rotor-nav");
+            RequireUiReference(previewPane, "preview-pane");
+            RequireUiReference(issueList, "issue-list");
 
-            Label title = new Label("DRONELAB");
-            title.AddToClassList("dc-title");
-            titleGroup.Add(title);
+            root.Q<Button>("nav-model").clicked += () => SelectSection(SectionModel);
+            root.Q<Button>("nav-physics").clicked += () => SelectSection(SectionPhysics);
+            root.Q<Button>("nav-propulsion").clicked += () => SelectSection(SectionPropulsion);
+            root.Q<Button>("nav-aero").clicked += () => SelectSection(SectionAero);
+            root.Q<Button>("nav-power").clicked += () => SelectSection(SectionPower);
+            root.Q<Button>("nav-modules").clicked += () => SelectSection(SectionModules);
 
-            Label subtitle = new Label("MULTIROTOR DIGITAL TWIN CONFIGURATOR");
-            subtitle.AddToClassList("dc-subtitle");
-            titleGroup.Add(subtitle);
+            root.Q<Button>("view-top").clicked += () => ApplyCameraView(ViewMode.Top, true);
+            root.Q<Button>("view-front").clicked += () => ApplyCameraView(ViewMode.Front, true);
+            root.Q<Button>("view-side").clicked += () => ApplyCameraView(ViewMode.Side, true);
+            root.Q<Button>("view-3d").clicked += () => ApplyCameraView(ViewMode.Perspective, true);
+            root.Q<Button>("view-frame").clicked += FrameModel;
 
-            validationBadge = new Label("VALIDATION —");
-            validationBadge.AddToClassList("dc-badge");
-            header.Add(validationBadge);
-
-            VisualElement body = new VisualElement();
-            body.AddToClassList("dc-body");
-            root.Add(body);
-
-            VisualElement left = BuildLeftPanel();
-            body.Add(left);
-
-            previewPane = BuildPreviewPane();
-            body.Add(previewPane);
-
-            VisualElement right = new VisualElement();
-            right.AddToClassList("dc-right");
-            body.Add(right);
-
-            Label inspectorTitle = new Label("INSPECTOR");
-            inspectorTitle.AddToClassList("dc-panel-heading");
-            right.Add(inspectorTitle);
-
-            ScrollView inspectorScroll = new ScrollView();
-            inspectorScroll.AddToClassList("dc-inspector-scroll");
-            right.Add(inspectorScroll);
-
-            inspector = new VisualElement();
-            inspector.AddToClassList("dc-inspector");
-            inspectorScroll.Add(inspector);
-
-            VisualElement validation = new VisualElement();
-            validation.AddToClassList("dc-validation");
-            root.Add(validation);
-
-            VisualElement validationHeader = new VisualElement();
-            validationHeader.AddToClassList("dc-validation-header");
-            validation.Add(validationHeader);
-            validationHeader.Add(new Label("VALIDATION / CONTRACT 1.0.0"));
-
-            issueList = new ScrollView();
-            issueList.AddToClassList("dc-issue-list");
-            validation.Add(issueList);
-
-            VisualElement footer = new VisualElement();
-            footer.AddToClassList("dc-footer");
-            root.Add(footer);
-
-            statusLabel = new Label();
-            statusLabel.AddToClassList("dc-status");
-            footer.Add(statusLabel);
-
-            VisualElement footerButtons = new VisualElement();
-            footerButtons.AddToClassList("dc-footer-buttons");
-            footer.Add(footerButtons);
-
-            footerButtons.Add(ActionButton("НАЗАД", Back));
-            footerButtons.Add(ActionButton("СОХРАНИТЬ ЧЕРНОВИК", SaveDraft));
-            footerButtons.Add(ActionButton("ПРОВЕРИТЬ", ValidateDraft));
-            Button saveProfile = ActionButton("СОХРАНИТЬ ПРОФИЛЬ", SaveReadyProfile);
-            saveProfile.AddToClassList("dc-primary");
-            footerButtons.Add(saveProfile);
+            root.Q<Button>("back-button").clicked += Back;
+            root.Q<Button>("save-draft-button").clicked += SaveDraft;
+            root.Q<Button>("validate-button").clicked += ValidateDraft;
+            root.Q<Button>("save-profile-button").clicked += SaveReadyProfile;
 
             previewPane.RegisterCallback<GeometryChangedEvent>(OnPreviewGeometry);
             previewPane.RegisterCallback<PointerDownEvent>(OnPreviewPointerDown);
             previewPane.RegisterCallback<PointerMoveEvent>(OnPreviewPointerMove);
             previewPane.RegisterCallback<PointerUpEvent>(OnPreviewPointerUp);
             previewPane.RegisterCallback<WheelEvent>(OnPreviewWheel);
+        }
+
+        private void RequireUiReference(VisualElement element, string name)
+        {
+            if (element == null)
+                Debug.LogError("Configurator.uxml is missing required element: " + name, this);
         }
 
         private VisualElement BuildLeftPanel()
@@ -1305,7 +1291,7 @@ namespace DroneLab.Configurator
             if (evt.button != 0) return;
 
             Ray ray = ScreenRay(evt.position);
-            if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
+            if (UnityEngine.Physics.Raycast(ray, out RaycastHit hit, 1000f))
             {
                 ConfiguratorMarker marker = hit.collider.GetComponent<ConfiguratorMarker>();
                 if (marker != null)

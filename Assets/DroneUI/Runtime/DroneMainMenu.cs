@@ -30,8 +30,8 @@ namespace DroneLab.UI
             panel.scaleMode = PanelScaleMode.ConstantPixelSize;
             panel.sortingOrder = 100;
             panel.themeStyleSheet = Resources.Load<ThemeStyleSheet>("DroneLab/MainMenuTheme");
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            UnityEngine.Cursor.lockState = CursorLockMode.None;
+            UnityEngine.Cursor.visible = true;
             document = gameObject.AddComponent<UIDocument>();
             document.panelSettings = panel;
             root = document.rootVisualElement;

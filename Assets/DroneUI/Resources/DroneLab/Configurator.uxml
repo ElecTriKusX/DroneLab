@@ -1,0 +1,71 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="root-layout" class="dc-root">
+        <ui:VisualElement name="header" class="dc-header">
+            <ui:VisualElement class="dc-title-group">
+                <ui:Label text="DRONELAB" class="dc-title" />
+                <ui:Label text="MULTIROTOR DIGITAL TWIN CONFIGURATOR" class="dc-subtitle" />
+            </ui:VisualElement>
+            <ui:Label name="validation-badge" text="VALIDATION —" class="dc-badge" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="body" class="dc-body">
+            <ui:VisualElement name="left-panel" class="dc-left">
+                <ui:Label text="SECTIONS" class="dc-panel-heading" />
+                <ui:VisualElement name="section-navigation" class="dc-nav">
+                    <ui:Button name="nav-model" text="МОДЕЛЬ" class="dc-button dc-nav-button" />
+                    <ui:Button name="nav-physics" text="ФИЗИКА КОРПУСА" class="dc-button dc-nav-button" />
+                    <ui:Button name="nav-propulsion" text="ДВИГАТЕЛИ / РОТОРЫ" class="dc-button dc-nav-button" />
+                    <ui:VisualElement name="rotor-nav" class="dc-rotor-nav" />
+                    <ui:Button name="nav-aero" text="АЭРОДИНАМИКА" class="dc-button dc-nav-button" />
+                    <ui:Button name="nav-power" text="ПИТАНИЕ" class="dc-button dc-nav-button" />
+                    <ui:Button name="nav-modules" text="МОДУЛИ" class="dc-button dc-nav-button" />
+                </ui:VisualElement>
+
+                <ui:Label text="MODEL HIERARCHY" class="dc-panel-heading" />
+                <ui:ScrollView name="hierarchy-scroll" class="dc-hierarchy-scroll">
+                    <ui:VisualElement name="hierarchy-root" class="dc-hierarchy">
+                        <ui:Label text="Модель не загружена" />
+                    </ui:VisualElement>
+                </ui:ScrollView>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="preview-pane" class="dc-preview">
+                <ui:VisualElement name="preview-toolbar" class="dc-preview-toolbar">
+                    <ui:Button name="view-top" text="TOP" class="dc-button" />
+                    <ui:Button name="view-front" text="FRONT" class="dc-button" />
+                    <ui:Button name="view-side" text="SIDE" class="dc-button" />
+                    <ui:Button name="view-3d" text="3D" class="dc-button" />
+                    <ui:Button name="view-frame" text="FRAME" class="dc-button" />
+                </ui:VisualElement>
+                <ui:Label name="preview-hud" text="+Z FRONT  /  X RIGHT  /  Y UP" class="dc-preview-hud" />
+                <ui:Label name="selected-node-hud" text="NODE: —" class="dc-selected-hud" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="right-panel" class="dc-right">
+                <ui:Label text="INSPECTOR" class="dc-panel-heading" />
+                <ui:ScrollView name="inspector-scroll" class="dc-inspector-scroll">
+                    <ui:VisualElement name="inspector" class="dc-inspector" />
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="validation-panel" class="dc-validation">
+            <ui:VisualElement class="dc-validation-header">
+                <ui:Label text="VALIDATION / CONTRACT 1.0.0" />
+            </ui:VisualElement>
+            <ui:ScrollView name="issue-list" class="dc-issue-list">
+                <ui:Label text="Ошибок пока нет. Нажмите ПРОВЕРИТЬ." class="dc-hint" />
+            </ui:ScrollView>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="footer" class="dc-footer">
+            <ui:Label name="status-label" text="Готово" class="dc-status" />
+            <ui:VisualElement class="dc-footer-buttons">
+                <ui:Button name="back-button" text="НАЗАД" class="dc-button" />
+                <ui:Button name="save-draft-button" text="СОХРАНИТЬ ЧЕРНОВИК" class="dc-button" />
+                <ui:Button name="validate-button" text="ПРОВЕРИТЬ" class="dc-button" />
+                <ui:Button name="save-profile-button" text="СОХРАНИТЬ ПРОФИЛЬ" class="dc-button dc-primary" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

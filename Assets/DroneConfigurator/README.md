@@ -74,3 +74,30 @@ Assets/Scenes/
 - `draft.json` — incomplete UI state and not-yet-valid values.
 
 The physics root convention remains X right, Y up, Z forward, SI units.
+
+
+## Scene-authored layout (revision 2)
+
+The configurator no longer creates its stable preview hierarchy from C#.
+
+Open `Assets/Scenes/DroneConfigurator.unity` and edit these objects directly:
+
+```text
+DroneConfigurator
+  - DroneConfiguratorController
+  - RuntimeGltfModelLoader
+
+PreviewWorld
+  ├── VisualModelRoot
+  ├── PhysicalMarkerRoot
+  ├── PreviewCamera
+  └── KeyLight
+```
+
+The static UI layout is also no longer constructed in C#. It lives in:
+
+`Assets/DroneUI/Resources/DroneLab/Configurator.uxml`
+
+Open that asset in UI Builder to move/rename/style the header, panels, buttons, preview area, validation area and footer. Runtime C# only binds callbacks and fills dynamic content such as rotor rows, model hierarchy and inspector fields.
+
+The `DroneConfiguratorController` Inspector exposes scene references for PreviewWorld, VisualModelRoot, PhysicalMarkerRoot, PreviewCamera, KeyLight and RuntimeGltfModelLoader.
