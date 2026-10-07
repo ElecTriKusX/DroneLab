@@ -140,6 +140,12 @@ namespace DroneLab.Configurator
         private Plane dragPlane;
         private bool orbiting;
         private Vector2 previousPointerPosition;
+        private DroneConfiguratorAdvancedEditors advancedEditors;
+
+        public DroneConfiguratorDraft Draft => draft;
+        public int SelectedRotorIndex => selectedRotorIndex;
+
+        public void SetConfiguratorStatus(string message) => SetStatus(message);
 
         private void Awake()
         {
@@ -164,6 +170,11 @@ namespace DroneLab.Configurator
             BindButtons();
             BindInputs();
             BindPreviewEvents();
+
+            advancedEditors = GetComponent<DroneConfiguratorAdvancedEditors>();
+            if (advancedEditors == null)
+                advancedEditors = gameObject.AddComponent<DroneConfiguratorAdvancedEditors>();
+            advancedEditors.Initialize(this);
 
             SelectPage(pageModel);
             SyncDraftPositionsFromSceneMarkers();
@@ -1332,6 +1343,7 @@ namespace DroneLab.Configurator
             draft.selectedRotorIndex = selectedRotorIndex;
             RefreshRotorUi();
             HighlightSelectedMarker();
+            advancedEditors?.RefreshSelectedRotor();
         }
 
         private ConfiguratorRotor CurrentRotor()
@@ -1505,6 +1517,8 @@ namespace DroneLab.Configurator
 
         private void SelectPage(GameObject page)
         {
+            advancedEditors?.HideDynamicPages();
+
             if (pageModel != null) pageModel.SetActive(page == pageModel);
             if (pageMass != null) pageMass.SetActive(page == pageMass);
             if (pageRotor != null) pageRotor.SetActive(page == pageRotor);
