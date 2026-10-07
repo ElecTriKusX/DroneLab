@@ -1,70 +1,127 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <ui:VisualElement name="root-layout" class="dc-root">
         <ui:VisualElement name="header" class="dc-header">
-            <ui:VisualElement class="dc-title-group">
-                <ui:Label text="DRONELAB" class="dc-title" />
-                <ui:Label text="MULTIROTOR DIGITAL TWIN CONFIGURATOR" class="dc-subtitle" />
+            <ui:VisualElement class="dc-brand-row">
+                <ui:Label text="DRONELAB" class="dc-logo" />
+                <ui:Label text="UAV SIMULATION&#10;LABORATORY" class="dc-lab" />
+                <ui:Label text="Конфигуратор дрона" class="dc-page-title" />
             </ui:VisualElement>
-            <ui:Label name="validation-badge" text="VALIDATION —" class="dc-badge" />
+            <ui:VisualElement class="dc-header-right">
+                <ui:VisualElement class="dc-mode-toggle">
+                    <ui:Button text="Базовый" class="dc-button dc-mode-button" />
+                    <ui:Button text="Расширенный" class="dc-button dc-mode-button dc-mode-selected" />
+                </ui:VisualElement>
+                <ui:Label name="validation-badge" text="Черновик" class="dc-draft-label" />
+            </ui:VisualElement>
         </ui:VisualElement>
 
-        <ui:VisualElement name="body" class="dc-body">
+        <ui:VisualElement name="workspace" class="dc-workspace">
             <ui:VisualElement name="left-panel" class="dc-left">
-                <ui:Label text="SECTIONS" class="dc-panel-heading" />
+                <ui:Label text="ПРОФИЛЬ" class="dc-panel-heading" />
+                <ui:VisualElement class="dc-section-line" />
                 <ui:VisualElement name="section-navigation" class="dc-nav">
-                    <ui:Button name="nav-model" text="МОДЕЛЬ" class="dc-button dc-nav-button" />
-                    <ui:Button name="nav-physics" text="ФИЗИКА КОРПУСА" class="dc-button dc-nav-button" />
-                    <ui:Button name="nav-propulsion" text="ДВИГАТЕЛИ / РОТОРЫ" class="dc-button dc-nav-button" />
+                    <ui:Button name="nav-model" text="◇   Модель" class="dc-button dc-nav-button" />
+                    <ui:Button name="nav-physics" text="▣   Масса и инерция" class="dc-button dc-nav-button" />
+                    <ui:Button name="nav-propulsion" text="⌘   Роторы" class="dc-button dc-nav-button dc-nav-selected" />
                     <ui:VisualElement name="rotor-nav" class="dc-rotor-nav" />
-                    <ui:Button name="nav-aero" text="АЭРОДИНАМИКА" class="dc-button dc-nav-button" />
-                    <ui:Button name="nav-power" text="ПИТАНИЕ" class="dc-button dc-nav-button" />
-                    <ui:Button name="nav-modules" text="МОДУЛИ" class="dc-button dc-nav-button" />
+                    <ui:Button name="nav-aero" text="◒   Аэродинамика" class="dc-button dc-nav-button" />
+                    <ui:Button name="nav-power" text="▤   Батарея и питание" class="dc-button dc-nav-button" />
+                    <ui:Button text="♨   Температура" class="dc-button dc-nav-button" />
+                    <ui:Button name="nav-modules" text="▦   Модули" class="dc-button dc-nav-button" />
                 </ui:VisualElement>
 
-                <ui:Label text="MODEL HIERARCHY" class="dc-panel-heading" />
+                <ui:Label text="MODEL HIERARCHY" class="dc-tree-title" />
                 <ui:ScrollView name="hierarchy-scroll" class="dc-hierarchy-scroll">
                     <ui:VisualElement name="hierarchy-root" class="dc-hierarchy">
-                        <ui:Label text="Модель не загружена" />
+                        <ui:Label text="Модель не загружена" class="dc-muted" />
                     </ui:VisualElement>
                 </ui:ScrollView>
-            </ui:VisualElement>
 
-            <ui:VisualElement name="preview-pane" class="dc-preview">
-                <ui:VisualElement name="preview-toolbar" class="dc-preview-toolbar">
-                    <ui:Button name="view-top" text="TOP" class="dc-button" />
-                    <ui:Button name="view-front" text="FRONT" class="dc-button" />
-                    <ui:Button name="view-side" text="SIDE" class="dc-button" />
-                    <ui:Button name="view-3d" text="3D" class="dc-button" />
-                    <ui:Button name="view-frame" text="FRAME" class="dc-button" />
+                <ui:VisualElement class="dc-left-bottom">
+                    <ui:Label text="4 ротора" class="dc-muted" />
+                    <ui:Button text="+   Добавить ротор" class="dc-button dc-add-rotor" />
                 </ui:VisualElement>
-                <ui:Label name="preview-hud" text="+Z FRONT  /  X RIGHT  /  Y UP" class="dc-preview-hud" />
-                <ui:Label name="selected-node-hud" text="NODE: —" class="dc-selected-hud" />
             </ui:VisualElement>
 
-            <ui:VisualElement name="right-panel" class="dc-right">
-                <ui:Label text="INSPECTOR" class="dc-panel-heading" />
-                <ui:ScrollView name="inspector-scroll" class="dc-inspector-scroll">
-                    <ui:VisualElement name="inspector" class="dc-inspector" />
-                </ui:ScrollView>
-            </ui:VisualElement>
-        </ui:VisualElement>
+            <ui:VisualElement name="main-area" class="dc-main-area">
+                <ui:VisualElement name="top-area" class="dc-top-area">
+                    <ui:VisualElement name="preview-pane" class="dc-preview">
+                        <ui:Label text="ГЕОМЕТРИЯ" class="dc-preview-title" />
+                        <ui:VisualElement name="preview-toolbar" class="dc-preview-toolbar">
+                            <ui:Button name="view-3d" text="✥  Перемещение" class="dc-button dc-tool-button dc-tool-selected" />
+                            <ui:Button text="↑  Вектор тяги" class="dc-button dc-tool-button" />
+                            <ui:Button name="view-top" text="◉  Вид сверху" class="dc-button dc-tool-button" />
+                            <ui:Button name="view-front" text="FRONT" class="dc-button dc-mini-tool" />
+                            <ui:Button name="view-side" text="SIDE" class="dc-button dc-mini-tool" />
+                            <ui:Button name="view-frame" text="FRAME" class="dc-button dc-mini-tool" />
+                        </ui:VisualElement>
+                        <ui:Label name="preview-hud" text="X вправо   •   Y вверх   •   Z вперёд" class="dc-preview-hud" />
+                        <ui:Label name="selected-node-hud" text="NODE: —" class="dc-selected-hud" />
+                        <ui:Label text="1 ед. = 1 м" class="dc-scale-hud" />
+                    </ui:VisualElement>
 
-        <ui:VisualElement name="validation-panel" class="dc-validation">
-            <ui:VisualElement class="dc-validation-header">
-                <ui:Label text="VALIDATION / CONTRACT 1.0.0" />
+                    <ui:VisualElement name="right-panel" class="dc-right">
+                        <ui:Label text="РОТОР / ПАРАМЕТРЫ" class="dc-panel-heading dc-right-heading" />
+                        <ui:VisualElement class="dc-section-line" />
+                        <ui:ScrollView name="inspector-scroll" class="dc-inspector-scroll">
+                            <ui:VisualElement name="inspector" class="dc-inspector" />
+                        </ui:ScrollView>
+                        <ui:VisualElement name="validation-details" class="dc-validation-details">
+                            <ui:Label text="ПРОВЕРКА" class="dc-small-heading" />
+                            <ui:ScrollView name="issue-list" class="dc-issue-list">
+                                <ui:Label text="Нажмите «Проверить профиль»." class="dc-muted" />
+                            </ui:ScrollView>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement name="curve-panel" class="dc-curve-panel">
+                    <ui:VisualElement class="dc-curve-header">
+                        <ui:Label text="ХАРАКТЕРИСТИКИ ВИНТА" class="dc-panel-heading" />
+                        <ui:VisualElement class="dc-curve-tabs">
+                            <ui:Button text="Тяга" class="dc-button dc-curve-tab dc-tab-selected" />
+                            <ui:Button text="Момент" class="dc-button dc-curve-tab" />
+                            <ui:Button text="Ток" class="dc-button dc-curve-tab" />
+                        </ui:VisualElement>
+                        <ui:Label text="RPM-таблица" class="dc-table-mode" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="dc-curve-content">
+                        <ui:VisualElement class="dc-graph-placeholder">
+                            <ui:Label text="Тяга, Н" class="dc-graph-axis-y" />
+                            <ui:VisualElement class="dc-graph-grid">
+                                <ui:Label text="График характеристик появится после ввода Omega² / CtCq / RPM-таблицы" class="dc-graph-caption" />
+                            </ui:VisualElement>
+                            <ui:Label text="0          2500          5000          7500          10000 RPM" class="dc-graph-axis-x" />
+                        </ui:VisualElement>
+
+                        <ui:VisualElement class="dc-table-placeholder">
+                            <ui:VisualElement class="dc-table-row dc-table-head">
+                                <ui:Label text="RPM" />
+                                <ui:Label text="Тяга, Н" />
+                                <ui:Label text="Момент, Н·м" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="dc-table-row"><ui:Label text="0" /><ui:Label text="—" /><ui:Label text="—" /></ui:VisualElement>
+                            <ui:VisualElement class="dc-table-row"><ui:Label text="2500" /><ui:Label text="—" /><ui:Label text="—" /></ui:VisualElement>
+                            <ui:VisualElement class="dc-table-row"><ui:Label text="5000" /><ui:Label text="—" /><ui:Label text="—" /></ui:VisualElement>
+                            <ui:VisualElement class="dc-table-row"><ui:Label text="7500" /><ui:Label text="—" /><ui:Label text="—" /></ui:VisualElement>
+                            <ui:VisualElement class="dc-table-row"><ui:Label text="10000" /><ui:Label text="—" /><ui:Label text="—" /></ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
             </ui:VisualElement>
-            <ui:ScrollView name="issue-list" class="dc-issue-list">
-                <ui:Label text="Ошибок пока нет. Нажмите ПРОВЕРИТЬ." class="dc-hint" />
-            </ui:ScrollView>
         </ui:VisualElement>
 
         <ui:VisualElement name="footer" class="dc-footer">
-            <ui:Label name="status-label" text="Готово" class="dc-status" />
+            <ui:VisualElement class="dc-footer-status">
+                <ui:Label text="⚠" class="dc-warning-icon" />
+                <ui:Label name="status-label" text="Новый черновик" class="dc-status" />
+            </ui:VisualElement>
             <ui:VisualElement class="dc-footer-buttons">
-                <ui:Button name="back-button" text="НАЗАД" class="dc-button" />
-                <ui:Button name="save-draft-button" text="СОХРАНИТЬ ЧЕРНОВИК" class="dc-button" />
-                <ui:Button name="validate-button" text="ПРОВЕРИТЬ" class="dc-button" />
-                <ui:Button name="save-profile-button" text="СОХРАНИТЬ ПРОФИЛЬ" class="dc-button dc-primary" />
+                <ui:Button name="back-button" text="НАЗАД" class="dc-button dc-footer-button" />
+                <ui:Button name="validate-button" text="Проверить профиль" class="dc-button dc-footer-button dc-validate" />
+                <ui:Button name="save-draft-button" text="Сохранить черновик" class="dc-button dc-footer-button" />
+                <ui:Button name="save-profile-button" text="Сохранить профиль" class="dc-button dc-footer-button dc-primary" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

@@ -30,6 +30,8 @@ namespace DroneLab.Configurator
         [SerializeField] private Camera previewCamera;
         [SerializeField] private Light previewLight;
         [SerializeField] private RuntimeGltfModelLoader modelLoader;
+        [Tooltip("Scene-authored editor placeholder. Hidden automatically in Play mode.")]
+        [SerializeField] private GameObject editorPreviewPlaceholder;
 
         private readonly CultureInfo invariant = CultureInfo.InvariantCulture;
         private readonly List<ConfiguratorIssue> issues = new List<ConfiguratorIssue>();
@@ -84,6 +86,8 @@ namespace DroneLab.Configurator
             manifest = new DronePackageManifest();
 
             BindSceneObjects();
+            if (editorPreviewPlaceholder != null)
+                editorPreviewPlaceholder.SetActive(false);
             BuildUi();
             RebuildRotorMarkers();
             RefreshNavigation();
@@ -185,7 +189,7 @@ namespace DroneLab.Configurator
                 return;
             }
 
-            StyleSheet styleSheet = Resources.Load<StyleSheet>("DroneLab/Configurator");
+            StyleSheet styleSheet = Resources.Load<StyleSheet>("DroneLab/ConfiguratorStyle");
             if (styleSheet != null) root.styleSheets.Add(styleSheet);
 
             inspector = root.Q<VisualElement>("inspector");
