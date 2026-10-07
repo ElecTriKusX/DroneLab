@@ -9916,7 +9916,7 @@ MonoBehaviour:
   editorPlaceholder: {fileID: 2022056376}
   previewCamera: {fileID: 1718977449}
   previewRawImage: {fileID: 43392086}
-  backScene:
+  backScene: DimaScene
   autoFindByName: 1
 --- !u!1 &934576312
 GameObject:
