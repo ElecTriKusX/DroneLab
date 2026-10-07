@@ -9863,6 +9863,7 @@ GameObject:
   m_Component:
   - component: {fileID: 934155447}
   - component: {fileID: 934155448}
+  - component: {fileID: 934155449}
   m_Layer: 0
   m_Name: Runtime
   m_TagString: Untagged
@@ -9897,6 +9898,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43f6ffbd38724a99abc2d0d0b3fe7279, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DroneLab.Configurator.RuntimeGltfModelLoader
+--- !u!114 &934155449
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 934155446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1f402a8374e46d3bd6314868d68d799, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DroneLab.Configurator.DroneConfiguratorCanvasController
+  modelLoader: {fileID: 934155448}
+  visualModelRoot: {fileID: 2106382346}
+  physicalMarkerRoot: {fileID: 1739355932}
+  editorPlaceholder: {fileID: 2022056376}
+  previewCamera: {fileID: 1718977449}
+  previewRawImage: {fileID: 43392086}
+  backScene:
+  autoFindByName: 1
 --- !u!1 &934576312
 GameObject:
   m_ObjectHideFlags: 0

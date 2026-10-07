@@ -14,7 +14,7 @@ namespace DroneLab.UI
         [Tooltip("Optional Cyrillic-capable font. Leave empty to use Unity's default font.")]
         [SerializeField] private Font menuFont;
         [SerializeField] private string flightScene = "PhysTest";
-        [SerializeField] private string configuratorScene = "DroneConfigurator";
+        [SerializeField] private string configuratorScene = "DroneConfigurator 1";
         [SerializeField, TextArea] private string developers = "Разработчики: Матвиенко, Якубовский, Николаев, Поляков";
         [SerializeField] private UnityEvent configureDrone = new UnityEvent();
         private UIDocument document;
