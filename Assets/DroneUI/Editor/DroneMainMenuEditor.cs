@@ -19,6 +19,7 @@ namespace DroneLab.UI.Editor
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var go = new GameObject("DroneLab Main Menu");
             go.AddComponent<DroneMainMenu>();
+            go.AddComponent<DroneScenarioController>();
             System.IO.Directory.CreateDirectory("Assets/Scenes");
             EditorSceneManager.SaveScene(scene, path);
             Selection.activeGameObject = go;

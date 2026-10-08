@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Collections.Generic;
 using DroneLab.Physics;
 using DroneLab.Simulation;
 using DroneLab.Weather;
@@ -83,6 +85,10 @@ namespace DroneLab.UI
             Set(visual, "fogBaseHeight", x => weatherClone.fogOverride.baseHeight = x);
             Set(visual, "fogMaxHeight", x => weatherClone.fogOverride.maxHeight = x);
 #endif
+#if ENVIRO_HDRP
+            if (weatherClone.fogOverride.maxHeight <= weatherClone.fogOverride.baseHeight)
+                throw new ArgumentException("Верхняя граница тумана должна быть выше нижней в выбранной основе.");
+#endif
             var e = DroneEnvironmentProfiles.Effective(document.environment);
             var airMode = (string)e["airDensityMode"];
             var temperature = (double)e["temperatureK"];
@@ -99,18 +105,40 @@ namespace DroneLab.UI
                 float intensity = (float)weather["intensityMmPerHour"];
                 bridge.weatherBindings = new[] { new WeatherPrecipitationBinding { preset = weatherClone,
                     precipitation = (PrecipitationKind)Enum.Parse(typeof(PrecipitationKind), precipitation), intensityMmPerHour = intensity } };
-                // Enviro VFX emissions have no SI calibration. A normalised presentation scale only.
-                foreach (var effect in weatherClone.effectsOverride.effectsOverride) {
-                    string key = effect.name.ToLowerInvariant();
-                    bool rain = key.Contains("rain"), snow = key.Contains("snow"), hail = key.Contains("hail");
-                    if (rain || snow || hail) effect.emission =
-                        ((rain && precipitation == "Rain") || (snow && precipitation == "Snow") || (hail && precipitation == "Hail")) ? Mathf.Clamp01(intensity / 20f) : 0;
+                // Use the scene's available effects, even when the sky preset has no rain/snow overrides.
+                // This makes precipitation independent of the selected sky/cloud/fog foundation.
+                var effects = manager.Effects?.Settings?.effectTypes;
+                var overrides = weatherClone.effectsOverride.effectsOverride ?? new List<EnviroEffectsOverrideType>();
+                weatherClone.effectsOverride.effectsOverride = overrides;
+                if (effects != null) foreach (var effect in effects.Where(x => x != null)) {
+                    string kind = EffectKind(effect.name);
+                    if (kind == "None") continue;
+                    var target = overrides.Find(x => x != null && x.name == effect.name);
+                    if (target == null) { target = new EnviroEffectsOverrideType { name = effect.name }; overrides.Add(target); }
                 }
+                bool available = false;
+                foreach (var effect in overrides.Where(x => x != null)) {
+                    string kind = EffectKind(effect.name); if (kind == "None") continue;
+                    bool selected = kind == precipitation;
+                    effect.emission = selected ? Mathf.Clamp01(intensity / 20f) : 0;
+                    if (selected && effects != null) available |= effects.Any(x => x != null && x.name == effect.name && (x.prefab != null || x.prefabVFXGraph != null));
+                }
+                if (precipitation != "None" && (manager.Effects == null || !manager.Effects.active || !available))
+                    Debug.LogWarning("DroneLab: для выбранных осадков нет активного эффекта Enviro в сцене. Физический профиль и метаданные сохранены; настройте модуль Effects / имена эффектов в каталоге.",this);
             }
             manager.Weather.ChangeWeatherInstant(weatherClone);
             if (manager.Time != null && manager.Time.active) bridge.SetTimeOfDay((double)visual["timeOfDay"], (bool)visual["simulateTime"]);
             else Debug.LogWarning("DroneLab: модуль времени Enviro выключен; время профиля не применено.", this);
             applied = true;
+        }
+        private string EffectKind(string name)
+        {
+            string key = (name ?? "").ToLowerInvariant();
+            bool Matches(string configured) => !string.IsNullOrWhiteSpace(configured) && string.Equals(name,configured,StringComparison.OrdinalIgnoreCase);
+            if (Matches(catalog?.rainEffectName) || key.Contains("rain") || key.Contains("дожд")) return "Rain";
+            if (Matches(catalog?.snowEffectName) || key.Contains("snow") || key.Contains("снег")) return "Snow";
+            if (Matches(catalog?.hailEffectName) || key.Contains("hail") || key.Contains("град")) return "Hail";
+            return "None";
         }
         private static void Set(JObject visual, string key, Action<float> setter)
         { if (visual[key] != null) setter((float)visual[key]); }

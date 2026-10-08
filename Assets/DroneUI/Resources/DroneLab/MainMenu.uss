@@ -63,19 +63,18 @@
 
 .settings-control .unity-base-field__input { background-color: rgb(38, 39, 40); color: rgb(230, 230, 227); border-color: rgb(120, 120, 118); border-radius: 4px; }
 
-/* Compact dropdown values and their detached popup menus. */
-.settings-control .unity-base-popup-field__text { font-size: 18px; }
-.settings-control .unity-base-field__input { min-height: 36px; font-size: 18px; }
-.settings-control .unity-base-field__input:focus { border-color: rgb(190, 190, 186); }
-.unity-base-dropdown { font-size: 16px; color: rgb(230, 230, 227); }
-.unity-base-dropdown__container-inner, .unity-base-dropdown__container-outer {
-    background-color: rgb(32, 33, 34); border-color: rgb(125, 126, 123); border-radius: 6px;
-}
-.unity-base-dropdown__item { min-height: 32px; background-color: rgb(32, 33, 34); }
-.unity-base-dropdown__label { font-size: 16px; color: rgb(230, 230, 227); }
-.unity-base-dropdown__item:hover, .unity-base-dropdown__item:focus { background-color: rgb(62, 63, 64); }
-.unity-base-dropdown__item:hover .unity-base-dropdown__label { color: white; }
-
+/* Shared popup control in the same scaled reference stage. */
+.drone-dropdown > .unity-base-field__input { padding: 0; border-width: 0; background-color: transparent; }
+.drone-dropdown-trigger { flex-grow: 1; flex-direction: row; align-items: center; height: 40px; min-height: 40px; margin: 0; padding: 0 10px; border-width: 1px; border-color: rgb(119, 122, 123); border-radius: 6px; background-color: rgb(25, 26, 27); color: rgb(232, 233, 230); }
+.drone-dropdown-trigger:hover, .drone-dropdown-trigger:focus { border-color: white; background-color: rgb(37, 39, 40); }
+.drone-dropdown-value { flex-grow: 1; flex-basis: 0; font-size: 16px; -unity-text-align: middle-left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drone-dropdown-arrow { width: 16px; margin-left: 8px; font-size: 18px; -unity-text-align: middle-center; }
+.drone-dropdown-overlay { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+.drone-dropdown-popup { position: absolute; padding: 5px; background-color: rgb(27, 29, 30); border-width: 1px; border-color: rgb(145, 151, 151); border-radius: 7px; }
+.drone-dropdown-option { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 34px; min-height: 34px; flex-shrink: 0; margin: 0; padding: 0 10px; border-width: 0; border-radius: 4px; background-color: transparent; color: rgb(220, 224, 221); font-size: 16px; -unity-text-align: middle-left; }
+.drone-dropdown-option:hover, .drone-dropdown-option:focus { background-color: rgb(55, 58, 59); color: white; }
+.drone-dropdown-option.selected { background-color: rgb(42, 45, 46); border-left-width: 2px; border-left-color: white; }
+.stage .unity-base-text-field, .stage TextField, .stage DoubleField, .stage IntegerField { --unity-cursor-color: white; --unity-selection-color: rgba(172, 179, 180, .35); }
 /* Native scroll behavior with a quiet graphite track and rounded thumb. */
 .graphite-scroller { width: 12px; min-width: 12px; margin-left: 14px; background-color: rgb(25, 26, 27); }
 .graphite-scroller .unity-slider { margin: 0; padding: 0; background-color: rgb(25, 26, 27); }

@@ -73,7 +73,7 @@ namespace DroneLab.UI
             firstButton = AddMenuButton("НОВАЯ СИМУЛЯЦИЯ", MenuIconKind.Play, StartFlight, true);
             AddMenuButton("КАТАЛОГ ДРОНОВ", MenuIconKind.Drone, () => OpenScreen(configureDrone, "Каталог дронов"));
             AddMenuButton("СЦЕНАРИИ И ОКРУЖЕНИЕ", MenuIconKind.Landscape, OpenScenarios);
-            AddMenuButton("ЛАБОРАТОРИЯ", MenuIconKind.Laboratory, () => OpenScreen(laboratory, "Лаборатория"));G
+            AddMenuButton("ЛАБОРАТОРИЯ", MenuIconKind.Laboratory, () => OpenScreen(laboratory, "Лаборатория"));
             var divider = new VisualElement(); divider.AddToClassList("menu-divider"); stack.Add(divider);
             AddMenuButton("НАСТРОЙКИ", MenuIconKind.Settings, Settings, compact: true);
             AddMenuButton("СПРАВКА / О ПРОГРАММЕ", MenuIconKind.Book, About, compact: true);
@@ -107,9 +107,9 @@ namespace DroneLab.UI
             label.focusable = false;
             label.pickingMode = PickingMode.Ignore;
         }
-        private static DropdownField Dropdown(VisualElement parent, string title, List<string> choices, int index)
+        private static DroneDropdown Dropdown(VisualElement parent, string title, List<string> choices, int index)
         {
-            var field = new DropdownField(title, DroneScenarioCatalog.DisplayChoices(choices), index);
+            var field = new DroneDropdown(title, DroneScenarioCatalog.DisplayChoices(choices), index);
             field.AddToClassList("settings-control");
             field.Query<Label>().ForEach(MakeReadOnly);
             parent.Add(field);
@@ -157,9 +157,15 @@ namespace DroneLab.UI
             stage.style.scale = new Scale(new Vector3(scale, scale, 1));
         }
 
+        private DroneScenarioCatalog GetCatalog()
+        {
+            var controller = GetComponent<DroneScenarioController>();
+            if (controller == null) controller = FindFirstObjectByType<DroneScenarioController>();
+            return controller != null ? controller.Catalog : scenarioCatalog != null ? scenarioCatalog : DroneScenarioCatalog.Load();
+        }
         public void StartFlight()
         {
-            var catalog = scenarioCatalog != null ? scenarioCatalog : DroneScenarioCatalog.Load();
+            var catalog = GetCatalog();
             if (catalog != null && catalog.maps.Count > 0) { PrepareFlight(catalog); return; }
             LoadLegacyFlight();
         }
@@ -179,7 +185,7 @@ namespace DroneLab.UI
         private void OpenScenarios()
         {
             CloseModal(); stack.SetEnabled(false);
-            var catalog = scenarioCatalog != null ? scenarioCatalog : DroneScenarioCatalog.Load();
+            var catalog = GetCatalog();
             scenarioScreen = new DroneScenariosScreen(stage, catalog, () => { scenarioScreen = null; stack.SetEnabled(!loading); (returnFocus ?? firstButton)?.Focus(); });
         }
         private void PrepareFlight(DroneScenarioCatalog catalog)

@@ -28,7 +28,7 @@ namespace DroneLab.UI
         {
             if (map == null || string.IsNullOrWhiteSpace(map.scenePath) || !Application.CanStreamedLevelBeLoaded(map.scenePath))
                 throw new ArgumentException("Карта не включена в список сцен сборки.");
-            DroneEnvironmentProfiles.Validate(profile);
+            DroneEnvironmentProfiles.Validate(profile,null,catalog);
             var physical = DroneEnvironmentProfiles.Effective(profile.environment);
             var air = (string)physical["airDensityMode"] == "StandardAtmosphere" ?
                 Atmosphere.Troposphere((double)physical["altitudeM"], (double)physical["temperatureK"], (double)physical["pressurePa"]) :
@@ -46,7 +46,7 @@ namespace DroneLab.UI
         private static void PrepareBody(DronePhysicsBody body)
         {
             if (active == null || body.gameObject.scene.path != scenePath) return;
-            DroneEnvironmentProfiles.Validate(active, body.droneProfile);
+            DroneEnvironmentProfiles.Validate(active, body.droneProfile,activeCatalog);
             var asset = new TextAsset(DroneEnvironmentProfiles.PhysicsJson(active)) { name = active.name };
             body.environmentProfile = asset;
             var lifetime = body.gameObject.AddComponent<DroneProfileAssetLifetime>(); lifetime.asset = asset;

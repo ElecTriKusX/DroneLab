@@ -40,10 +40,10 @@ namespace DroneLab.UI.Editor
         public static void AddWeather(DroneScenarioCatalog catalog)
         {
             Undo.RecordObject(catalog, "Register weather presets");
-            foreach (string guid in AssetDatabase.FindAssets("t:EnviroWeatherType")) {
+            foreach (string guid in AssetDatabase.FindAssets("t:EnviroWeatherType").OrderBy(g => AssetDatabase.GUIDToAssetPath(g).Contains("DroneEnvironment/Profiles/Forest") ? 0 : 1)) {
                 if (catalog.weatherPresets.Any(w => w != null && w.id == guid)) continue;
                 var preset = AssetDatabase.LoadAssetAtPath<EnviroWeatherType>(AssetDatabase.GUIDToAssetPath(guid));
-                catalog.weatherPresets.Add(new DroneWeatherEntry { id = guid, title = preset.name, preset = preset });
+                catalog.weatherPresets.Add(new DroneWeatherEntry { id = guid, title = DroneScenarioCatalog.WeatherTitle(preset.name), preset = preset });
             }
             EditorUtility.SetDirty(catalog); AssetDatabase.SaveAssets();
         }
@@ -66,12 +66,12 @@ namespace DroneLab.UI.Editor
         public override void OnInspectorGUI()
         {
             DrawDefaultInspector(); var catalog = (DroneScenarioCatalog)target;
-            EditorGUILayout.HelpBox("Screenshots: Assets/DroneUI/Screenshots/Maps. Sizes are in metres. Profiles are shared by every map. IDs must be unique and stable.", MessageType.Info);
-            if (GUILayout.Button("Add scenes from Assets/Scenes")) DroneScenarioCatalogSetup.AddScenes(catalog);
-            if (GUILayout.Button("Register Enviro weather presets")) DroneScenarioCatalogSetup.AddWeather(catalog);
-            if (GUILayout.Button("Add catalog maps to Build")) DroneScenarioCatalogSetup.AddToBuild(catalog);
+            EditorGUILayout.HelpBox("Превью: Assets/DroneUI/Screenshots/Maps. Размеры вводятся в километрах. Настройка карт также доступна в компоненте DroneScenarioController на MainMenu. Идентификаторы должны быть уникальными.", MessageType.Info);
+            if (GUILayout.Button("Добавить сцены из Assets/Scenes")) DroneScenarioCatalogSetup.AddScenes(catalog);
+            if (GUILayout.Button("Зарегистрировать основы погоды Enviro")) DroneScenarioCatalogSetup.AddWeather(catalog);
+            if (GUILayout.Button("Добавить карты в сборку")) DroneScenarioCatalogSetup.AddToBuild(catalog);
             var ids = catalog.maps.Where(m => m != null).Select(m => m.id).ToList();
-            if (ids.Any(string.IsNullOrWhiteSpace) || ids.Distinct().Count() != ids.Count) EditorGUILayout.HelpBox("Map IDs must be non-empty and unique.", MessageType.Error);
+            if (ids.Any(string.IsNullOrWhiteSpace) || ids.Distinct().Count() != ids.Count) EditorGUILayout.HelpBox("Идентификаторы карт должны быть заполнены и уникальны.", MessageType.Error);
         }
     }
 
@@ -84,13 +84,20 @@ namespace DroneLab.UI.Editor
             EditorGUI.BeginProperty(position, label, property);
             var row = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
             EditorGUI.LabelField(row, label, EditorStyles.boldLabel); row.y += row.height + 4;
-            foreach (string field in new[] { "id", "title", "terrainType", "sizeM", "screenshot" }) {
-                EditorGUI.PropertyField(row, property.FindPropertyRelative(field)); row.y += row.height + 4;
+            foreach (var field in new[] { ("id", "Идентификатор"), ("title", "Название"), ("terrainType", "Тип местности") }) {
+                EditorGUI.PropertyField(row, property.FindPropertyRelative(field.Item1),new GUIContent(field.Item2)); row.y += row.height + 4;
             }
+            var size = property.FindPropertyRelative("sizeM");
+            EditorGUI.BeginChangeCheck(); var km = EditorGUI.Vector2Field(row,"Размер, км × км",size.vector2Value / 1000f);
+            if (EditorGUI.EndChangeCheck() && !float.IsNaN(km.x) && !float.IsNaN(km.y) && !float.IsInfinity(km.x) && !float.IsInfinity(km.y)) size.vector2Value = new Vector2(Mathf.Max(0,km.x),Mathf.Max(0,km.y)) * 1000f;
+            row.y += row.height + 4; EditorGUI.PropertyField(row,property.FindPropertyRelative("screenshot"),new GUIContent("Превью")); row.y += row.height + 4;
             var scenePath = property.FindPropertyRelative("scenePath");
             var previous = AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath.stringValue);
-            var scene = (SceneAsset)EditorGUI.ObjectField(row, "Scene", previous, typeof(SceneAsset), false);
-            if (scene != previous) scenePath.stringValue = scene == null ? "" : AssetDatabase.GetAssetPath(scene);
+            var scene = (SceneAsset)EditorGUI.ObjectField(row, "Сцена", previous, typeof(SceneAsset), false);
+            if (scene != previous) {
+                scenePath.stringValue = scene == null ? "" : AssetDatabase.GetAssetPath(scene);
+                var id = property.FindPropertyRelative("id"); if (scene != null && string.IsNullOrWhiteSpace(id.stringValue)) id.stringValue = AssetDatabase.AssetPathToGUID(scenePath.stringValue);
+            }
             row.y += row.height + 4; EditorGUI.LabelField(row, scenePath.stringValue, EditorStyles.miniLabel);
             EditorGUI.EndProperty();
         }

@@ -19,7 +19,7 @@ namespace DroneLab.UI
         public JObject visual = new JObject { ["timeOfDay"] = 14.0, ["simulateTime"] = false, ["weatherPresetId"] = "" };
         [JsonIgnore] public bool builtIn;
         public DroneEnvironmentDocument Copy() => new DroneEnvironmentDocument {
-            id = id, name = name, environment = (JObject)environment.DeepClone(),
+            documentVersion = documentVersion, id = id, name = name, environment = (JObject)environment.DeepClone(),
             visual = (JObject)visual.DeepClone(), builtIn = builtIn
         };
     }
@@ -43,17 +43,23 @@ namespace DroneLab.UI
         public static List<DroneEnvironmentDocument> LoadAll(out string warnings)
         {
             var result = new List<DroneEnvironmentDocument>(); var errors = new List<string>();
+            var store = new DroneEnvironmentProfileStore(Folder); HashSet<string> removed;
+            try { removed = store.Removed(); }
+            catch (Exception ex) when (ex is IOException || ex is JsonException) { removed = new HashSet<string>(); errors.Add("Не удалось прочитать список удалённых профилей: " + ex.Message); }
             foreach (var asset in Resources.LoadAll<TextAsset>("DronePhysics").OrderBy(x => x.name))
             {
                 if (!asset.name.StartsWith("environment_", StringComparison.Ordinal)) continue;
                 try {
                     var d = New(); d.id = "builtin-" + asset.name; d.name = Title(asset.name);
-                    d.environment = JObject.Parse(asset.text); d.builtIn = true; result.Add(d);
+                    d.environment = JObject.Parse(asset.text); d.builtIn = true;
+                    if (!removed.Contains(d.id)) result.Add(d);
                 } catch (JsonException ex) { errors.Add(asset.name + ": " + ex.Message); }
             }
             Directory.CreateDirectory(Folder);
-            foreach (var file in Directory.GetFiles(Folder, "*.json").OrderBy(x => x))
-                try { var d = Read(File.ReadAllText(file)); Validate(d); result.Add(d); }
+            foreach (var file in store.Files())
+                try { var d = Read(File.ReadAllText(file)); Validate(d);
+                    if (!DroneEnvironmentProfileStore.ValidId(d.id)) throw new ArgumentException("Неверный идентификатор профиля.");
+                    result.RemoveAll(p => p.id == d.id); if (!removed.Contains(d.id)) result.Add(d); }
                 catch (Exception ex) when (ex is IOException || ex is ArgumentException || ex is JsonException) { errors.Add(Path.GetFileName(file) + ": " + ex.Message); }
             warnings = string.Join("\n", errors);
             return result;
@@ -65,7 +71,7 @@ namespace DroneLab.UI
                 case "environment_wind": return "Постоянный ветер";
                 case "environment_gust": return "Порывы ветра";
                 case "environment_turbulence": return "Турбулентность";
-                case "environment_dryden_frozen": return "Турбулентность Dryden";
+                case "environment_dryden_frozen": return "Турбулентность Драйдена";
                 case "environment_atmosphere": return "Стандартная атмосфера";
                 case "environment_field": return "Ветер Enviro / внешнее поле";
                 case "environment_thermal_rain": return "Дождь";
@@ -83,7 +89,7 @@ namespace DroneLab.UI
             return value;
         }
         public static string PhysicsJson(DroneEnvironmentDocument d) => Effective(d.environment).ToString(Formatting.Indented);
-        public static void Validate(DroneEnvironmentDocument d, TextAsset drone = null)
+        public static void Validate(DroneEnvironmentDocument d, TextAsset drone = null, DroneScenarioCatalog catalog = null)
         {
             if (d == null || d.documentVersion != 1 || d.environment == null || d.visual == null)
                 throw new ArgumentException("Неподдерживаемый или неполный профиль среды.");
@@ -109,6 +115,8 @@ namespace DroneLab.UI
                 throw new ArgumentException("Неверные параметры времени или погодного пресета.");
             var allowed = new HashSet<string> { "timeOfDay", "simulateTime", "weatherPresetId", "windTurbulence", "cloudCoverage", "cloudDensity", "wetness", "snow", "fogDistance", "fogBaseHeight", "fogMaxHeight" };
             if (d.visual.Properties().Any(p => !allowed.Contains(p.Name))) throw new ArgumentException("Неизвестный визуальный параметр.");
+            var fieldErrors = DroneEnvironmentFields.Errors(d,catalog != null ? catalog : DroneScenarioCatalog.Load());
+            if (fieldErrors.Count > 0) throw new ArgumentException(string.Join("\n", fieldErrors.Select(x => x.Key + ": " + x.Value)));
             if (Effective(d.environment).Descendants().OfType<JValue>().Any(v =>
                 (v.Type == JTokenType.Float || v.Type == JTokenType.Integer) && Math.Abs((double)v) > 1e12))
                 throw new ArgumentException("Параметр среды превышает допустимый численный диапазон.");
@@ -133,30 +141,19 @@ namespace DroneLab.UI
                 return d;
             }
         }
-        private static string PathFor(string id)
+        public static DroneEnvironmentDocument Save(DroneEnvironmentDocument draft, DroneScenarioCatalog catalog = null)
         {
-            if (!Guid.TryParseExact(id, "N", out _)) throw new ArgumentException("Неверный идентификатор пользовательского профиля.");
-            return Path.Combine(Folder, id + ".json");
+            Validate(draft,null,catalog); var saved = draft.Copy();
+            if (!DroneEnvironmentProfileStore.ValidId(saved.id)) saved.id = Guid.NewGuid().ToString("N");
+            saved.builtIn = false; new DroneEnvironmentProfileStore(Folder).Save(saved); return saved;
         }
-        public static DroneEnvironmentDocument Save(DroneEnvironmentDocument draft)
+        public static void Delete(DroneEnvironmentDocument document) => new DroneEnvironmentProfileStore(Folder).Delete(document);
+        public static string Export(DroneEnvironmentDocument document, string destination = null, DroneScenarioCatalog catalog = null)
         {
-            Validate(draft);
-            var saved = draft.Copy();
-            if (saved.builtIn || !Guid.TryParseExact(saved.id, "N", out _)) saved.id = Guid.NewGuid().ToString("N");
-            saved.builtIn = false;
-            Directory.CreateDirectory(Folder);
-            var path = PathFor(saved.id); var temp = path + ".tmp";
-            File.WriteAllText(temp, JsonConvert.SerializeObject(saved, Formatting.Indented));
-            if (File.Exists(path)) File.Replace(temp, path, null); else File.Move(temp, path);
-            return saved;
-        }
-        public static void Delete(DroneEnvironmentDocument d)
-        { if (d.builtIn) throw new ArgumentException("Встроенный профиль нельзя удалить."); File.Delete(PathFor(d.id)); }
-        public static string Export(DroneEnvironmentDocument d)
-        {
-            Validate(d); Directory.CreateDirectory(ExchangeFolder);
-            string path = Path.Combine(ExchangeFolder, "environment-" + Guid.NewGuid().ToString("N") + ".json");
-            File.WriteAllText(path, JsonConvert.SerializeObject(d, Formatting.Indented)); return path;
+            Validate(document,null,catalog); Directory.CreateDirectory(ExchangeFolder);
+            string path = destination ?? Path.Combine(ExchangeFolder, "environment-" + Guid.NewGuid().ToString("N") + ".json");
+            if (!path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) path += ".json";
+            DroneEnvironmentProfileStore.Atomic(path, JsonConvert.SerializeObject(document, Formatting.Indented)); return path;
         }
         public static DroneEnvironmentDocument Import(string path)
         {

@@ -361,6 +361,7 @@ GameObject:
   m_Component:
   - component: {fileID: 250566053}
   - component: {fileID: 250566052}
+  - component: {fileID: 250566054}
   m_Layer: 0
   m_Name: DroneLab Main Menu
   m_TagString: Untagged
@@ -379,7 +380,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: faec514c6cca4936bccd17e98c846571, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DroneLab.UI.DroneMainMenu
+  m_EditorClassIdentifier: DroneLab.UI::DroneLab.UI.DroneMainMenu
   background: {fileID: 2800000, guid: 7c3a62320ea28cb40bf874e5918a90bf, type: 3}
   menuFont: {fileID: 0}
   flightScene: PhysTest
@@ -417,6 +418,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &250566054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 250566051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72ad8ddba9114ff78317fc1086a887a9, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DroneLab.UI::DroneLab.UI.DroneScenarioController
+  catalog: {fileID: 11400000, guid: 237d385895ac5db09661a5c368f2dca0, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
