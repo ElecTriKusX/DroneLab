@@ -1,6 +1,10 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine.UIElements;
 using DroneLab.UI;
 using Enviro;
 using Newtonsoft.Json.Linq;
@@ -14,6 +18,53 @@ namespace DroneLab.UI.Tests
         private string folder;
         [SetUp] public void Setup() { folder = Path.Combine(Path.GetTempPath(),"DroneLab-"+Guid.NewGuid().ToString("N")); }
         [TearDown] public void Cleanup() { if (Directory.Exists(folder)) Directory.Delete(folder,true); }
+        [Test] public void DropdownCaptionChangeDoesNotSelectAnotherWeather()
+        {
+            var window = ScriptableObject.CreateInstance<EditorWindow>();
+            try {
+                window.Show();
+                var dropdown = new DroneDropdown("Погода", new List<string> { "Ясно", "Облачно" }, 0);
+                window.rootVisualElement.Add(dropdown);
+                int changes = 0; dropdown.RegisterValueChangedCallback(_ => changes++);
+                dropdown.SetCaption("Кастомное");
+                Assert.That(changes, Is.Zero); Assert.That(dropdown.value, Is.EqualTo("Ясно"));
+                Assert.That(dropdown.Q<Label>(className: "drone-dropdown-value").text, Is.EqualTo("Кастомное"));
+                dropdown.index = 1;
+                Assert.That(changes, Is.EqualTo(1)); Assert.That(dropdown.value, Is.EqualTo("Облачно"));
+            } finally { window.Close(); }
+        }
+        [Test] public void VisualEditKeepsOverrideAndExpandedFormAndCancelRestoresProfile()
+        {
+            var window = ScriptableObject.CreateInstance<EditorWindow>();
+            var catalog = ScriptableObject.CreateInstance<DroneScenarioCatalog>();
+            try {
+                window.Show(); var host = new VisualElement(); host.AddToClassList("stage"); window.rootVisualElement.Add(host);
+                var type = typeof(DroneDropdown).Assembly.GetType("DroneLab.UI.DroneScenariosScreen", true);
+                var screen = Activator.CreateInstance(type, new object[] { host, catalog, (Action)(() => { }) });
+                const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance;
+                type.GetMethod("SwitchTab", flags).Invoke(screen, new object[] { true });
+                var original = DroneEnvironmentProfiles.New();
+                var profiles = (List<DroneEnvironmentDocument>)type.GetField("profiles", flags).GetValue(screen);
+                profiles.Add(original); type.GetMethod("Select", flags).Invoke(screen, new object[] { original, false });
+                var editor = (VisualElement)type.GetField("editor", flags).GetValue(screen);
+                editor.Q<Foldout>("environment-advanced").value = true;
+                editor.Q<DoubleField>("visual.cloudCoverage").value = .73;
+                var draft = (DroneEnvironmentDocument)type.GetField("draft", flags).GetValue(screen);
+                Assert.That((double?)draft.visual["cloudCoverage"], Is.EqualTo(.73));
+                Assert.That((string)draft.visual["weatherPresetId"], Is.EqualTo(""));
+                Assert.That(editor.Q<Foldout>("environment-advanced").value, Is.True);
+                var weather = (DroneDropdown)type.GetField("weatherChoice", flags).GetValue(screen);
+                Assert.That(weather.Q<Label>(className: "drone-dropdown-value").text, Is.EqualTo("Кастомное"));
+                Assert.That(((Button)type.GetField("cancelButton", flags).GetValue(screen)).style.display.value, Is.EqualTo(DisplayStyle.Flex));
+                type.GetMethod("BuildEditor", flags).Invoke(screen, new object[] { true });
+                Assert.That(editor.Q<Foldout>("environment-advanced").value, Is.True);
+                type.GetMethod("DiscardChanges", flags).Invoke(screen, null);
+                draft = (DroneEnvironmentDocument)type.GetField("draft", flags).GetValue(screen);
+                Assert.That(draft.visual["cloudCoverage"], Is.Null); Assert.That(original.visual["cloudCoverage"], Is.Null);
+                Assert.That(editor.Q<Foldout>("environment-advanced").value, Is.True);
+                Assert.That(((Button)type.GetField("cancelButton", flags).GetValue(screen)).style.display.value, Is.EqualTo(DisplayStyle.None));
+            } finally { window.Close(); UnityEngine.Object.DestroyImmediate(catalog); }
+        }
         [Test] public void BundledProfileOverrideKeepsIdentityAndDeletionSurvivesRestart()
         {
             var store = new DroneEnvironmentProfileStore(folder);

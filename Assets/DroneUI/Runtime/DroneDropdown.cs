@@ -36,9 +36,11 @@ namespace DroneLab.UI
             var input = this.Q<VisualElement>(className: "unity-base-field__input");
             trigger = new Button(Toggle); trigger.selection.isSelectable = false; trigger.AddToClassList("drone-dropdown-trigger"); input.Add(trigger);
             caption = new Label(); caption.AddToClassList("drone-dropdown-value"); caption.pickingMode = PickingMode.Ignore; caption.selection.isSelectable = false; trigger.Add(caption);
+            // Caption changes are presentation, not a new dropdown selection.
+            caption.RegisterCallback<ChangeEvent<string>>(evt => evt.StopPropagation());
             var arrow = new DroneDropdownArrow(); arrow.AddToClassList("drone-dropdown-arrow"); arrow.pickingMode = PickingMode.Ignore; trigger.Add(arrow);
             SetValueWithoutNotify(items.Count == 0 ? "" : items[Mathf.Clamp(initial, 0, items.Count - 1)]);
-            this.RegisterValueChangedCallback(_ => caption.text = value);
+            this.RegisterValueChangedCallback(evt => { if (evt.target == this) caption.text = value; });
             trigger.RegisterCallback<KeyDownEvent>(evt => {
                 if (evt.keyCode == KeyCode.DownArrow || evt.keyCode == KeyCode.UpArrow) { Open(); evt.StopPropagation(); }
             });

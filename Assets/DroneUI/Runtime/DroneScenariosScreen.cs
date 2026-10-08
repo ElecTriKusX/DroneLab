@@ -22,7 +22,7 @@ namespace DroneLab.UI
         private readonly Dictionary<string,List<VisualElement>> controls = new Dictionary<string,List<VisualElement>>();
         private readonly Dictionary<string,string> inputErrors = new Dictionary<string,string>();
         private bool savedStatus, fileDialogBusy, newProfile;
-        private Button saveButton;
+        private Button saveButton, cancelButton;
         private IVisualElementScheduledItem transferTimer;
         private readonly Dictionary<string,string> inputText = new Dictionary<string,string>();
         private DroneDropdown weatherChoice;
@@ -147,17 +147,21 @@ namespace DroneLab.UI
                 Label(text, $"{v.Length:0.##} м/с · {(double)e["temperatureK"] - 273.15:0.#} °C · {(int)hours:00}:{(int)((hours % 1) * 60):00}", "scenario-muted");
             }
         }
-        private void Select(DroneEnvironmentDocument source)
+        private void Select(DroneEnvironmentDocument source, bool preserveView = false)
         {
             selected = source; draft = source.Copy();
             newProfile = !profiles.Any(p => p.id == source.id);
             // Explicit standard defaults are editable; unused optional parameters remain harmless.
             draft.environment = DroneEnvironmentProfiles.Effective(draft.environment);
             original = JsonConvert.SerializeObject(draft); savedStatus = false; inputErrors.Clear(); inputText.Clear();
-            FillList(); BuildEditor();
+            FillList(); BuildEditor(preserveView);
         }
-        private void BuildEditor()
+        private void BuildEditor(bool preserveView = false)
         {
+            var previousScroll = editor.Q<ScrollView>("profile-form-scroll");
+            var offset = preserveView && previousScroll != null ? previousScroll.scrollOffset : Vector2.zero;
+            bool expanded = preserveView && (editor.Q<Foldout>("environment-advanced")?.value ?? false);
+            bool drydenExpanded = preserveView ? editor.Q<Foldout>("environment-dryden")?.value ?? (string)draft.environment["windMode"] == "DrydenFrozen" : (string)draft.environment["windMode"] == "DrydenFrozen";
             editor.Clear(); controls.Clear(); weatherChoice = null;
             var head = Box(editor, "scenario-toolbar profile-editor-heading"); Label(head, "РЕДАКТОР ПРОФИЛЯ", "scenario-panel-title");
             Label(head, "Профили доступны для всех карт", "scenario-muted editor-caption");
@@ -165,7 +169,7 @@ namespace DroneLab.UI
             var name = new TextField("Название") { value = draft.name, isDelayed = true }; name.AddToClassList("profile-name-field"); ReadOnly(name.labelElement); editor.Add(name);
             Register(name, "name");
             name.RegisterValueChangedCallback(evt => { draft.name = evt.newValue; Changed(); });
-            var scroll = Scroll(editor); scroll.AddToClassList("profile-form-scroll");
+            var scroll = Scroll(editor); scroll.name = "profile-form-scroll"; scroll.AddToClassList("profile-form-scroll");
             var columns = Box(scroll, "profile-form-columns");
             var left = Box(columns, "profile-form-panel"); var right = Box(columns, "profile-form-panel last-panel");
             Label(left, "ПОГОДА И ВРЕМЯ", "scenario-panel-title");
@@ -193,7 +197,7 @@ namespace DroneLab.UI
             Register(Choice(right, "Модель воздуха", new[] { "Постоянная плотность", "Стандартная атмосфера" }, new[] { "Constant", "StandardAtmosphere" },
                 (string)draft.environment["airDensityMode"], mode => { draft.environment["airDensityMode"] = mode; Changed(); RebuildEditor(); }), "airDensityMode");
             Temperature(right);
-            var advanced = new Foldout { text = "Расширенные параметры", value = false }; advanced.AddToClassList("environment-advanced"); scroll.Add(advanced);
+            var advanced = new Foldout { name = "environment-advanced", text = "Расширенные параметры", value = expanded }; advanced.AddToClassList("environment-advanced"); scroll.Add(advanced);
             var atmosphere = Section(advanced, "АТМОСФЕРА И ГРАВИТАЦИЯ");
             Number(atmosphere, draft.environment, "airDensityKgM3", "Плотность, кг/м³", 1.225);
             Number(atmosphere, draft.environment, "pressurePa", "Давление, Па", 101325);
@@ -205,7 +209,7 @@ namespace DroneLab.UI
             Number(wind, draft.environment, "gustIntensityMps", "Амплитуда колебаний, м/с", 0);
             Number(wind, draft.environment, "gustTimeScaleS", "Период / масштаб времени, с", 2);
             Number(wind, draft.environment, "turbulenceSeed", "Начальное число генератора (seed)", 48271, true);
-            var dryden = new Foldout { text = "Спектральная турбулентность — модель Драйдена", value = (string)draft.environment["windMode"] == "DrydenFrozen" }; advanced.Add(dryden);
+            var dryden = new Foldout { name = "environment-dryden", text = "Спектральная турбулентность — модель Драйдена", value = drydenExpanded }; advanced.Add(dryden);
             Vector(dryden, "dryden.sigmaUvwMps", "Колебания u / v / w, м/с", new[] { .4, .4, .25 });
             Vector(dryden, "dryden.lengthScaleUvwM", "Масштабы u / v / w, м", new[] { 20.0, 20, 10 });
             Vector(dryden, "dryden.advectionDirectionWorld", "Ось переноса X / Y / Z", new[] { 1.0, 0, 0 });
@@ -225,11 +229,17 @@ namespace DroneLab.UI
             VisualNumber(visuals, "fogMaxHeight", "Верхняя граница тумана, м", registered?.preset?.fogOverride?.maxHeight ?? 250);
 #endif
             var actions = Box(editor, "profile-editor-actions"); message = Label(actions, "", "profile-message");
+            cancelButton = Button(actions, "Отменить", DiscardChanges);
             saveButton = Button(actions, "Сохранить профиль", () => Save(), "scenario-button primary");
+            if (preserveView && offset != Vector2.zero) {
+                EventCallback<GeometryChangedEvent> restore = null;
+                restore = _ => { scroll.scrollOffset = offset; scroll.contentContainer.UnregisterCallback(restore); };
+                scroll.contentContainer.RegisterCallback(restore);
+            }
             editor.Query<Label>().ForEach(ReadOnly);
             Changed();
         }
-        private void RebuildEditor() => editor.schedule.Execute(BuildEditor);
+        private void RebuildEditor() => editor.schedule.Execute(() => BuildEditor(true));
         private void WeatherChoice(VisualElement parent)
         {
             var titles = new List<string> { "Из сцены" }; var ids = new List<string> { "" };
@@ -250,7 +260,7 @@ namespace DroneLab.UI
         private void RefreshWeatherCaption()
         {
             if (weatherChoice == null) return;
-            weatherChoice.SetCaption(HasVisualOverrides ? "Кастомный" : weatherChoice.value);
+            weatherChoice.SetCaption(HasVisualOverrides ? "Кастомное" : weatherChoice.value);
         }
         private void TimeOfDay(VisualElement parent)
         {
@@ -283,10 +293,11 @@ namespace DroneLab.UI
             var speedRow = Box(parent, "wind-speed-row");
             var slider = new Slider("Скорость, м/с", 0, 100) { value = (float)speed }; slider.AddToClassList("environment-field"); ReadOnly(slider.labelElement); speedRow.Add(slider);
             slider.name = "mean-wind-slider";
-            var number = new DroneDoubleField { value = speed, isDelayed = true, name = "mean-wind-speed" }; number.AddToClassList("wind-speed-number"); speedRow.Add(number); Register(slider,"meanWindSpeed"); Register(number,"meanWindSpeed", false); WatchInput(number,"meanWindSpeed", false);
+            var number = new DroneDoubleField { value = speed, isDelayed = true, name = "mean-wind-speed" }; number.AddToClassList("wind-speed-number"); speedRow.Add(number); Register(slider,"meanWindSpeed", false); Register(number,"meanWindSpeed", false);
+            DroneHelp.Attach(speedRow, () => DroneEnvironmentFields.Rules["meanWindSpeed"].Help()); WatchInput(number,"meanWindSpeed", false);
             var direction = new DroneDoubleField("Направление ветра, °") { value = bearing, isDelayed = true, name = "mean-wind-bearing" }; direction.AddToClassList("environment-field"); ReadOnly(direction.labelElement);
-            var row = Box(parent, "wind-direction-row"); row.Add(direction); Register(direction,"meanWindBearing"); WatchInput(direction,"meanWindBearing",false);
-            var compass = new DroneWindCompass { Bearing = (float)bearing }; row.Add(compass);
+            var row = Box(parent, "wind-direction-row"); row.Add(direction); Register(direction,"meanWindBearing", false); WatchInput(direction,"meanWindBearing",false);
+            var compass = new DroneWindCompass { Bearing = (float)bearing }; row.Add(compass); DroneHelp.Attach(row, () => DroneEnvironmentFields.Rules["meanWindBearing"].Help());
             void UpdateWind(double s, double degrees) {
                 foreach (string key in new[] { "meanWindSpeed", "meanWindBearing" }) if (inputText.TryGetValue(key,out var typed) &&
                     (!double.TryParse(typed.Replace(',','.'),NumberStyles.Float,CultureInfo.InvariantCulture,out double parsed) || !DroneEnvironmentFields.Finite(parsed))) {
@@ -330,7 +341,7 @@ namespace DroneLab.UI
         }
         private void VisualNumber(VisualElement parent, string key, string title, double inherited)
         {
-            var field = new DroneDoubleField(title) { value = (double?)draft.visual[key] ?? inherited, isDelayed = true }; Field(parent, field);
+            var field = new DroneDoubleField(title) { name = "visual." + key, value = (double?)draft.visual[key] ?? inherited, isDelayed = true }; Field(parent, field);
             Register(field,"visual." + key, true, () => DroneEnvironmentFields.Rules["visual." + key].Help(inherited.ToString("0.###",CultureInfo.CurrentCulture) + " (" + BaseWeatherTitle() + ")") + ((string)draft.visual["weatherPresetId"] == "" ? "\nПри основе «Из сцены» это справочное значение; фактическое наследуется при запуске карты." : ""));
             WatchInput(field,"visual." + key,false);
             field.EnableInClassList("is-default", draft.visual[key] == null);
@@ -426,8 +437,19 @@ namespace DroneLab.UI
             if (message == null || draft == null) return;
             ValidateFields(); RefreshWeatherCaption();
             if (saveButton != null) saveButton.style.display = CommittedChanges ? DisplayStyle.Flex : DisplayStyle.None;
+            if (cancelButton != null) cancelButton.style.display = Dirty ? DisplayStyle.Flex : DisplayStyle.None;
             message.text = Dirty ? "Изменения не сохранены" : savedStatus ? "Сохранено" : "";
             message.RemoveFromClassList("error");
+        }
+        private void DiscardChanges()
+        {
+            if (!newProfile) { Select(selected, true); return; }
+            // Cancelling creation discards the draft without saving a new document.
+            draft = null; selected = profiles.FirstOrDefault(); newProfile = false;
+            inputErrors.Clear(); inputText.Clear(); savedStatus = false;
+            if (selected != null) { Select(selected, true); return; }
+            FillList(); editor.Clear(); message = null; saveButton = null; cancelButton = null;
+            Label(editor, "Профиль не выбран. Создайте новый или импортируйте существующий.", "scenario-hint");
         }
         private bool Save()
         {
@@ -436,7 +458,7 @@ namespace DroneLab.UI
                 var saved = DroneEnvironmentProfiles.Save(draft,catalog);
                 int index = profiles.FindIndex(p => p.id == saved.id);
                 if (index < 0) profiles.Add(saved); else profiles[index] = saved;
-                Select(saved); savedStatus = true; Changed(); footnote.text = "Профилей: " + profiles.Count; Transfer("Сохранено: " + new DroneEnvironmentProfileStore(DroneEnvironmentProfiles.Folder).PathFor(saved.id)); return true;
+                Select(saved, true); savedStatus = true; Changed(); footnote.text = "Профилей: " + profiles.Count; Transfer("Сохранено: " + new DroneEnvironmentProfileStore(DroneEnvironmentProfiles.Folder).PathFor(saved.id)); return true;
             } catch (Exception ex) { Error(ex.Message); return false; }
         }
         private void Delete()
@@ -511,7 +533,7 @@ namespace DroneLab.UI
         {
             var keys = ids.ToList(); var field = new DroneDropdown(title, DroneScenarioCatalog.DisplayChoices(names), Math.Max(0, keys.IndexOf(value)));
             Field(parent, field); field.Query<Label>().ForEach(ReadOnly);
-            field.RegisterValueChangedCallback(_ => { if (field.index >= 0 && field.index < keys.Count) changed(keys[field.index]); }); return field;
+            field.RegisterValueChangedCallback(evt => { if (evt.target == field && field.index >= 0 && field.index < keys.Count) changed(keys[field.index]); }); return field;
         }
         private static VisualElement Section(VisualElement parent, string title) { var section = Box(parent, "environment-section"); Label(section, title, "scenario-panel-title"); return section; }
         private static VisualElement Box(VisualElement parent, string classes) { var box = new VisualElement(); Classes(box, classes); parent.Add(box); return box; }
