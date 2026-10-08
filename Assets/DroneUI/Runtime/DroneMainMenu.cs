@@ -73,7 +73,7 @@ namespace DroneLab.UI
             firstButton = AddMenuButton("НОВАЯ СИМУЛЯЦИЯ", MenuIconKind.Play, StartFlight, true);
             AddMenuButton("КАТАЛОГ ДРОНОВ", MenuIconKind.Drone, () => OpenScreen(configureDrone, "Каталог дронов"));
             AddMenuButton("СЦЕНАРИИ И ОКРУЖЕНИЕ", MenuIconKind.Landscape, OpenScenarios);
-            AddMenuButton("ЛАБОРАТОРИЯ", MenuIconKind.Laboratory, () => OpenScreen(laboratory, "Лаборатория"));
+            AddMenuButton("ЛАБОРАТОРИЯ", MenuIconKind.Laboratory, () => OpenScreen(laboratory, "Лаборатория"));G
             var divider = new VisualElement(); divider.AddToClassList("menu-divider"); stack.Add(divider);
             AddMenuButton("НАСТРОЙКИ", MenuIconKind.Settings, Settings, compact: true);
             AddMenuButton("СПРАВКА / О ПРОГРАММЕ", MenuIconKind.Book, About, compact: true);
@@ -246,7 +246,7 @@ namespace DroneLab.UI
             var names = new List<string>();
             foreach (var name in QualitySettings.names)
                 names.Add(name == "High Fidelity" ? "Высокое качество" : name == "Balanced" ? "Сбалансированное" : name == "Performant" ? "Производительность" : name);
-            var quality = Dropdown(scroll, "Пресет качества", names, draft.quality);
+            var quality = Dropdown(scroll, "Настройки качества", names, draft.quality);
             var vsync = Dropdown(scroll, "Вертикальная синхронизация", new List<string> { "Включено", "Выключено" }, draft.vSync ? 0 : 1);
             Text(scroll, "УПРАВЛЕНИЕ", "section-title");
             var device = Dropdown(scroll, "Устройство", new List<string> { "Клавиатура", "Геймпад" }, draft.inputDevice == PilotDevice.Gamepad ? 1 : 0);

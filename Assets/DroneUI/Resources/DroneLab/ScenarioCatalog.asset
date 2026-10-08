@@ -11,18 +11,91 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f5d50ce5c36c59d09189c86edd72210e, type: 3}
   m_Name: ScenarioCatalog
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   maps:
   - id: f1ca9263f6f25f8479653e1b37655609
-    title: Лес
-    terrainType: Лес
+    title: "\u041B\u0435\u0441"
+    terrainType: "\u041B\u0435\u0441"
     sizeM: {x: 0, y: 0}
     screenshot: {fileID: 0}
     scenePath: Assets/Scenes/Forest.unity
   - id: 1e964141e745b4d4da52fcf98fcaedb0
-    title: Испытательная площадка
-    terrainType: Открытая местность
+    title: "\u0418\u0441\u043F\u044B\u0442\u0430\u0442\u0435\u043B\u044C\u043D\u0430\u044F
+      \u043F\u043B\u043E\u0449\u0430\u0434\u043A\u0430"
+    terrainType: "\u041E\u0442\u043A\u0440\u044B\u0442\u0430\u044F \u043C\u0435\u0441\u0442\u043D\u043E\u0441\u0442\u044C"
     sizeM: {x: 0, y: 0}
     screenshot: {fileID: 0}
     scenePath: Assets/Scenes/PhysTest.unity
-  weatherPresets: []
+  weatherPresets:
+  - id: d079f57df3605b04af57fdba45cb112f
+    title: Clear Sky
+    preset: {fileID: 11400000, guid: d079f57df3605b04af57fdba45cb112f, type: 2}
+    screenshot: {fileID: 0}
+  - id: 2a35257eeaa953b4b8837a16085cc7c8
+    title: Cloudy 1
+    preset: {fileID: 11400000, guid: 2a35257eeaa953b4b8837a16085cc7c8, type: 2}
+    screenshot: {fileID: 0}
+  - id: d3e7852a84c55ca2b0ebaf5f4aa92e76
+    title: Cloudy 2
+    preset: {fileID: 11400000, guid: d3e7852a84c55ca2b0ebaf5f4aa92e76, type: 2}
+    screenshot: {fileID: 0}
+  - id: 80cc684e800b519fb5233704cb123b13
+    title: Cloudy 3
+    preset: {fileID: 11400000, guid: 80cc684e800b519fb5233704cb123b13, type: 2}
+    screenshot: {fileID: 0}
+  - id: 77f18c9b186d5a14bfb8fb2658e38edb
+    title: Cloudy 4
+    preset: {fileID: 11400000, guid: 77f18c9b186d5a14bfb8fb2658e38edb, type: 2}
+    screenshot: {fileID: 0}
+  - id: 458495c5681e553e9979979a00ae3a6e
+    title: Foggy
+    preset: {fileID: 11400000, guid: 458495c5681e553e9979979a00ae3a6e, type: 2}
+    screenshot: {fileID: 0}
+  - id: ba3877b613865a1ebeeb2b975f0134c0
+    title: Rain
+    preset: {fileID: 11400000, guid: ba3877b613865a1ebeeb2b975f0134c0, type: 2}
+    screenshot: {fileID: 0}
+  - id: db9396ab5b5758a7a20967ac4520a07f
+    title: Snow
+    preset: {fileID: 11400000, guid: db9396ab5b5758a7a20967ac4520a07f, type: 2}
+    screenshot: {fileID: 0}
+  - id: 9e250021e1c35905aeacb9ce1f6c7ea6
+    title: Storm
+    preset: {fileID: 11400000, guid: 9e250021e1c35905aeacb9ce1f6c7ea6, type: 2}
+    screenshot: {fileID: 0}
+  - id: 3e61e22e1ac8ba045a3b0e53c22b3629
+    title: Clear Sky
+    preset: {fileID: 11400000, guid: 3e61e22e1ac8ba045a3b0e53c22b3629, type: 2}
+    screenshot: {fileID: 0}
+  - id: 6c589d06d1746d04a864437f71d0cc30
+    title: Cloudy 1
+    preset: {fileID: 11400000, guid: 6c589d06d1746d04a864437f71d0cc30, type: 2}
+    screenshot: {fileID: 0}
+  - id: de555bbfb870a794d8ba3d0d8e68f475
+    title: Cloudy 2
+    preset: {fileID: 11400000, guid: de555bbfb870a794d8ba3d0d8e68f475, type: 2}
+    screenshot: {fileID: 0}
+  - id: 11fdd63974de7ae44b1c689d499953f6
+    title: Cloudy 3
+    preset: {fileID: 11400000, guid: 11fdd63974de7ae44b1c689d499953f6, type: 2}
+    screenshot: {fileID: 0}
+  - id: bb17a17dcbe893f4d992633c085dc5eb
+    title: Cloudy 4
+    preset: {fileID: 11400000, guid: bb17a17dcbe893f4d992633c085dc5eb, type: 2}
+    screenshot: {fileID: 0}
+  - id: 9ba6458aa7df92d4494a7a3d40830a15
+    title: Foggy
+    preset: {fileID: 11400000, guid: 9ba6458aa7df92d4494a7a3d40830a15, type: 2}
+    screenshot: {fileID: 0}
+  - id: f736e404e0b052942bc41c35c50dccad
+    title: Rain
+    preset: {fileID: 11400000, guid: f736e404e0b052942bc41c35c50dccad, type: 2}
+    screenshot: {fileID: 0}
+  - id: 96eebec6fa78a3c48ba2bc98ac5ab57f
+    title: Snow
+    preset: {fileID: 11400000, guid: 96eebec6fa78a3c48ba2bc98ac5ab57f, type: 2}
+    screenshot: {fileID: 0}
+  - id: ebf8ae7a51a5cd342a90c81f5182d8a8
+    title: Storm
+    preset: {fileID: 11400000, guid: ebf8ae7a51a5cd342a90c81f5182d8a8, type: 2}
+    screenshot: {fileID: 0}
