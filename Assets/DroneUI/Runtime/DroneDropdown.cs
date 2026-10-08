@@ -26,7 +26,7 @@ namespace DroneLab.UI
             caption = new Label(); caption.AddToClassList("drone-dropdown-value"); caption.pickingMode = PickingMode.Ignore; trigger.Add(caption);
             var arrow = new Label("⌄"); arrow.AddToClassList("drone-dropdown-arrow"); arrow.pickingMode = PickingMode.Ignore; trigger.Add(arrow);
             SetValueWithoutNotify(items.Count == 0 ? "" : items[Mathf.Clamp(initial, 0, items.Count - 1)]);
-            RegisterValueChangedCallback(_ => caption.text = value);
+            this.RegisterValueChangedCallback(_ => caption.text = value);
             trigger.RegisterCallback<KeyDownEvent>(evt => {
                 if (evt.keyCode == KeyCode.DownArrow || evt.keyCode == KeyCode.UpArrow) { Open(); evt.StopPropagation(); }
             });
