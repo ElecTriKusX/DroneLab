@@ -156,7 +156,7 @@ namespace DroneLab.UI
             var left = Box(columns, "profile-form-panel"); var right = Box(columns, "profile-form-panel");
             Label(left, "ПОГОДА И ВРЕМЯ", "scenario-panel-title");
             WeatherChoice(left);
-            Number(left, draft.visual, "timeOfDay", "Время суток, часы", 14);
+            TimeOfDay(left);
             Bool(left, draft.visual, "simulateTime", "Ход времени", false);
             Choice(left, "Осадки", new[] { "Нет", "Дождь", "Снег", "Град" }, new[] { "None", "Rain", "Snow", "Hail" }, (string)draft.environment["weather"]["precipitation"], value => {
                 draft.environment["weather"]["precipitation"] = value;
@@ -231,6 +231,22 @@ namespace DroneLab.UI
             string id = (string)draft.visual["weatherPresetId"];
             if (!ids.Contains(id)) { titles.Add("Недоступный пресет"); ids.Add(id); }
             Choice(parent, "Погода", titles, ids, id, value => { draft.visual["weatherPresetId"] = value; Changed(); RebuildEditor(); });
+        }
+        private void TimeOfDay(VisualElement parent)
+        {
+            double hours = (double)draft.visual["timeOfDay"];
+            string Caption(double time) => $"{(int)time:00}:{(int)((time % 1) * 60 + 1e-7):00}";
+            var field = new TextField("Время суток") { value = Caption(hours), isDelayed = true };
+            Field(parent, field); DefaultStyle(field, hours, 14);
+            field.RegisterValueChangedCallback(evt => {
+                var parts = evt.newValue.Trim().Split(':');
+                if (parts.Length != 2 || !int.TryParse(parts[0], out int hour) || !int.TryParse(parts[1], out int minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+                    field.SetValueWithoutNotify(Caption((double)draft.visual["timeOfDay"]));
+                    Error("Введите время в формате ЧЧ:ММ, от 00:00 до 23:59."); return;
+                }
+                hours = hour + minute / 60.0; draft.visual["timeOfDay"] = hours;
+                field.SetValueWithoutNotify(Caption(hours)); DefaultStyle(field, hours, 14); Changed();
+            });
         }
         private void Wind(VisualElement parent)
         {
