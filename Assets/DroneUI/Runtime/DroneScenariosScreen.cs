@@ -21,7 +21,9 @@ namespace DroneLab.UI
         private readonly Label footnote, transferStatus;
         private readonly Dictionary<string,List<VisualElement>> controls = new Dictionary<string,List<VisualElement>>();
         private readonly Dictionary<string,string> inputErrors = new Dictionary<string,string>();
-        private bool savedStatus, fileDialogBusy;
+        private bool savedStatus, fileDialogBusy, newProfile;
+        private Button saveButton;
+        private IVisualElementScheduledItem transferTimer;
         private readonly Dictionary<string,string> inputText = new Dictionary<string,string>();
         private DroneDropdown weatherChoice;
         private bool HasVisualOverrides => draft != null && draft.visual.Properties().Any(p => p.Name != "timeOfDay" && p.Name != "simulateTime" && p.Name != "weatherPresetId");
@@ -30,7 +32,8 @@ namespace DroneLab.UI
         private VisualElement library, editor, prompt;
         private Label message;
         public VisualElement Element => page;
-        private bool Dirty => draft != null && (JsonConvert.SerializeObject(draft) != original || inputErrors.Count > 0);
+        private bool CommittedChanges => draft != null && (newProfile || JsonConvert.SerializeObject(draft) != original);
+        private bool Dirty => draft != null && (CommittedChanges || inputErrors.Count > 0);
 
         public DroneScenariosScreen(VisualElement host, DroneScenarioCatalog catalog, Action closed)
         {
@@ -84,7 +87,7 @@ namespace DroneLab.UI
             draft = null; inputErrors.Clear(); transferStatus.text = ""; Label(content, "Каталог доступных карт", "scenario-hint");
             var toolbar = Box(content, "scenario-toolbar");
             var search = new TextField { value = "" }; search.AddToClassList("scenario-search"); search.tooltip = "Поиск карты";
-            search.label = "Поиск карты"; ReadOnly(search.labelElement); toolbar.Add(search);
+            search.label = "Поиск карты"; ReadOnly(search.labelElement); DroneTextInput.Configure(search); toolbar.Add(search);
             var maps = catalog?.maps.Where(m => m != null).ToList() ?? new List<DroneMapEntry>();
             var types = new List<string> { "Все местности" }; types.AddRange(maps.Select(m => m.terrainType).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct());
             var kind = Choice(toolbar, "", types, types, types[0], _ => { }); kind.AddToClassList("map-filter");
@@ -118,7 +121,7 @@ namespace DroneLab.UI
             library = Box(columns, "profile-library");
             var top = Box(library, "scenario-toolbar"); Label(top, "ПРОФИЛИ", "scenario-panel-title");
             Button(top, "+ Создать профиль", () => Guard(() => Select(DroneEnvironmentProfiles.New())));
-            var search = new TextField("Поиск профиля") { value = filter }; search.AddToClassList("scenario-search"); ReadOnly(search.labelElement); library.Add(search);
+            var search = new TextField("Поиск профиля") { value = filter }; search.AddToClassList("scenario-search"); ReadOnly(search.labelElement); DroneTextInput.Configure(search); library.Add(search);
             var list = Scroll(library); list.name = "profile-list";
             search.RegisterValueChangedCallback(evt => { filter = evt.newValue; FillList(); });
             var exchange = Box(library, "scenario-actions");
@@ -147,6 +150,7 @@ namespace DroneLab.UI
         private void Select(DroneEnvironmentDocument source)
         {
             selected = source; draft = source.Copy();
+            newProfile = !profiles.Any(p => p.id == source.id);
             // Explicit standard defaults are editable; unused optional parameters remain harmless.
             draft.environment = DroneEnvironmentProfiles.Effective(draft.environment);
             original = JsonConvert.SerializeObject(draft); savedStatus = false; inputErrors.Clear(); inputText.Clear();
@@ -155,30 +159,30 @@ namespace DroneLab.UI
         private void BuildEditor()
         {
             editor.Clear(); controls.Clear(); weatherChoice = null;
-            var head = Box(editor, "scenario-toolbar"); Label(head, "РЕДАКТОР ПРОФИЛЯ", "scenario-panel-title");
+            var head = Box(editor, "scenario-toolbar profile-editor-heading"); Label(head, "РЕДАКТОР ПРОФИЛЯ", "scenario-panel-title");
             Label(head, "Профили доступны для всех карт", "scenario-muted editor-caption");
             if (profiles.Any(p => p.id == draft.id)) Button(head, "Удалить", Delete);
-            var name = new TextField("Название") { value = draft.name }; name.AddToClassList("profile-name-field"); ReadOnly(name.labelElement); editor.Add(name);
+            var name = new TextField("Название") { value = draft.name, isDelayed = true }; name.AddToClassList("profile-name-field"); ReadOnly(name.labelElement); editor.Add(name);
             Register(name, "name");
             name.RegisterValueChangedCallback(evt => { draft.name = evt.newValue; Changed(); });
             var scroll = Scroll(editor); scroll.AddToClassList("profile-form-scroll");
             var columns = Box(scroll, "profile-form-columns");
-            var left = Box(columns, "profile-form-panel"); var right = Box(columns, "profile-form-panel");
+            var left = Box(columns, "profile-form-panel"); var right = Box(columns, "profile-form-panel last-panel");
             Label(left, "ПОГОДА И ВРЕМЯ", "scenario-panel-title");
             WeatherChoice(left);
             TimeOfDay(left);
             Bool(left, draft.visual, "simulateTime", "Ход времени", false);
-            Register(Choice(left, "Осадки *", new[] { "Нет", "Дождь", "Снег", "Град" }, new[] { "None", "Rain", "Snow", "Hail" }, (string)draft.environment["weather"]["precipitation"], value => {
+            Register(Choice(left, "Осадки", new[] { "Нет", "Дождь", "Снег", "Град" }, new[] { "None", "Rain", "Snow", "Hail" }, (string)draft.environment["weather"]["precipitation"], value => {
                 draft.environment["weather"]["precipitation"] = value;
                 if (value == "None") draft.environment["weather"]["intensityMmPerHour"] = 0;
                 else if ((double)draft.environment["weather"]["intensityMmPerHour"] == 0) draft.environment["weather"]["intensityMmPerHour"] = 5;
                 Changed(); RebuildEditor();
             }), "weather.precipitation");
-            Number(left, draft.environment, "weather.intensityMmPerHour", "Осадки, мм/ч *", 0);
+            Number(left, draft.environment, "weather.intensityMmPerHour", "Осадки, мм/ч", 0);
             var registered = catalog?.Weather((string)draft.visual["weatherPresetId"]);
             Label(right, "ВЕТЕР И ВОЗДУХ", "scenario-panel-title");
             var modes = new[] { "None", "Constant", "Gust", "Turbulence", "DrydenFrozen", "CustomField" };
-            Register(Choice(right, "Модель ветра", new[] { "Штиль", "Постоянный", "Порывы", "Турбулентность", "Модель Драйдена", "Внешнее поле / Enviro" }, modes,
+            Register(Choice(right, "Модель ветра", new[] { "Штиль", "Постоянный", "Порывы", "Турбулентность", "Модель Драйдена", "Внешнее поле" }, modes,
                 (string)draft.environment["windMode"], mode => {
                     draft.environment["windMode"] = mode;
                     if (mode == "Gust") draft.environment["gustEnabled"] = true;
@@ -196,11 +200,11 @@ namespace DroneLab.UI
             Number(atmosphere, draft.environment, "altitudeM", "Опорная высота, м", 0);
             Number(atmosphere, draft.environment, "gravityMps2", "Гравитация, м/с²", 9.81);
             var wind = Section(advanced, "ПОРЫВЫ И ТУРБУЛЕНТНОСТЬ");
-            Vector(wind, "windVelocityWorldMps", "Ветер X / Y / Z, м/с", new[] { 0.0, 0, 0 });
+            Vector(wind, "windVelocityWorldMps", "Средний ветер X / Y / Z, м/с", new[] { 0.0, 0, 0 });
             Bool(wind, draft.environment, "gustEnabled", "Периодические порывы", false);
             Number(wind, draft.environment, "gustIntensityMps", "Амплитуда колебаний, м/с", 0);
             Number(wind, draft.environment, "gustTimeScaleS", "Период / масштаб времени, с", 2);
-            Number(wind, draft.environment, "turbulenceSeed", "Начальное число генератора", 48271, true);
+            Number(wind, draft.environment, "turbulenceSeed", "Начальное число генератора (seed)", 48271, true);
             var dryden = new Foldout { text = "Спектральная турбулентность — модель Драйдена", value = (string)draft.environment["windMode"] == "DrydenFrozen" }; advanced.Add(dryden);
             Vector(dryden, "dryden.sigmaUvwMps", "Колебания u / v / w, м/с", new[] { .4, .4, .25 });
             Vector(dryden, "dryden.lengthScaleUvwM", "Масштабы u / v / w, м", new[] { 20.0, 20, 10 });
@@ -221,7 +225,8 @@ namespace DroneLab.UI
             VisualNumber(visuals, "fogMaxHeight", "Верхняя граница тумана, м", registered?.preset?.fogOverride?.maxHeight ?? 250);
 #endif
             var actions = Box(editor, "profile-editor-actions"); message = Label(actions, "", "profile-message");
-            Button(actions, "Сохранить профиль", () => Save(), "scenario-button primary");
+            saveButton = Button(actions, "Сохранить профиль", () => Save(), "scenario-button primary");
+            editor.Query<Label>().ForEach(ReadOnly);
             Changed();
         }
         private void RebuildEditor() => editor.schedule.Execute(BuildEditor);
@@ -238,7 +243,7 @@ namespace DroneLab.UI
                 foreach (var property in draft.visual.Properties().Where(p => p.Name != "timeOfDay" && p.Name != "simulateTime" && p.Name != "weatherPresetId").ToList()) property.Remove();
                 Changed(); RebuildEditor();
             }
-            weatherChoice = Choice(parent, "Погода *", titles, ids, id, SetBase);
+            weatherChoice = Choice(parent, "Погода", titles, ids, id, SetBase);
             weatherChoice.Reselected += () => { if (HasVisualOverrides) SetBase((string)draft.visual["weatherPresetId"]); };
             Register(weatherChoice,"visual.weatherPresetId"); RefreshWeatherCaption();
         }
@@ -251,7 +256,7 @@ namespace DroneLab.UI
         {
             double hours = (double)draft.visual["timeOfDay"];
             string Caption(double time) => $"{(int)time:00}:{(int)((time % 1) * 60 + 1e-7):00}";
-            var field = new TextField("Время суток *") { value = inputErrors.ContainsKey("visual.timeOfDay") && inputText.TryGetValue("visual.timeOfDay",out var typedTime) ? typedTime : Caption(hours), isDelayed = true };
+            var field = new TextField("Время суток") { value = inputErrors.ContainsKey("visual.timeOfDay") && inputText.TryGetValue("visual.timeOfDay",out var typedTime) ? typedTime : Caption(hours), isDelayed = true };
             Field(parent, field); Register(field,"visual.timeOfDay"); DefaultStyle(field, hours, 14);
             field.RegisterCallback<InputEvent>(evt => {
                 inputText["visual.timeOfDay"] = evt.newData; var parts = evt.newData.Trim().Split(':');
@@ -303,7 +308,7 @@ namespace DroneLab.UI
             number.RegisterValueChangedCallback(evt => { slider.SetValueWithoutNotify((float)evt.newValue); UpdateWind(evt.newValue, direction.value); });
             direction.RegisterValueChangedCallback(evt => UpdateWind(number.value, evt.newValue));
             speedRow.SetEnabled(!external); row.SetEnabled(!external);
-            if (external) Label(parent, "Ветер берётся из погодного пресета Enviro / провайдера сцены", "scenario-hint small");
+            if (external) Label(parent, "Ветер задаётся погодной системой или провайдером сцены", "scenario-hint small");
         }
         private void Temperature(VisualElement parent)
         {
@@ -325,7 +330,7 @@ namespace DroneLab.UI
         }
         private void VisualNumber(VisualElement parent, string key, string title, double inherited)
         {
-            var field = new DroneDoubleField(title + " *") { value = (double?)draft.visual[key] ?? inherited, isDelayed = true }; Field(parent, field);
+            var field = new DroneDoubleField(title) { value = (double?)draft.visual[key] ?? inherited, isDelayed = true }; Field(parent, field);
             Register(field,"visual." + key, true, () => DroneEnvironmentFields.Rules["visual." + key].Help(inherited.ToString("0.###",CultureInfo.CurrentCulture) + " (" + BaseWeatherTitle() + ")") + ((string)draft.visual["weatherPresetId"] == "" ? "\nПри основе «Из сцены» это справочное значение; фактическое наследуется при запуске карты." : ""));
             WatchInput(field,"visual." + key,false);
             field.EnableInClassList("is-default", draft.visual[key] == null);
@@ -364,7 +369,7 @@ namespace DroneLab.UI
         }
         private void Bool(VisualElement parent, JObject source, string path, string title, bool fallback)
         {
-            Register(Choice(parent, title + (source == draft.visual ? " *" : ""), new[] { "Включено", "Выключено" }, new[] { "true", "false" }, ((bool?)source.SelectToken(path) ?? fallback) ? "true" : "false",
+            Register(Choice(parent, title, new[] { "Включено", "Выключено" }, new[] { "true", "false" }, ((bool?)source.SelectToken(path) ?? fallback) ? "true" : "false",
                 value => { Set(source, path, value == "true"); Changed(); }), source == draft.visual ? "visual." + path : path);
         }
         private static void Set(JObject source, string path, JToken value)
@@ -375,6 +380,7 @@ namespace DroneLab.UI
         }
         private void Register(VisualElement field,string path,bool help = true,Func<string> text = null)
         {
+            if (field is TextField textField) DroneTextInput.Configure(textField);
             if (!controls.TryGetValue(path,out var fields)) controls[path] = fields = new List<VisualElement>(); fields.Add(field);
             if (help && DroneEnvironmentFields.Rules.TryGetValue(path,out var rule)) DroneHelp.Attach(field,text ?? (() => rule.Help()));
         }
@@ -419,6 +425,7 @@ namespace DroneLab.UI
         {
             if (message == null || draft == null) return;
             ValidateFields(); RefreshWeatherCaption();
+            if (saveButton != null) saveButton.style.display = CommittedChanges ? DisplayStyle.Flex : DisplayStyle.None;
             message.text = Dirty ? "Изменения не сохранены" : savedStatus ? "Сохранено" : "";
             message.RemoveFromClassList("error");
         }
@@ -488,7 +495,14 @@ namespace DroneLab.UI
                 prompt.RemoveFromHierarchy(); prompt = null; Select(imported); footnote.text = "Профилей: " + profiles.Count; Transfer("Импортировано: " + new DroneEnvironmentProfileStore(DroneEnvironmentProfiles.Folder).PathFor(imported.id));
             } catch (Exception ex) { path.AddToClassList("invalid-field"); error.text = ex.Message; } });
         }
-        private void Transfer(string text,bool error = false) { transferStatus.text = text; transferStatus.tooltip = text; transferStatus.EnableInClassList("error",error); }
+        private void Transfer(string text,bool error = false)
+        {
+            transferTimer?.Pause();
+            transferStatus.text = text; transferStatus.tooltip = text; transferStatus.EnableInClassList("error",error);
+            transferTimer = page.schedule.Execute(() => {
+                transferStatus.text = ""; transferStatus.tooltip = ""; transferStatus.RemoveFromClassList("error");
+            }).StartingIn(10000);
+        }
         private void Error(string text, bool error = true) { if (message != null) { message.text = text; message.EnableInClassList("error", error); } }
         private static bool Contains(string text, string query) => string.IsNullOrWhiteSpace(query) || (text ?? "").IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
         private static void DefaultStyle(VisualElement field, double value, double fallback) => field.EnableInClassList("is-default", Math.Abs(value - fallback) < 1e-8);
@@ -522,13 +536,13 @@ namespace DroneLab.UI
             var north = new Label("N"); north.AddToClassList("compass-north"); north.pickingMode = PickingMode.Ignore; Add(north); generateVisualContent += Draw; }
         private void Draw(MeshGenerationContext context)
         {
-            var p = context.painter2D; float r = contentRect.width * .35f; var c = contentRect.center;
+            var p = context.painter2D; float r = contentRect.width * .30f; var c = contentRect.center;
             p.lineWidth = 1.2f; p.strokeColor = new Color(.7f, .7f, .69f);
             p.BeginPath(); for (int i = 0; i <= 48; i++) { float a = i * Mathf.PI / 24; var q = c + new Vector2(Mathf.Sin(a), -Mathf.Cos(a)) * r; if (i == 0) p.MoveTo(q); else p.LineTo(q); } p.ClosePath(); p.Stroke();
             float angle = Bearing * Mathf.Deg2Rad; var d = new Vector2(Mathf.Sin(angle), -Mathf.Cos(angle)); var normal = new Vector2(-d.y, d.x);
             p.strokeColor = Color.white; p.BeginPath(); p.MoveTo(c - d * r * .35f); p.LineTo(c + d * r * .85f); p.Stroke();
             p.BeginPath(); p.MoveTo(c + d * r * .5f + normal * 5); p.LineTo(c + d * r * .85f); p.LineTo(c + d * r * .5f - normal * 5); p.Stroke();
-            for (int i = 0; i < 4; i++) { float a = i * Mathf.PI / 2; var d2 = new Vector2(Mathf.Sin(a), -Mathf.Cos(a)); p.BeginPath(); p.MoveTo(c + d2 * r); p.LineTo(c + d2 * (r + 5)); p.Stroke(); }
+            for (int i = 1; i < 4; i++) { float a = i * Mathf.PI / 2; var d2 = new Vector2(Mathf.Sin(a), -Mathf.Cos(a)); p.BeginPath(); p.MoveTo(c + d2 * r); p.LineTo(c + d2 * (r + 5)); p.Stroke(); }
         }
     }
 }

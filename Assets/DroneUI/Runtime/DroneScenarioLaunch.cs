@@ -34,7 +34,7 @@ namespace DroneLab.UI
                 Atmosphere.Troposphere((double)physical["altitudeM"], (double)physical["temperatureK"], (double)physical["pressurePa"]) :
                 new AirSample((double)physical["airDensityKgM3"], (double)physical["temperatureK"], (double)physical["pressurePa"], (double)physical["altitudeM"]);
             try { new AtmosphereColumn(air.TemperatureK, air.PressurePa, air.AltitudeM); }
-            catch (ArgumentException) { throw new ArgumentException("Связь с Enviro требует локальную температуру 200–330 К, давление 1000–200000 Па и высоту −500–11000 м."); }
+            catch (ArgumentException) { throw new ArgumentException("Связь с погодной системой требует локальную температуру 200–330 К, давление 1000–200000 Па и высоту −500–11000 м."); }
             activeCatalog = catalog != null ? catalog : DroneScenarioCatalog.Load();
             string presetId = (string)profile.visual["weatherPresetId"];
             if (!string.IsNullOrEmpty(presetId) && activeCatalog?.Weather(presetId)?.preset == null)

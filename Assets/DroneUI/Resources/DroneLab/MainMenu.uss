@@ -68,7 +68,7 @@
 .drone-dropdown-trigger { flex-grow: 1; flex-direction: row; align-items: center; height: 40px; min-height: 40px; margin: 0; padding: 0 10px; border-width: 1px; border-color: rgb(119, 122, 123); border-radius: 6px; background-color: rgb(25, 26, 27); color: rgb(232, 233, 230); }
 .drone-dropdown-trigger:hover, .drone-dropdown-trigger:focus { border-color: white; background-color: rgb(37, 39, 40); }
 .drone-dropdown-value { flex-grow: 1; flex-basis: 0; font-size: 16px; -unity-text-align: middle-left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.drone-dropdown-arrow { width: 16px; margin-left: 8px; font-size: 18px; -unity-text-align: middle-center; }
+.drone-dropdown-arrow { width: 16px; height: 16px; flex-shrink: 0; margin-left: 8px; }
 .drone-dropdown-overlay { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
 .drone-dropdown-popup { position: absolute; padding: 5px; background-color: rgb(27, 29, 30); border-width: 1px; border-color: rgb(145, 151, 151); border-radius: 7px; }
 .drone-dropdown-option { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 34px; min-height: 34px; flex-shrink: 0; margin: 0; padding: 0 10px; border-width: 0; border-radius: 4px; background-color: transparent; color: rgb(220, 224, 221); font-size: 16px; -unity-text-align: middle-left; }
@@ -86,3 +86,10 @@
 .graphite-scroller .unity-base-slider__dragger:hover { background-color: rgb(84, 85, 86); }
 .graphite-scroller .unity-base-slider__dragger:active { background-color: rgb(100, 101, 102); }
 .graphite-scroller .unity-base-slider__dragger-border { background-color: transparent; border-width: 0; }
+
+/* Apply custom colors to the actual editable TextElement, including numeric fields. */
+.stage .unity-base-text-field__input, .stage .unity-base-text-field__input .unity-text-element,
+.stage .unity-text-field__input, .stage .unity-text-field__input .unity-text-element {
+    --unity-cursor-color: white;
+    --unity-selection-color: rgba(172, 179, 180, .35);
+}

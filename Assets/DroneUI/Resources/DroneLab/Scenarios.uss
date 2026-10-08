@@ -51,12 +51,13 @@
 .profile-origin { font-size: 13px; color: rgb(140, 148, 152); width: 90px; -unity-text-align: upper-right; }
 .scenario-actions { flex-direction: row; justify-content: flex-end; margin-top: 20px; flex-shrink: 0; }
 .profile-library > .scenario-actions { border-top-width: 1px; border-top-color: rgb(62, 65, 66); padding-top: 20px; justify-content: space-between; }
-.profile-name-field { flex-direction: column; margin: 16px 0 24px; }
+.profile-name-field { flex-direction: column; margin: 0 0 16px; }
+.profile-editor-heading { margin-bottom: 8px; }
 .profile-name-field > .unity-base-field__label { margin-bottom: 6px; font-size: 17px; }
 .profile-name-field .unity-base-field__input { min-height: 46px; border-width: 1px; border-color: rgb(124, 127, 127); border-radius: 6px; padding: 6px 12px; color: rgb(233, 234, 231); background-color: rgb(22, 23, 24); font-size: 20px; }
 .profile-form-scroll .unity-scroll-view__content-container { padding-right: 10px; }
 .profile-form-columns { flex-direction: row; }
-.profile-form-panel { width: 49%; padding: 20px; border-width: 1px; border-color: rgb(64, 67, 69); border-radius: 8px; margin-right: 12px; }
+.profile-form-panel { flex-grow: 1; flex-basis: 0; min-width: 0; padding: 20px; border-width: 1px; border-color: rgb(64, 67, 69); border-radius: 8px; margin-right: 12px; }
 .environment-field { margin: 0 0 16px; min-height: 42px; font-size: 17px; align-items: center; }
 .environment-field > .unity-base-field__label { min-width: 0; width: 48%; flex-shrink: 0; white-space: normal; }
 .environment-field .unity-base-field__input, .vector-field .unity-base-field__input, .wind-speed-number .unity-base-field__input {
@@ -76,7 +77,8 @@
 .wind-direction-row { flex-direction: row; align-items: center; }
 .wind-direction-row .environment-field { flex-grow: 1; }
 .wind-compass { width: 76px; height: 76px; flex-shrink: 0; margin-left: 10px; }
-.environment-advanced { border-width: 1px; border-color: rgb(65, 68, 70); border-radius: 8px; padding: 15px; margin-top: 20px; }
+.profile-form-panel.last-panel { margin-right: 0; }
+.environment-advanced { margin-left: 0; margin-right: 0; min-width: 0; border-width: 1px; border-color: rgb(65, 68, 70); border-radius: 8px; padding: 15px; margin-top: 20px; }
 .environment-advanced .unity-foldout__toggle { color: rgb(215, 219, 216); background-color: transparent; font-size: 19px; }
 .environment-advanced .unity-foldout__input { background-color: transparent; }
 .environment-advanced .unity-toggle__checkmark { -unity-background-image-tint-color: rgb(197, 201, 198); }
@@ -113,7 +115,7 @@
 .invalid-field .unity-base-field__input { border-color: rgb(232, 86, 82); border-width: 2px; }
 .invalid-field .unity-base-field__input:focus { border-color: rgb(255, 109, 104); }
 .invalid-field .drone-dropdown-trigger { border-color: rgb(232, 86, 82); }
-.compass-north { position: absolute; top: -2px; left: 29px; font-size: 12px; color: white; }
+.compass-north { position: absolute; top: 0; left: 0; right: 0; height: 12px; -unity-text-align: middle-center; font-size: 12px; color: white; }
 
 .environment-field.drone-dropdown > .unity-base-field__input { padding: 0; border-width: 0; background-color: transparent; }
 .environment-field > .unity-base-field__input { min-width: 0; flex-grow: 1; flex-basis: 0; }

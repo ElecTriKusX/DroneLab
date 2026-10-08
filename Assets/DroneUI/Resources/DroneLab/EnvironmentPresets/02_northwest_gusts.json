@@ -1,0 +1,55 @@
+{
+  "documentVersion": 1,
+  "id": "builtin-environment_lab_nw_gusts_v1",
+  "name": "Северо-западный ветер · порывы",
+  "environment": {
+    "schemaVersion": "1.0.0",
+    "gravityMps2": 9.81,
+    "airDensityMode": "Constant",
+    "airDensityKgM3": 1.225,
+    "temperatureK": 288.15,
+    "pressurePa": 101325,
+    "altitudeM": 0,
+    "windMode": "Gust",
+    "windVelocityWorldMps": [
+      3.5355339059327373,
+      0,
+      -3.5355339059327373
+    ],
+    "gustEnabled": true,
+    "gustIntensityMps": 3,
+    "gustTimeScaleS": 12,
+    "turbulenceSeed": 48271,
+    "weather": {
+      "precipitation": "None",
+      "intensityMmPerHour": 0,
+      "model": "VisualOnly"
+    },
+    "dryden": {
+      "sigmaUvwMps": [
+        0.4,
+        0.4,
+        0.25
+      ],
+      "lengthScaleUvwM": [
+        20,
+        20,
+        10
+      ],
+      "advectionDirectionWorld": [
+        1,
+        0,
+        0
+      ],
+      "advectionSpeedMps": 5,
+      "modesPerComponent": 32,
+      "minDimensionlessWaveNumber": 0.02,
+      "maxDimensionlessWaveNumber": 20
+    }
+  },
+  "visual": {
+    "timeOfDay": 13,
+    "simulateTime": false,
+    "weatherPresetId": "2a35257eeaa953b4b8837a16085cc7c8"
+  }
+}

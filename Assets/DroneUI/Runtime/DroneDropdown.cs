@@ -5,6 +5,18 @@ using UnityEngine.UIElements;
 
 namespace DroneLab.UI
 {
+    /// <summary>Font-independent down chevron.</summary>
+    internal sealed class DroneDropdownArrow : VisualElement
+    {
+        public DroneDropdownArrow() { generateVisualContent += Draw; }
+        private void Draw(MeshGenerationContext context)
+        {
+            var p = context.painter2D; var c = contentRect.center;
+            p.strokeColor = resolvedStyle.color; p.lineWidth = 1.5f;
+            p.BeginPath(); p.MoveTo(c + new Vector2(-4, -2));
+            p.LineTo(c + new Vector2(0, 2)); p.LineTo(c + new Vector2(4, -2)); p.Stroke();
+        }
+    }
     /// <summary>Runtime dropdown. The popup stays inside the same scaled stage and USS theme.</summary>
     public sealed class DroneDropdown : BaseField<string>
     {
@@ -22,9 +34,9 @@ namespace DroneLab.UI
         {
             choices = items; AddToClassList("drone-dropdown");
             var input = this.Q<VisualElement>(className: "unity-base-field__input");
-            trigger = new Button(Toggle); trigger.AddToClassList("drone-dropdown-trigger"); input.Add(trigger);
-            caption = new Label(); caption.AddToClassList("drone-dropdown-value"); caption.pickingMode = PickingMode.Ignore; trigger.Add(caption);
-            var arrow = new Label("⌄"); arrow.AddToClassList("drone-dropdown-arrow"); arrow.pickingMode = PickingMode.Ignore; trigger.Add(arrow);
+            trigger = new Button(Toggle); trigger.selection.isSelectable = false; trigger.AddToClassList("drone-dropdown-trigger"); input.Add(trigger);
+            caption = new Label(); caption.AddToClassList("drone-dropdown-value"); caption.pickingMode = PickingMode.Ignore; caption.selection.isSelectable = false; trigger.Add(caption);
+            var arrow = new DroneDropdownArrow(); arrow.AddToClassList("drone-dropdown-arrow"); arrow.pickingMode = PickingMode.Ignore; trigger.Add(arrow);
             SetValueWithoutNotify(items.Count == 0 ? "" : items[Mathf.Clamp(initial, 0, items.Count - 1)]);
             this.RegisterValueChangedCallback(_ => caption.text = value);
             trigger.RegisterCallback<KeyDownEvent>(evt => {
@@ -56,7 +68,7 @@ namespace DroneLab.UI
             for (int i = 0; i < choices.Count; i++) {
                 int selected = i;
                 var option = new Button(() => { bool same = index == selected; index = selected; if (same) Reselected?.Invoke(); Close(); trigger.Focus(); }) { text = choices[i] };
-                option.AddToClassList("drone-dropdown-option"); option.EnableInClassList("selected", i == index); popup.Add(option); buttons.Add(option);
+                option.selection.isSelectable = false; option.AddToClassList("drone-dropdown-option"); option.EnableInClassList("selected", i == index); popup.Add(option); buttons.Add(option);
                 option.RegisterCallback<KeyDownEvent>(evt => {
                     if (evt.keyCode == KeyCode.Escape) { Close(); trigger.Focus(); evt.StopPropagation(); }
                     else if (evt.keyCode == KeyCode.DownArrow || evt.keyCode == KeyCode.UpArrow) {

@@ -33,7 +33,7 @@ namespace DroneLab.UI
     {
         public List<DroneMapEntry> maps = new List<DroneMapEntry>();
         public List<DroneWeatherEntry> weatherPresets = new List<DroneWeatherEntry>();
-        [Header("Названия эффектов Enviro (необязательно; иначе распознаются Rain / Snow / Hail)")]
+        [Header("Названия эффектов системы погоды (необязательно; иначе распознаются Rain / Snow / Hail)")]
         public string rainEffectName, snowEffectName, hailEffectName;
         public static DroneScenarioCatalog Load() => Resources.Load<DroneScenarioCatalog>("DroneLab/ScenarioCatalog");
         public DroneWeatherEntry Weather(string id) => weatherPresets.Find(x => x != null && x.id == id);

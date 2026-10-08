@@ -124,11 +124,11 @@ namespace DroneLab.UI
                     if (selected && effects != null) available |= effects.Any(x => x != null && x.name == effect.name && (x.prefab != null || x.prefabVFXGraph != null));
                 }
                 if (precipitation != "None" && (manager.Effects == null || !manager.Effects.active || !available))
-                    Debug.LogWarning("DroneLab: для выбранных осадков нет активного эффекта Enviro в сцене. Физический профиль и метаданные сохранены; настройте модуль Effects / имена эффектов в каталоге.",this);
+                    Debug.LogWarning("DroneLab: для выбранных осадков нет активного эффекта осадков в сцене. Физический профиль и метаданные сохранены; настройте модуль Effects / имена эффектов в каталоге.",this);
             }
             manager.Weather.ChangeWeatherInstant(weatherClone);
             if (manager.Time != null && manager.Time.active) bridge.SetTimeOfDay((double)visual["timeOfDay"], (bool)visual["simulateTime"]);
-            else Debug.LogWarning("DroneLab: модуль времени Enviro выключен; время профиля не применено.", this);
+            else Debug.LogWarning("DroneLab: модуль времени выключен; время профиля не применено.", this);
             applied = true;
         }
         private string EffectKind(string name)

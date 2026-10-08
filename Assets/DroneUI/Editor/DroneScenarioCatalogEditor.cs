@@ -68,7 +68,7 @@ namespace DroneLab.UI.Editor
             DrawDefaultInspector(); var catalog = (DroneScenarioCatalog)target;
             EditorGUILayout.HelpBox("Превью: Assets/DroneUI/Screenshots/Maps. Размеры вводятся в километрах. Настройка карт также доступна в компоненте DroneScenarioController на MainMenu. Идентификаторы должны быть уникальными.", MessageType.Info);
             if (GUILayout.Button("Добавить сцены из Assets/Scenes")) DroneScenarioCatalogSetup.AddScenes(catalog);
-            if (GUILayout.Button("Зарегистрировать основы погоды Enviro")) DroneScenarioCatalogSetup.AddWeather(catalog);
+            if (GUILayout.Button("Зарегистрировать основы погоды")) DroneScenarioCatalogSetup.AddWeather(catalog);
             if (GUILayout.Button("Добавить карты в сборку")) DroneScenarioCatalogSetup.AddToBuild(catalog);
             var ids = catalog.maps.Where(m => m != null).Select(m => m.id).ToList();
             if (ids.Any(string.IsNullOrWhiteSpace) || ids.Distinct().Count() != ids.Count) EditorGUILayout.HelpBox("Идентификаторы карт должны быть заполнены и уникальны.", MessageType.Error);

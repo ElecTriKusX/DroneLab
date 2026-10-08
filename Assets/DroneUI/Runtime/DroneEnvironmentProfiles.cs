@@ -46,15 +46,15 @@ namespace DroneLab.UI
             var store = new DroneEnvironmentProfileStore(Folder); HashSet<string> removed;
             try { removed = store.Removed(); }
             catch (Exception ex) when (ex is IOException || ex is JsonException) { removed = new HashSet<string>(); errors.Add("Не удалось прочитать список удалённых профилей: " + ex.Message); }
-            foreach (var asset in Resources.LoadAll<TextAsset>("DronePhysics").OrderBy(x => x.name))
-            {
-                if (!asset.name.StartsWith("environment_", StringComparison.Ordinal)) continue;
+            foreach (var asset in Resources.LoadAll<TextAsset>("DroneLab/EnvironmentPresets").OrderBy(x => x.name))
                 try {
-                    var d = New(); d.id = "builtin-" + asset.name; d.name = Title(asset.name);
-                    d.environment = JObject.Parse(asset.text); d.builtIn = true;
+                    var d = Read(asset.text); Validate(d);
+                    if (!DroneEnvironmentProfileStore.ValidId(d.id) || !d.id.StartsWith("builtin-environment_", StringComparison.Ordinal))
+                        throw new ArgumentException("Неверный идентификатор стартового профиля.");
+                    if (result.Any(p => p.id == d.id)) throw new ArgumentException("Повторяющийся идентификатор стартового профиля.");
+                    d.builtIn = true;
                     if (!removed.Contains(d.id)) result.Add(d);
-                } catch (JsonException ex) { errors.Add(asset.name + ": " + ex.Message); }
-            }
+                } catch (Exception ex) when (ex is JsonException || ex is ArgumentException) { errors.Add(asset.name + ": " + ex.Message); }
             Directory.CreateDirectory(Folder);
             foreach (var file in store.Files())
                 try { var d = Read(File.ReadAllText(file)); Validate(d);
@@ -63,24 +63,6 @@ namespace DroneLab.UI
                 catch (Exception ex) when (ex is IOException || ex is ArgumentException || ex is JsonException) { errors.Add(Path.GetFileName(file) + ": " + ex.Message); }
             warnings = string.Join("\n", errors);
             return result;
-        }
-        private static string Title(string name)
-        {
-            switch (name) {
-                case "environment_calm": return "Штиль / день";
-                case "environment_wind": return "Постоянный ветер";
-                case "environment_gust": return "Порывы ветра";
-                case "environment_turbulence": return "Турбулентность";
-                case "environment_dryden_frozen": return "Турбулентность Драйдена";
-                case "environment_atmosphere": return "Стандартная атмосфера";
-                case "environment_field": return "Ветер Enviro / внешнее поле";
-                case "environment_thermal_rain": return "Дождь";
-                case "environment_thermal_snow": return "Снег";
-                case "environment_thermal_hail": return "Град";
-                case "environment_thermal_warm": return "Тёплый воздух";
-                case "environment_final_acceptance": return "Комплексные условия";
-                default: return name;
-            }
         }
         public static JObject Effective(JObject source)
         {
