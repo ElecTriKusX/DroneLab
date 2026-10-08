@@ -1,0 +1,4 @@
+{
+  "name": "DroneLab.UI",
+  "references": ["DroneLab.Physics", "DroneLab.Simulation", "DroneLab.Demo", "DroneLab.Environment.Enviro", "Enviro3.Runtime", "Unity.InputSystem"]
+}

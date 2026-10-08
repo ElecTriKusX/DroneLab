@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5d50ce5c36c59d09189c86edd72210e, type: 3}
+  m_Name: ScenarioCatalog
+  m_EditorClassIdentifier:
+  maps:
+  - id: f1ca9263f6f25f8479653e1b37655609
+    title: Лес
+    terrainType: Лес
+    sizeM: {x: 0, y: 0}
+    screenshot: {fileID: 0}
+    scenePath: Assets/Scenes/Forest.unity
+  - id: 1e964141e745b4d4da52fcf98fcaedb0
+    title: Испытательная площадка
+    terrainType: Открытая местность
+    sizeM: {x: 0, y: 0}
+    screenshot: {fileID: 0}
+    scenePath: Assets/Scenes/PhysTest.unity
+  weatherPresets: []

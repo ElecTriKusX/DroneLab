@@ -92,11 +92,18 @@ namespace DroneLab.Simulation
         private bool[] groundHits;
         private readonly RotorGroundProbe groundProbe=new RotorGroundProbe();
 
+        // Optional application-level preparation. Runs before the first Initialize, never in flight.
+        public static event Action<DronePhysicsBody> PreparingSceneBody;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetPreparationHooks() => PreparingSceneBody = null;
+
         private void Awake()
         {
             Body=GetComponent<Rigidbody>();
             if (droneProfile == null) droneProfile=Resources.Load<TextAsset>("DronePhysics/quad_test_basic");
             if (environmentProfile == null) environmentProfile=Resources.Load<TextAsset>("DronePhysics/environment_calm");
+            try { PreparingSceneBody?.Invoke(this); }
+            catch (Exception ex) { Fail("Scene preparation rejected: "+ex.Message); return; }
             Initialize(droneProfile,environmentProfile);
         }
         public bool Initialize(TextAsset drone,TextAsset environment)

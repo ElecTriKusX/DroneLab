@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 namespace DroneLab.UI
 {
-    internal enum MenuIconKind { Play, Drone, Landscape, Laboratory, Settings, Book, Exit, Chevron }
+    internal enum MenuIconKind { Play, Drone, Landscape, Laboratory, Settings, Book, Exit, Chevron, Sun, Wind }
 
     /// <summary>Resolution-independent outline icons; no font glyphs or bitmap dependencies.</summary>
     internal sealed class DroneMenuIcon : VisualElement
@@ -43,6 +43,14 @@ namespace DroneLab.UI
             }
             switch (kind)
             {
+                case MenuIconKind.Sun:
+                    Circle(20, 20, 8);
+                    for (int i = 0; i < 8; i++) { float a = i * Mathf.PI / 4; Line(20 + Mathf.Cos(a) * 12, 20 + Mathf.Sin(a) * 12, 20 + Mathf.Cos(a) * 17, 20 + Mathf.Sin(a) * 17); }
+                    break;
+                case MenuIconKind.Wind:
+                    Line(3, 13, 28, 13, 32, 10, 32, 6, 28, 4, 24, 6);
+                    Line(3, 21, 34, 21, 37, 18, 37, 15, 34, 13);
+                    Line(3, 29, 24, 29, 28, 32, 28, 35, 24, 37, 20, 35); break;
                 case MenuIconKind.Play: Line(11, 7, 32, 20, 11, 33, 11, 7); break;
                 case MenuIconKind.Drone:
                     Line(10, 10, 30, 30); Line(30, 10, 10, 30);

@@ -1,0 +1,96 @@
+.scenario-page {
+    position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+    background-color: rgb(20, 21, 22); color: rgb(230, 231, 230); padding: 28px 46px 20px;
+    font-size: 20px;
+}
+.scenario-header { flex-direction: row; align-items: center; height: 64px; flex-shrink: 0; }
+.scenario-brand { font-size: 32px; -unity-font-style: bold; letter-spacing: 3px; }
+.scenario-header-divider { width: 1px; height: 42px; margin: 0 30px; background-color: rgb(85, 86, 86); }
+.scenario-title { font-size: 34px; -unity-font-style: bold; letter-spacing: 1px; }
+.scenario-tabs { flex-direction: row; height: 65px; border-bottom-width: 1px; border-bottom-color: rgb(87, 88, 88); margin-bottom: 24px; flex-shrink: 0; }
+.scenario-tab { font-size: 22px; color: rgb(141, 145, 150); background-color: transparent; border-width: 0; border-radius: 0; margin: 0 30px 0 0; padding: 0 28px; }
+.scenario-tab.active { color: rgb(241, 241, 239); border-bottom-width: 3px; border-bottom-color: rgb(239, 239, 236); }
+.scenario-tab:hover, .scenario-tab:focus { background-color: rgb(34, 35, 36); color: white; }
+.scenario-content { flex-grow: 1; min-height: 0; }
+.scenario-hint { color: rgb(165, 169, 174); font-size: 20px; white-space: normal; margin-bottom: 22px; }
+.scenario-hint.small { font-size: 16px; margin-top: 5px; margin-bottom: 10px; }
+.scenario-muted { color: rgb(140, 146, 151); font-size: 16px; white-space: normal; }
+.scenario-toolbar { flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-shrink: 0; }
+.scenario-search { min-height: 48px; flex-grow: 1; margin: 0 22px 0 0; }
+.scenario-search > .unity-base-field__label { min-width: 150px; color: rgb(154, 159, 164); }
+.scenario-search .unity-base-field__input { background-color: rgb(25, 26, 27); color: rgb(232, 233, 230); border-width: 1px; border-color: rgb(111, 113, 114); border-radius: 7px; padding: 6px 12px; font-size: 18px; }
+.map-filter { width: 320px; margin: 0; }
+.scenario-scroll { flex-grow: 1; min-height: 0; }
+.map-grid { flex-direction: row; flex-wrap: wrap; justify-content: space-between; padding-right: 12px; }
+.map-card { width: 49%; margin-bottom: 24px; border-width: 1px; border-color: rgb(90, 93, 94); border-radius: 10px; overflow: hidden; background-color: rgb(23, 24, 25); }
+.map-preview { height: 440px; position: relative; background-color: rgb(30, 31, 32); -unity-background-scale-mode: scale-and-crop; align-items: center; justify-content: center; }
+.map-name { position: absolute; left: 0; right: 0; bottom: 0; background-color: rgba(12, 13, 14, .8); color: rgb(235, 235, 233); padding: 14px 20px; font-size: 24px; }
+.map-meta { padding: 16px 20px; font-size: 19px; color: rgb(164, 169, 172); }
+.map-placeholder { width: 80px; height: 80px; color: rgb(95, 100, 103); }
+.map-placeholder-caption { font-size: 18px; color: rgb(135, 140, 144); margin-top: 18px; }
+.scenario-footer { height: 66px; flex-direction: row; justify-content: space-between; align-items: center; margin-top: 22px; padding-top: 16px; border-top-width: 1px; border-top-color: rgb(85, 87, 88); flex-shrink: 0; }
+.scenario-button { min-height: 46px; padding: 0 20px; font-size: 18px; color: rgb(230, 231, 228); background-color: rgb(23, 24, 25); border-width: 1px; border-color: rgb(159, 162, 160); border-radius: 7px; margin: 0 0 0 12px; }
+.scenario-button.primary { border-color: rgb(233, 234, 229); }
+.scenario-button:hover, .scenario-button:focus { background-color: rgb(48, 49, 50); border-color: white; color: white; }
+.scenario-button:active { background-color: rgb(76, 77, 78); }
+.scenario-button:disabled { opacity: .45; }
+.profile-columns { flex-direction: row; flex-grow: 1; min-height: 0; }
+.profile-library, .profile-editor { border-width: 1px; border-color: rgb(101, 104, 105); border-radius: 10px; background-color: rgb(24, 25, 26); padding: 24px; }
+.profile-library { width: 31%; margin-right: 18px; }
+.profile-editor { flex-grow: 1; min-width: 0; }
+.scenario-panel-title { font-size: 21px; -unity-font-style: bold; letter-spacing: 1px; margin-bottom: 14px; }
+.scenario-toolbar > .scenario-panel-title { margin-bottom: 0; }
+.profile-library .scenario-search { flex-grow: 0; margin: 0 0 24px; }
+.profile-library .scenario-search > .unity-base-field__label { min-width: 136px; }
+.profile-list-item { min-height: 88px; flex-shrink: 0; flex-direction: row; align-items: center; margin: 0 5px 14px 0; padding: 14px; background-color: rgb(25, 26, 27); border-width: 1px; border-color: rgb(65, 67, 68); border-radius: 8px; color: rgb(229, 230, 227); }
+.profile-list-item.selected { border-color: rgb(235, 235, 231); }
+.profile-list-item:hover, .profile-list-item:focus { background-color: rgb(35, 36, 37); border-color: rgb(175, 178, 175); }
+.profile-icon { width: 40px; height: 40px; margin-right: 20px; flex-shrink: 0; }
+.profile-list-text { flex-grow: 1; min-width: 0; }
+.profile-list-name { font-size: 18px; margin-bottom: 7px; white-space: normal; }
+.profile-origin { font-size: 13px; color: rgb(140, 148, 152); width: 90px; -unity-text-align: upper-right; }
+.scenario-actions { flex-direction: row; justify-content: flex-end; margin-top: 20px; flex-shrink: 0; }
+.profile-library > .scenario-actions { border-top-width: 1px; border-top-color: rgb(62, 65, 66); padding-top: 20px; justify-content: space-between; }
+.profile-name-field { flex-direction: column; margin: 16px 0 24px; }
+.profile-name-field > .unity-base-field__label { margin-bottom: 6px; font-size: 17px; }
+.profile-name-field .unity-base-field__input { min-height: 46px; border-width: 1px; border-color: rgb(124, 127, 127); border-radius: 6px; padding: 6px 12px; color: rgb(233, 234, 231); background-color: rgb(22, 23, 24); font-size: 20px; }
+.profile-form-scroll .unity-scroll-view__content-container { padding-right: 10px; }
+.profile-form-columns { flex-direction: row; }
+.profile-form-panel { width: 49%; padding: 20px; border-width: 1px; border-color: rgb(64, 67, 69); border-radius: 8px; margin-right: 12px; }
+.environment-field { margin: 0 0 16px; min-height: 42px; font-size: 17px; align-items: center; }
+.environment-field > .unity-base-field__label { min-width: 0; width: 48%; flex-shrink: 0; white-space: normal; }
+.environment-field .unity-base-field__input, .vector-field .unity-base-field__input, .wind-speed-number .unity-base-field__input {
+    min-height: 40px; background-color: rgb(25, 26, 27); color: rgb(232, 233, 230); border-width: 1px; border-color: rgb(119, 122, 123); border-radius: 6px; padding: 4px 9px; font-size: 17px;
+}
+.environment-field .unity-base-popup-field__text { font-size: 17px; }
+.environment-field .unity-base-field__input:focus, .profile-name-field .unity-base-field__input:focus { border-color: rgb(225, 228, 223); }
+.is-default .unity-base-field__input, .is-default .unity-base-text-field__input { color: rgb(135, 143, 148); }
+.weather-preview { height: 182px; margin-top: 18px; background-color: rgb(30, 31, 32); border-width: 1px; border-color: rgb(68, 71, 73); border-radius: 7px; align-items: center; justify-content: center; -unity-background-scale-mode: scale-and-crop; }
+.weather-preview-icon { width: 70px; height: 70px; margin-bottom: 14px; color: rgb(134, 142, 147); }
+.wind-speed-row { flex-direction: row; align-items: center; margin-bottom: 16px; }
+.wind-speed-row .environment-field { flex-grow: 1; margin-bottom: 0; }
+.wind-speed-row .unity-base-slider__tracker { background-color: rgb(83, 88, 92); height: 6px; border-width: 0; border-radius: 3px; }
+.wind-speed-row .unity-base-slider__dragger { width: 12px; height: 24px; background-color: rgb(210, 212, 209); border-width: 0; border-radius: 4px; }
+.wind-speed-row .unity-base-slider__dragger-border { border-width: 0; background-color: transparent; }
+.wind-speed-number { width: 80px; margin-left: 12px; }
+.wind-direction-row { flex-direction: row; align-items: center; }
+.wind-direction-row .environment-field { flex-grow: 1; }
+.wind-compass { width: 76px; height: 76px; flex-shrink: 0; margin-left: 10px; }
+.environment-advanced { border-width: 1px; border-color: rgb(65, 68, 70); border-radius: 8px; padding: 15px; margin-top: 20px; }
+.environment-advanced .unity-foldout__toggle { color: rgb(215, 219, 216); background-color: transparent; font-size: 19px; }
+.environment-advanced .unity-foldout__input { background-color: transparent; }
+.environment-advanced .unity-toggle__checkmark { -unity-background-image-tint-color: rgb(197, 201, 198); }
+.environment-section { margin-top: 24px; border-top-width: 1px; border-top-color: rgb(62, 65, 67); padding-top: 18px; }
+.environment-section .environment-field > .unity-base-field__label { width: 53%; }
+.vector-title { color: rgb(193, 198, 195); font-size: 17px; margin: 10px 0; }
+.vector-row { flex-direction: row; margin-bottom: 15px; }
+.vector-field { flex-grow: 1; flex-basis: 0; margin-right: 12px; }
+.visual-override-row { flex-direction: row; align-items: center; }
+.visual-override-row .environment-field { flex-grow: 1; }
+.inherit-button { font-size: 15px; min-height: 38px; margin-bottom: 16px; width: 130px; }
+.profile-editor-actions { flex-direction: row; align-items: center; margin-top: 20px; padding-top: 18px; border-top-width: 1px; border-top-color: rgb(63, 66, 67); flex-shrink: 0; }
+.profile-message { font-size: 15px; color: rgb(143, 151, 156); flex-grow: 1; flex-basis: 0; white-space: normal; margin-right: 15px; max-height: 110px; }
+.profile-message.error { color: rgb(220, 189, 167); }
+.scenario-prompt { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, .8); align-items: center; justify-content: center; }
+.scenario-prompt-card { width: 850px; padding: 36px; background-color: rgb(25, 26, 27); border-width: 1px; border-color: rgb(145, 149, 146); border-radius: 10px; }
+.scenario-prompt-card .environment-field > .unity-base-field__label { width: 100px; }

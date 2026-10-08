@@ -129,3 +129,9 @@ Parameters/Power/Drive, сохранение заряда/тепла и соот
 JSON остаётся fallback до первого снимка, затем применяются данные провайдера.
 Запуск Enviro/Rigidbody, сохранение SOC и температур при смене профиля
 требуют проверки в Play Mode. Подключение: [README адаптера](https://github.com/ElecTriKusX/DroneLab/blob/physics-packages/Assets/DroneEnvironment/README.md).
+
+## Подготовка среды из меню
+
+Добавлен опциональный PreparingSceneBody hook Unity-адаптера до первого Initialize для назначения проверенного JSON окружения из UI. Ядро, формулы и JSON 1.0.0 не изменены. RuntimeEnvironment остаётся единственным источником сил при Constant/Gust/Turbulence/DrydenFrozen; визуальный Enviro-драйвер не прикладывает сил.
+
+Подготовлены EditMode проверки DroneLab.UI.Tests на копирование/импорт/round-trip/ограничения профилей и совместимость дрона; они требуют запуска в Unity и здесь не выполнялись. C# синтаксис, полнота полей environment относительно схемы и UPM-экспорт проверяются вне Unity. Play Mode порядка инициализации и визуальной связи Enviro требует проверки в Editor.

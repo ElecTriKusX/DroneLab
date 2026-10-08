@@ -25,6 +25,7 @@ namespace DroneLab.UI
         [SerializeField] private Font menuFont;
         [SerializeField] private string flightScene = "PhysTest";
         [SerializeField] private string version = "0.1.2";
+        [SerializeField] private DroneScenarioCatalog scenarioCatalog;
         [SerializeField] private DroneDeveloperLink[] developerLinks =
         {
             new DroneDeveloperLink("Матвиенко А. В."), new DroneDeveloperLink("Якубовский Д. А."),
@@ -40,6 +41,7 @@ namespace DroneLab.UI
         private Label status;
         private Button firstButton, returnFocus;
         private bool loading;
+        private DroneScenariosScreen scenarioScreen;
 
         private void OnEnable()
         {
@@ -58,6 +60,8 @@ namespace DroneLab.UI
             root.style.backgroundColor = Color.black;
             var sheet = Resources.Load<StyleSheet>("DroneLab/MainMenu");
             if (sheet != null) root.styleSheets.Add(sheet);
+            var scenariosSheet = Resources.Load<StyleSheet>("DroneLab/Scenarios");
+            if (scenariosSheet != null) root.styleSheets.Add(scenariosSheet);
             stage = new VisualElement { name = "reference-stage" };
             stage.AddToClassList("stage");
             if (menuFont != null) stage.style.unityFont = menuFont;
@@ -68,7 +72,7 @@ namespace DroneLab.UI
             stack = new VisualElement(); stack.AddToClassList("menu-stack"); stage.Add(stack);
             firstButton = AddMenuButton("НОВАЯ СИМУЛЯЦИЯ", MenuIconKind.Play, StartFlight, true);
             AddMenuButton("КАТАЛОГ ДРОНОВ", MenuIconKind.Drone, () => OpenScreen(configureDrone, "Каталог дронов"));
-            AddMenuButton("СЦЕНАРИИ И ОКРУЖЕНИЕ", MenuIconKind.Landscape, () => OpenScreen(scenarios, "Сценарии и окружение"));
+            AddMenuButton("СЦЕНАРИИ И ОКРУЖЕНИЕ", MenuIconKind.Landscape, OpenScenarios);
             AddMenuButton("ЛАБОРАТОРИЯ", MenuIconKind.Laboratory, () => OpenScreen(laboratory, "Лаборатория"));
             var divider = new VisualElement(); divider.AddToClassList("menu-divider"); stack.Add(divider);
             AddMenuButton("НАСТРОЙКИ", MenuIconKind.Settings, Settings, compact: true);
@@ -105,7 +109,7 @@ namespace DroneLab.UI
         }
         private static DropdownField Dropdown(VisualElement parent, string title, List<string> choices, int index)
         {
-            var field = new DropdownField(title, choices, index);
+            var field = new DropdownField(title, DroneScenarioCatalog.DisplayChoices(choices), index);
             field.AddToClassList("settings-control");
             field.Query<Label>().ForEach(MakeReadOnly);
             parent.Add(field);
@@ -141,6 +145,7 @@ namespace DroneLab.UI
         private void OnKeyDown(KeyDownEvent evt)
         {
             if (evt.keyCode != KeyCode.Escape) return;
+            if (scenarioScreen != null) { scenarioScreen.RequestClose(); evt.StopPropagation(); return; }
             if (modal != null) CloseModal(); else ConfirmExit();
             evt.StopPropagation();
         }
@@ -154,6 +159,12 @@ namespace DroneLab.UI
 
         public void StartFlight()
         {
+            var catalog = scenarioCatalog != null ? scenarioCatalog : DroneScenarioCatalog.Load();
+            if (catalog != null && catalog.maps.Count > 0) { PrepareFlight(catalog); return; }
+            LoadLegacyFlight();
+        }
+        private void LoadLegacyFlight()
+        {
             if (loading) return;
             if (string.IsNullOrWhiteSpace(flightScene) || !Application.CanStreamedLevelBeLoaded(flightScene))
             { status.text = "Сцена полёта недоступна. Проверьте Flight Scene и список сцен сборки."; return; }
@@ -164,6 +175,31 @@ namespace DroneLab.UI
             }
             catch (ArgumentException ex) { Debug.LogError(ex.Message, this); }
             loading = false; stack.SetEnabled(true); status.text = "Не удалось загрузить сцену.";
+        }
+        private void OpenScenarios()
+        {
+            CloseModal(); stack.SetEnabled(false);
+            var catalog = scenarioCatalog != null ? scenarioCatalog : DroneScenarioCatalog.Load();
+            scenarioScreen = new DroneScenariosScreen(stage, catalog, () => { scenarioScreen = null; stack.SetEnabled(!loading); (returnFocus ?? firstButton)?.Focus(); });
+        }
+        private void PrepareFlight(DroneScenarioCatalog catalog)
+        {
+            if (loading) return;
+            var maps = catalog.maps.FindAll(m => m != null && !string.IsNullOrWhiteSpace(m.scenePath));
+            var profiles = DroneEnvironmentProfiles.LoadAll(out _);
+            if (maps.Count == 0 || profiles.Count == 0) { status.text = "Добавьте карту и профиль среды в каталог."; return; }
+            var card = OpenModal("НОВАЯ СИМУЛЯЦИЯ", "launch-card");
+            var map = Dropdown(card, "Карта", maps.ConvertAll(m => m.title), 0);
+            var environment = Dropdown(card, "Профиль среды", profiles.ConvertAll(p => p.name), 0);
+            var error = Text(card, "Карта и профиль среды выбираются независимо.", "muted-text");
+            var actions = Actions(card); ActionButton(actions, "НАЗАД", CloseModal);
+            ActionButton(actions, "ЗАПУСТИТЬ", () => {
+                try {
+                    var operation = DroneScenarioLaunch.Load(maps[map.index], profiles[environment.index], catalog);
+                    if (operation == null) throw new InvalidOperationException("Не удалось начать загрузку карты.");
+                    loading = true; card.SetEnabled(false); status.text = "Загрузка симуляции…";
+                } catch (Exception ex) { error.text = ex.Message; }
+            });
         }
         private void OpenScreen(UnityEvent handler, string title)
         {
@@ -294,7 +330,7 @@ namespace DroneLab.UI
             }
             if (document != null) Destroy(document);
             if (panel != null) Destroy(panel);
-            root = null; stage = null; modal = null;
+            root = null; stage = null; modal = null; scenarioScreen = null;
         }
     }
 }
