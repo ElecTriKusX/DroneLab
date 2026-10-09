@@ -1,0 +1,2499 @@
+{
+  "$types": {
+    "DroneProfile": {
+      "schemaVersion": "1.0.0",
+      "metadata": {
+        "name": "Stage 12 thermal acceptance",
+        "manufacturer": "DroneLab",
+        "model": "Synthetic 1 kg test quad",
+        "description": "Synthetic coupled thermal regression fixture; estimated one-node temperatures and protection thresholds, not calibrated hardware."
+      },
+      "coordinateSystem": {
+        "convention": "UnityLeftHandedYUpZForward",
+        "lengthUnit": "m",
+        "modelScaleMetersPerUnit": 1
+      },
+      "physicsConfiguration": {
+        "fidelity": "Advanced",
+        "modules": {
+          "motorResponse": true,
+          "bodyDrag": true,
+          "windInteraction": true,
+          "groundEffect": true,
+          "rotorAerodynamics": true,
+          "bladeFlapping": true,
+          "inducedDrag": true,
+          "batteryDischarge": true,
+          "batteryVoltageSag": true,
+          "motorElectrical": true,
+          "gyroscopicRotorEffects": true
+        }
+      },
+      "massProperties": {
+        "massKg": 1,
+        "centerOfMassLocalM": [
+          0,
+          0,
+          0
+        ],
+        "dimensionsM": [
+          0.4,
+          0.1,
+          0.4
+        ],
+        "inertia": {
+          "mode": "ManualPrincipal",
+          "principalMomentsKgM2": [
+            0.014,
+            0.026,
+            0.018
+          ],
+          "principalAxesRotationXyzw": [
+            0,
+            0.17364817766693033,
+            0,
+            0.984807753012208
+          ]
+        }
+      },
+      "rotors": [
+        {
+          "rotorId": "FL",
+          "geometry": {
+            "positionLocalM": [
+              -0.14,
+              0,
+              0.14
+            ],
+            "thrustAxisLocal": [
+              0,
+              1,
+              0
+            ],
+            "spinDirection": "CW"
+          },
+          "motor": {
+            "minRpm": 0,
+            "idleRpm": 0,
+            "maxRpm": 10000,
+            "responseTimeUpS": 0.06,
+            "responseTimeDownS": 0.08,
+            "electrical": {
+              "motorKvRpmPerVolt": 900,
+              "motorResistanceOhm": 0.08,
+              "noLoadCurrentA": 0.4,
+              "maxCurrentA": 30,
+              "maxPowerW": 400,
+              "motorEfficiency": 0.85,
+              "escEfficiency": 0.95,
+              "escMaxCurrentA": 35,
+              "thermal": {
+                "heatCapacityJPerK": 15,
+                "heatTransferWPerK": 0.25,
+                "airflowHeatTransferWPerKPerMps": 0.04,
+                "maxAirSpeedMps": 25,
+                "initialTemperatureK": 293.15,
+                "derateStartTemperatureK": 343.15,
+                "cutoffTemperatureK": 373.15
+              },
+              "escThermal": {
+                "heatCapacityJPerK": 10,
+                "heatTransferWPerK": 0.12,
+                "airflowHeatTransferWPerKPerMps": 0.02,
+                "maxAirSpeedMps": 25,
+                "initialTemperatureK": 293.15,
+                "derateStartTemperatureK": 333.15,
+                "cutoffTemperatureK": 353.15
+              },
+              "resistanceReferenceTemperatureK": 293.15,
+              "resistanceTemperatureCoefficientPerK": 0.0039
+            },
+            "dynamicsModel": "RotorInertia",
+            "rotatingInertiaKgM2": 5e-06
+          },
+          "propeller": {
+            "diameterM": 0.127,
+            "pitchM": 0.0762,
+            "bladeCount": 3
+          },
+          "performance": {
+            "model": "CtCq",
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          "advancedAerodynamics": {
+            "rotorDragCoefficientKgPerRad": 0.0001,
+            "bladeFlappingCoefficient": 5e-06,
+            "inducedDragCoefficient": 0.0001,
+            "translationalLiftCoefficientKgPerM": 0.002,
+            "referenceAirDensityKgM3": 1.225,
+            "maxAirSpeedMps": 15,
+            "maxThrustCorrectionFraction": 0.25,
+            "maxFlappingMomentRatio": 0.2
+          }
+        },
+        {
+          "rotorId": "FR",
+          "geometry": {
+            "positionLocalM": [
+              0.14,
+              0,
+              0.14
+            ],
+            "thrustAxisLocal": [
+              0,
+              1,
+              0
+            ],
+            "spinDirection": "CCW"
+          },
+          "motor": {
+            "minRpm": 0,
+            "idleRpm": 0,
+            "maxRpm": 10000,
+            "responseTimeUpS": 0.06,
+            "responseTimeDownS": 0.08,
+            "electrical": {
+              "motorKvRpmPerVolt": 900,
+              "motorResistanceOhm": 0.08,
+              "noLoadCurrentA": 0.4,
+              "maxCurrentA": 30,
+              "maxPowerW": 400,
+              "motorEfficiency": 0.85,
+              "escEfficiency": 0.95,
+              "escMaxCurrentA": 35,
+              "thermal": {
+                "heatCapacityJPerK": 15,
+                "heatTransferWPerK": 0.25,
+                "airflowHeatTransferWPerKPerMps": 0.04,
+                "maxAirSpeedMps": 25,
+                "initialTemperatureK": 293.15,
+                "derateStartTemperatureK": 343.15,
+                "cutoffTemperatureK": 373.15
+              },
+              "escThermal": {
+                "heatCapacityJPerK": 10,
+                "heatTransferWPerK": 0.12,
+                "airflowHeatTransferWPerKPerMps": 0.02,
+                "maxAirSpeedMps": 25,
+                "initialTemperatureK": 293.15,
+                "derateStartTemperatureK": 333.15,
+                "cutoffTemperatureK": 353.15
+              },
+              "resistanceReferenceTemperatureK": 293.15,
+              "resistanceTemperatureCoefficientPerK": 0.0039
+            },
+            "dynamicsModel": "RotorInertia",
+            "rotatingInertiaKgM2": 5e-06
+          },
+          "propeller": {
+            "diameterM": 0.127,
+            "pitchM": 0.0762,
+            "bladeCount": 3
+          },
+          "performance": {
+            "model": "CtCq",
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          "advancedAerodynamics": {
+            "rotorDragCoefficientKgPerRad": 0.0001,
+            "bladeFlappingCoefficient": 5e-06,
+            "inducedDragCoefficient": 0.0001,
+            "translationalLiftCoefficientKgPerM": 0.002,
+            "referenceAirDensityKgM3": 1.225,
+            "maxAirSpeedMps": 15,
+            "maxThrustCorrectionFraction": 0.25,
+            "maxFlappingMomentRatio": 0.2
+          }
+        },
+        {
+          "rotorId": "RR",
+          "geometry": {
+            "positionLocalM": [
+              0.14,
+              0,
+              -0.14
+            ],
+            "thrustAxisLocal": [
+              0,
+              1,
+              0
+            ],
+            "spinDirection": "CW"
+          },
+          "motor": {
+            "minRpm": 0,
+            "idleRpm": 0,
+            "maxRpm": 10000,
+            "responseTimeUpS": 0.06,
+            "responseTimeDownS": 0.08,
+            "electrical": {
+              "motorKvRpmPerVolt": 900,
+              "motorResistanceOhm": 0.08,
+              "noLoadCurrentA": 0.4,
+              "maxCurrentA": 30,
+              "maxPowerW": 400,
+              "motorEfficiency": 0.85,
+              "escEfficiency": 0.95,
+              "escMaxCurrentA": 35,
+              "thermal": {
+                "heatCapacityJPerK": 15,
+                "heatTransferWPerK": 0.25,
+                "airflowHeatTransferWPerKPerMps": 0.04,
+                "maxAirSpeedMps": 25,
+                "initialTemperatureK": 293.15,
+                "derateStartTemperatureK": 343.15,
+                "cutoffTemperatureK": 373.15
+              },
+              "escThermal": {
+                "heatCapacityJPerK": 10,
+                "heatTransferWPerK": 0.12,
+                "airflowHeatTransferWPerKPerMps": 0.02,
+                "maxAirSpeedMps": 25,
+                "initialTemperatureK": 293.15,
+                "derateStartTemperatureK": 333.15,
+                "cutoffTemperatureK": 353.15
+              },
+              "resistanceReferenceTemperatureK": 293.15,
+              "resistanceTemperatureCoefficientPerK": 0.0039
+            },
+            "dynamicsModel": "RotorInertia",
+            "rotatingInertiaKgM2": 5e-06
+          },
+          "propeller": {
+            "diameterM": 0.127,
+            "pitchM": 0.0762,
+            "bladeCount": 3
+          },
+          "performance": {
+            "model": "CtCq",
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          "advancedAerodynamics": {
+            "rotorDragCoefficientKgPerRad": 0.0001,
+            "bladeFlappingCoefficient": 5e-06,
+            "inducedDragCoefficient": 0.0001,
+            "translationalLiftCoefficientKgPerM": 0.002,
+            "referenceAirDensityKgM3": 1.225,
+            "maxAirSpeedMps": 15,
+            "maxThrustCorrectionFraction": 0.25,
+            "maxFlappingMomentRatio": 0.2
+          }
+        },
+        {
+          "rotorId": "RL",
+          "geometry": {
+            "positionLocalM": [
+              -0.14,
+              0,
+              -0.14
+            ],
+            "thrustAxisLocal": [
+              0,
+              1,
+              0
+            ],
+            "spinDirection": "CCW"
+          },
+          "motor": {
+            "minRpm": 0,
+            "idleRpm": 0,
+            "maxRpm": 10000,
+            "responseTimeUpS": 0.06,
+            "responseTimeDownS": 0.08,
+            "electrical": {
+              "motorKvRpmPerVolt": 900,
+              "motorResistanceOhm": 0.08,
+              "noLoadCurrentA": 0.4,
+              "maxCurrentA": 30,
+              "maxPowerW": 400,
+              "motorEfficiency": 0.85,
+              "escEfficiency": 0.95,
+              "escMaxCurrentA": 35,
+              "thermal": {
+                "heatCapacityJPerK": 15,
+                "heatTransferWPerK": 0.25,
+                "airflowHeatTransferWPerKPerMps": 0.04,
+                "maxAirSpeedMps": 25,
+                "initialTemperatureK": 293.15,
+                "derateStartTemperatureK": 343.15,
+                "cutoffTemperatureK": 373.15
+              },
+              "escThermal": {
+                "heatCapacityJPerK": 10,
+                "heatTransferWPerK": 0.12,
+                "airflowHeatTransferWPerKPerMps": 0.02,
+                "maxAirSpeedMps": 25,
+                "initialTemperatureK": 293.15,
+                "derateStartTemperatureK": 333.15,
+                "cutoffTemperatureK": 353.15
+              },
+              "resistanceReferenceTemperatureK": 293.15,
+              "resistanceTemperatureCoefficientPerK": 0.0039
+            },
+            "dynamicsModel": "RotorInertia",
+            "rotatingInertiaKgM2": 5e-06
+          },
+          "propeller": {
+            "diameterM": 0.127,
+            "pitchM": 0.0762,
+            "bladeCount": 3
+          },
+          "performance": {
+            "model": "CtCq",
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          "advancedAerodynamics": {
+            "rotorDragCoefficientKgPerRad": 0.0001,
+            "bladeFlappingCoefficient": 5e-06,
+            "inducedDragCoefficient": 0.0001,
+            "translationalLiftCoefficientKgPerM": 0.002,
+            "referenceAirDensityKgM3": 1.225,
+            "maxAirSpeedMps": 15,
+            "maxThrustCorrectionFraction": 0.25,
+            "maxFlappingMomentRatio": 0.2
+          }
+        }
+      ],
+      "bodyAerodynamics": {
+        "model": "ProjectedArea",
+        "dragCoefficient": 1,
+        "projectedArea": {
+          "mode": "ManualDirectionalLUT",
+          "samples": [
+            {
+              "directionLocal": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "areaM2": 0.04000000000000001
+            },
+            {
+              "directionLocal": [
+                0.0,
+                0.7071067811865475,
+                -0.7071067811865475
+              ],
+              "areaM2": 0.14142135623730953
+            },
+            {
+              "directionLocal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "areaM2": 0.16000000000000003
+            },
+            {
+              "directionLocal": [
+                0.0,
+                0.7071067811865475,
+                0.7071067811865475
+              ],
+              "areaM2": 0.14142135623730953
+            },
+            {
+              "directionLocal": [
+                0.5773502691896258,
+                -0.5773502691896258,
+                -0.5773502691896258
+              ],
+              "areaM2": 0.13856406460551024
+            },
+            {
+              "directionLocal": [
+                0.7071067811865475,
+                -0.7071067811865475,
+                0.0
+              ],
+              "areaM2": 0.14142135623730953
+            },
+            {
+              "directionLocal": [
+                0.5773502691896258,
+                -0.5773502691896258,
+                0.5773502691896258
+              ],
+              "areaM2": 0.13856406460551024
+            },
+            {
+              "directionLocal": [
+                0.7071067811865475,
+                0.0,
+                -0.7071067811865475
+              ],
+              "areaM2": 0.05656854249492381
+            },
+            {
+              "directionLocal": [
+                1.0,
+                0.0,
+                0.0
+              ],
+              "areaM2": 0.04000000000000001
+            },
+            {
+              "directionLocal": [
+                0.7071067811865475,
+                0.0,
+                0.7071067811865475
+              ],
+              "areaM2": 0.05656854249492381
+            },
+            {
+              "directionLocal": [
+                0.5773502691896258,
+                0.5773502691896258,
+                -0.5773502691896258
+              ],
+              "areaM2": 0.13856406460551024
+            },
+            {
+              "directionLocal": [
+                0.7071067811865475,
+                0.7071067811865475,
+                0.0
+              ],
+              "areaM2": 0.14142135623730953
+            },
+            {
+              "directionLocal": [
+                0.5773502691896258,
+                0.5773502691896258,
+                0.5773502691896258
+              ],
+              "areaM2": 0.13856406460551024
+            }
+          ]
+        },
+        "dragApplicationPointLocalM": [
+          0,
+          0.01,
+          0
+        ]
+      },
+      "powerSystem": {
+        "battery": {
+          "mode": "Electrical",
+          "cellCount": 4,
+          "nominalVoltageV": 14.8,
+          "capacityAh": 1.3,
+          "initialSoc": 1,
+          "internalResistanceOhm": 0.06,
+          "maxDischargeCurrentA": 80,
+          "ocvCurve": [
+            {
+              "soc": 0,
+              "voltageV": 12
+            },
+            {
+              "soc": 0.2,
+              "voltageV": 14
+            },
+            {
+              "soc": 0.8,
+              "voltageV": 15.6
+            },
+            {
+              "soc": 1,
+              "voltageV": 16.8
+            }
+          ],
+          "thermal": {
+            "heatCapacityJPerK": 200,
+            "heatTransferWPerK": 0.3,
+            "airflowHeatTransferWPerKPerMps": 0.015,
+            "maxAirSpeedMps": 25,
+            "initialTemperatureK": 293.15,
+            "derateStartTemperatureK": 313.15,
+            "cutoffTemperatureK": 333.15
+          }
+        },
+        "thermalEnabled": true
+      },
+      "parameterProvenance": [
+        {
+          "path": "rotors",
+          "sourceType": "Estimated",
+          "source": "Synthetic symmetric test quad; not manufacturer data",
+          "confidence": 0.3
+        },
+        {
+          "path": "groundEffect / rotors.advancedAerodynamics",
+          "sourceType": "Estimated",
+          "source": "Demo coefficients for bounded ground effect and linear rotor drag; not measurements",
+          "confidence": 0.3
+        },
+        {
+          "path": "powerSystem / rotors.motor.electrical",
+          "sourceType": "Estimated",
+          "source": "Synthetic 4S / 1.3Ah battery and motor power demo; not calibrated hardware data.",
+          "confidence": 0.2
+        },
+        {
+          "path": "massProperties.inertia / rotors.performance / bodyAerodynamics",
+          "sourceType": "Estimated",
+          "source": "Synthetic combined acceptance fixture; manual principal inertia and analytic box directional areas, not measured mesh or hardware.",
+          "confidence": 0.2
+        },
+        {
+          "path": "rotors.advancedAerodynamics",
+          "sourceType": "Estimated",
+          "source": "Stage 10 empirical rotor-flow regression coefficients and envelope; synthetic estimates, not measured aircraft data.",
+          "confidence": 0.2
+        },
+        {
+          "path": "rotors.motor.dynamicsModel / rotatingInertiaKgM2",
+          "sourceType": "Estimated",
+          "source": "Synthetic stage 11 spin-axis inertia for motor rotor plus propeller; not measured aircraft data.",
+          "confidence": 0.2
+        },
+        {
+          "path": "powerSystem.battery.thermal / rotors.motor.electrical.thermal / escThermal",
+          "sourceType": "Estimated",
+          "source": "Synthetic lumped thermal capacities, cooling and derating thresholds for regression. Copper resistance coefficient 0.0039/K from maxon Product Range 2026/27, p.94; no real-drone calibration.",
+          "confidence": 0.2
+        }
+      ],
+      "groundEffect": {
+        "coefficient": 1,
+        "minHeightRadiusRatio": 0.25,
+        "maxMultiplier": 1.5
+      }
+    },
+    "Metadata": {
+      "name": "Stage 12 thermal acceptance",
+      "manufacturer": "DroneLab",
+      "model": "Synthetic 1 kg test quad",
+      "description": "Synthetic coupled thermal regression fixture; estimated one-node temperatures and protection thresholds, not calibrated hardware."
+    },
+    "CoordinateSystem": {
+      "convention": "UnityLeftHandedYUpZForward",
+      "lengthUnit": "m",
+      "modelScaleMetersPerUnit": 1
+    },
+    "PhysicsConfiguration": {
+      "fidelity": "Advanced",
+      "modules": {
+        "motorResponse": true,
+        "bodyDrag": true,
+        "windInteraction": true,
+        "groundEffect": true,
+        "rotorAerodynamics": true,
+        "bladeFlapping": true,
+        "inducedDrag": true,
+        "batteryDischarge": true,
+        "batteryVoltageSag": true,
+        "motorElectrical": true,
+        "gyroscopicRotorEffects": true
+      }
+    },
+    "PhysicsModulesProfile": {
+      "motorResponse": true,
+      "bodyDrag": true,
+      "windInteraction": true,
+      "groundEffect": true,
+      "rotorAerodynamics": true,
+      "bladeFlapping": true,
+      "inducedDrag": true,
+      "batteryDischarge": true,
+      "batteryVoltageSag": true,
+      "motorElectrical": true,
+      "gyroscopicRotorEffects": true
+    },
+    "MassProperties": {
+      "massKg": 1,
+      "centerOfMassLocalM": [
+        0,
+        0,
+        0
+      ],
+      "dimensionsM": [
+        0.4,
+        0.1,
+        0.4
+      ],
+      "inertia": {
+        "mode": "ManualPrincipal",
+        "principalMomentsKgM2": [
+          0.014,
+          0.026,
+          0.018
+        ],
+        "principalAxesRotationXyzw": [
+          0,
+          0.17364817766693033,
+          0,
+          0.984807753012208
+        ]
+      }
+    },
+    "InertiaProfile": {
+      "mode": "ManualPrincipal",
+      "principalMomentsKgM2": [
+        0.014,
+        0.026,
+        0.018
+      ],
+      "principalAxesRotationXyzw": [
+        0,
+        0.17364817766693033,
+        0,
+        0.984807753012208
+      ]
+    },
+    "RotorProfile": {
+      "rotorId": "FL",
+      "geometry": {
+        "positionLocalM": [
+          -0.14,
+          0,
+          0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35,
+          "thermal": {
+            "heatCapacityJPerK": 15,
+            "heatTransferWPerK": 0.25,
+            "airflowHeatTransferWPerKPerMps": 0.04,
+            "maxAirSpeedMps": 25,
+            "initialTemperatureK": 293.15,
+            "derateStartTemperatureK": 343.15,
+            "cutoffTemperatureK": 373.15
+          },
+          "escThermal": {
+            "heatCapacityJPerK": 10,
+            "heatTransferWPerK": 0.12,
+            "airflowHeatTransferWPerKPerMps": 0.02,
+            "maxAirSpeedMps": 25,
+            "initialTemperatureK": 293.15,
+            "derateStartTemperatureK": 333.15,
+            "cutoffTemperatureK": 353.15
+          },
+          "resistanceReferenceTemperatureK": 293.15,
+          "resistanceTemperatureCoefficientPerK": 0.0039
+        },
+        "dynamicsModel": "RotorInertia",
+        "rotatingInertiaKgM2": 5e-06
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "CtCq",
+        "ct": 1.1082060981260822,
+        "cq": 0.17452064537418616
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001,
+        "bladeFlappingCoefficient": 5e-06,
+        "inducedDragCoefficient": 0.0001,
+        "translationalLiftCoefficientKgPerM": 0.002,
+        "referenceAirDensityKgM3": 1.225,
+        "maxAirSpeedMps": 15,
+        "maxThrustCorrectionFraction": 0.25,
+        "maxFlappingMomentRatio": 0.2
+      }
+    },
+    "RotorGeometry": {
+      "positionLocalM": [
+        -0.14,
+        0,
+        0.14
+      ],
+      "thrustAxisLocal": [
+        0,
+        1,
+        0
+      ],
+      "spinDirection": "CW"
+    },
+    "MotorProfile": {
+      "minRpm": 0,
+      "idleRpm": 0,
+      "maxRpm": 10000,
+      "responseTimeUpS": 0.06,
+      "responseTimeDownS": 0.08,
+      "electrical": {
+        "motorKvRpmPerVolt": 900,
+        "motorResistanceOhm": 0.08,
+        "noLoadCurrentA": 0.4,
+        "maxCurrentA": 30,
+        "maxPowerW": 400,
+        "motorEfficiency": 0.85,
+        "escEfficiency": 0.95,
+        "escMaxCurrentA": 35,
+        "thermal": {
+          "heatCapacityJPerK": 15,
+          "heatTransferWPerK": 0.25,
+          "airflowHeatTransferWPerKPerMps": 0.04,
+          "maxAirSpeedMps": 25,
+          "initialTemperatureK": 293.15,
+          "derateStartTemperatureK": 343.15,
+          "cutoffTemperatureK": 373.15
+        },
+        "escThermal": {
+          "heatCapacityJPerK": 10,
+          "heatTransferWPerK": 0.12,
+          "airflowHeatTransferWPerKPerMps": 0.02,
+          "maxAirSpeedMps": 25,
+          "initialTemperatureK": 293.15,
+          "derateStartTemperatureK": 333.15,
+          "cutoffTemperatureK": 353.15
+        },
+        "resistanceReferenceTemperatureK": 293.15,
+        "resistanceTemperatureCoefficientPerK": 0.0039
+      },
+      "dynamicsModel": "RotorInertia",
+      "rotatingInertiaKgM2": 5e-06
+    },
+    "MotorElectricalProfile": {
+      "motorKvRpmPerVolt": 900,
+      "motorResistanceOhm": 0.08,
+      "noLoadCurrentA": 0.4,
+      "maxCurrentA": 30,
+      "maxPowerW": 400,
+      "motorEfficiency": 0.85,
+      "escEfficiency": 0.95,
+      "escMaxCurrentA": 35,
+      "thermal": {
+        "heatCapacityJPerK": 15,
+        "heatTransferWPerK": 0.25,
+        "airflowHeatTransferWPerKPerMps": 0.04,
+        "maxAirSpeedMps": 25,
+        "initialTemperatureK": 293.15,
+        "derateStartTemperatureK": 343.15,
+        "cutoffTemperatureK": 373.15
+      },
+      "escThermal": {
+        "heatCapacityJPerK": 10,
+        "heatTransferWPerK": 0.12,
+        "airflowHeatTransferWPerKPerMps": 0.02,
+        "maxAirSpeedMps": 25,
+        "initialTemperatureK": 293.15,
+        "derateStartTemperatureK": 333.15,
+        "cutoffTemperatureK": 353.15
+      },
+      "resistanceReferenceTemperatureK": 293.15,
+      "resistanceTemperatureCoefficientPerK": 0.0039
+    },
+    "ThermalProfile": {
+      "heatCapacityJPerK": 15,
+      "heatTransferWPerK": 0.25,
+      "airflowHeatTransferWPerKPerMps": 0.04,
+      "maxAirSpeedMps": 25,
+      "initialTemperatureK": 293.15,
+      "derateStartTemperatureK": 343.15,
+      "cutoffTemperatureK": 373.15
+    },
+    "PropellerProfile": {
+      "diameterM": 0.127,
+      "pitchM": 0.0762,
+      "bladeCount": 3
+    },
+    "RotorPerformanceProfile": {
+      "model": "CtCq",
+      "ct": 1.1082060981260822,
+      "cq": 0.17452064537418616
+    },
+    "RotorAerodynamicsProfile": {
+      "rotorDragCoefficientKgPerRad": 0.0001,
+      "bladeFlappingCoefficient": 5e-06,
+      "inducedDragCoefficient": 0.0001,
+      "translationalLiftCoefficientKgPerM": 0.002,
+      "referenceAirDensityKgM3": 1.225,
+      "maxAirSpeedMps": 15,
+      "maxThrustCorrectionFraction": 0.25,
+      "maxFlappingMomentRatio": 0.2
+    },
+    "BodyAerodynamicsProfile": {
+      "model": "ProjectedArea",
+      "dragCoefficient": 1,
+      "projectedArea": {
+        "mode": "ManualDirectionalLUT",
+        "samples": [
+          {
+            "directionLocal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "areaM2": 0.04000000000000001
+          },
+          {
+            "directionLocal": [
+              0.0,
+              0.7071067811865475,
+              -0.7071067811865475
+            ],
+            "areaM2": 0.14142135623730953
+          },
+          {
+            "directionLocal": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "areaM2": 0.16000000000000003
+          },
+          {
+            "directionLocal": [
+              0.0,
+              0.7071067811865475,
+              0.7071067811865475
+            ],
+            "areaM2": 0.14142135623730953
+          },
+          {
+            "directionLocal": [
+              0.5773502691896258,
+              -0.5773502691896258,
+              -0.5773502691896258
+            ],
+            "areaM2": 0.13856406460551024
+          },
+          {
+            "directionLocal": [
+              0.7071067811865475,
+              -0.7071067811865475,
+              0.0
+            ],
+            "areaM2": 0.14142135623730953
+          },
+          {
+            "directionLocal": [
+              0.5773502691896258,
+              -0.5773502691896258,
+              0.5773502691896258
+            ],
+            "areaM2": 0.13856406460551024
+          },
+          {
+            "directionLocal": [
+              0.7071067811865475,
+              0.0,
+              -0.7071067811865475
+            ],
+            "areaM2": 0.05656854249492381
+          },
+          {
+            "directionLocal": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "areaM2": 0.04000000000000001
+          },
+          {
+            "directionLocal": [
+              0.7071067811865475,
+              0.0,
+              0.7071067811865475
+            ],
+            "areaM2": 0.05656854249492381
+          },
+          {
+            "directionLocal": [
+              0.5773502691896258,
+              0.5773502691896258,
+              -0.5773502691896258
+            ],
+            "areaM2": 0.13856406460551024
+          },
+          {
+            "directionLocal": [
+              0.7071067811865475,
+              0.7071067811865475,
+              0.0
+            ],
+            "areaM2": 0.14142135623730953
+          },
+          {
+            "directionLocal": [
+              0.5773502691896258,
+              0.5773502691896258,
+              0.5773502691896258
+            ],
+            "areaM2": 0.13856406460551024
+          }
+        ]
+      },
+      "dragApplicationPointLocalM": [
+        0,
+        0.01,
+        0
+      ]
+    },
+    "ProjectedAreaProfile": {
+      "mode": "ManualDirectionalLUT",
+      "samples": [
+        {
+          "directionLocal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "areaM2": 0.04000000000000001
+        },
+        {
+          "directionLocal": [
+            0.0,
+            0.7071067811865475,
+            -0.7071067811865475
+          ],
+          "areaM2": 0.14142135623730953
+        },
+        {
+          "directionLocal": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "areaM2": 0.16000000000000003
+        },
+        {
+          "directionLocal": [
+            0.0,
+            0.7071067811865475,
+            0.7071067811865475
+          ],
+          "areaM2": 0.14142135623730953
+        },
+        {
+          "directionLocal": [
+            0.5773502691896258,
+            -0.5773502691896258,
+            -0.5773502691896258
+          ],
+          "areaM2": 0.13856406460551024
+        },
+        {
+          "directionLocal": [
+            0.7071067811865475,
+            -0.7071067811865475,
+            0.0
+          ],
+          "areaM2": 0.14142135623730953
+        },
+        {
+          "directionLocal": [
+            0.5773502691896258,
+            -0.5773502691896258,
+            0.5773502691896258
+          ],
+          "areaM2": 0.13856406460551024
+        },
+        {
+          "directionLocal": [
+            0.7071067811865475,
+            0.0,
+            -0.7071067811865475
+          ],
+          "areaM2": 0.05656854249492381
+        },
+        {
+          "directionLocal": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "areaM2": 0.04000000000000001
+        },
+        {
+          "directionLocal": [
+            0.7071067811865475,
+            0.0,
+            0.7071067811865475
+          ],
+          "areaM2": 0.05656854249492381
+        },
+        {
+          "directionLocal": [
+            0.5773502691896258,
+            0.5773502691896258,
+            -0.5773502691896258
+          ],
+          "areaM2": 0.13856406460551024
+        },
+        {
+          "directionLocal": [
+            0.7071067811865475,
+            0.7071067811865475,
+            0.0
+          ],
+          "areaM2": 0.14142135623730953
+        },
+        {
+          "directionLocal": [
+            0.5773502691896258,
+            0.5773502691896258,
+            0.5773502691896258
+          ],
+          "areaM2": 0.13856406460551024
+        }
+      ]
+    },
+    "ProjectedAreaSample": {
+      "directionLocal": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "areaM2": 0.04000000000000001
+    },
+    "PowerSystemProfile": {
+      "battery": {
+        "mode": "Electrical",
+        "cellCount": 4,
+        "nominalVoltageV": 14.8,
+        "capacityAh": 1.3,
+        "initialSoc": 1,
+        "internalResistanceOhm": 0.06,
+        "maxDischargeCurrentA": 80,
+        "ocvCurve": [
+          {
+            "soc": 0,
+            "voltageV": 12
+          },
+          {
+            "soc": 0.2,
+            "voltageV": 14
+          },
+          {
+            "soc": 0.8,
+            "voltageV": 15.6
+          },
+          {
+            "soc": 1,
+            "voltageV": 16.8
+          }
+        ],
+        "thermal": {
+          "heatCapacityJPerK": 200,
+          "heatTransferWPerK": 0.3,
+          "airflowHeatTransferWPerKPerMps": 0.015,
+          "maxAirSpeedMps": 25,
+          "initialTemperatureK": 293.15,
+          "derateStartTemperatureK": 313.15,
+          "cutoffTemperatureK": 333.15
+        }
+      },
+      "thermalEnabled": true
+    },
+    "BatteryProfile": {
+      "mode": "Electrical",
+      "cellCount": 4,
+      "nominalVoltageV": 14.8,
+      "capacityAh": 1.3,
+      "initialSoc": 1,
+      "internalResistanceOhm": 0.06,
+      "maxDischargeCurrentA": 80,
+      "ocvCurve": [
+        {
+          "soc": 0,
+          "voltageV": 12
+        },
+        {
+          "soc": 0.2,
+          "voltageV": 14
+        },
+        {
+          "soc": 0.8,
+          "voltageV": 15.6
+        },
+        {
+          "soc": 1,
+          "voltageV": 16.8
+        }
+      ],
+      "thermal": {
+        "heatCapacityJPerK": 200,
+        "heatTransferWPerK": 0.3,
+        "airflowHeatTransferWPerKPerMps": 0.015,
+        "maxAirSpeedMps": 25,
+        "initialTemperatureK": 293.15,
+        "derateStartTemperatureK": 313.15,
+        "cutoffTemperatureK": 333.15
+      }
+    },
+    "OcvPoint": {
+      "soc": 0,
+      "voltageV": 12
+    },
+    "ParameterProvenance": {
+      "path": "rotors",
+      "sourceType": "Estimated",
+      "source": "Synthetic symmetric test quad; not manufacturer data",
+      "confidence": 0.3
+    },
+    "GroundEffectProfile": {
+      "coefficient": 1,
+      "minHeightRadiusRatio": 0.25,
+      "maxMultiplier": 1.5
+    },
+    "RpmPerformancePoint": {
+      "rpm": 0,
+      "thrustN": 0,
+      "torqueNm": 0,
+      "currentA": 0
+    },
+    "PerformanceMapPoint": {
+      "rpm": 2500,
+      "advanceRatio": -0.5,
+      "ct": 1.2190267079386905,
+      "cq": 0.18324667764289548
+    },
+    "AeroSurfaceProfile": {
+      "surfaceId": "right",
+      "positionLocalM": [
+        0.2,
+        0,
+        0
+      ],
+      "normalLocal": [
+        0,
+        0,
+        1
+      ],
+      "areaM2": 0.020000000000000004,
+      "dragCoefficient": 1
+    },
+    "EfficiencyPoint": {
+      "loadFraction": 0,
+      "efficiency": 0.85
+    },
+    "RotorOperatingEnvelopeProfile": {
+      "model": "ReportOnly",
+      "maxAxialClimbSpeedMps": 10,
+      "maxAxialDescentSpeedMps": 5,
+      "maxLateralSpeedMps": 20
+    }
+  },
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "name": "Stage 12 thermal acceptance",
+    "manufacturer": "DroneLab",
+    "model": "Synthetic 1 kg test quad",
+    "description": "Synthetic coupled thermal regression fixture; estimated one-node temperatures and protection thresholds, not calibrated hardware."
+  },
+  "name": "Новый дрон",
+  "manufacturer": "DroneLab",
+  "model": "Synthetic 1 kg test quad",
+  "description": "Synthetic coupled thermal regression fixture; estimated one-node temperatures and protection thresholds, not calibrated hardware.",
+  "coordinateSystem": {
+    "convention": "UnityLeftHandedYUpZForward",
+    "lengthUnit": "m",
+    "modelScaleMetersPerUnit": 1
+  },
+  "convention": "UnityLeftHandedYUpZForward",
+  "lengthUnit": "m",
+  "modelScaleMetersPerUnit": 1,
+  "physicsConfiguration": {
+    "fidelity": "Advanced",
+    "modules": {
+      "motorResponse": true,
+      "bodyDrag": true,
+      "windInteraction": true,
+      "groundEffect": true,
+      "rotorAerodynamics": true,
+      "bladeFlapping": true,
+      "inducedDrag": true,
+      "batteryDischarge": true,
+      "batteryVoltageSag": true,
+      "motorElectrical": true,
+      "gyroscopicRotorEffects": true
+    }
+  },
+  "fidelity": "Advanced",
+  "modules": {
+    "motorResponse": true,
+    "bodyDrag": true,
+    "windInteraction": true,
+    "groundEffect": true,
+    "rotorAerodynamics": true,
+    "bladeFlapping": true,
+    "inducedDrag": true,
+    "batteryDischarge": true,
+    "batteryVoltageSag": true,
+    "motorElectrical": true,
+    "gyroscopicRotorEffects": true
+  },
+  "motorResponse": true,
+  "bodyDrag": true,
+  "windInteraction": true,
+  "groundEffect": true,
+  "rotorAerodynamics": true,
+  "bladeFlapping": true,
+  "inducedDrag": true,
+  "batteryDischarge": true,
+  "batteryVoltageSag": true,
+  "motorElectrical": true,
+  "gyroscopicRotorEffects": true,
+  "massProperties": {
+    "massKg": 1,
+    "centerOfMassLocalM": [
+      0,
+      0,
+      0
+    ],
+    "dimensionsM": [
+      0.4,
+      0.1,
+      0.4
+    ],
+    "inertia": {
+      "mode": "ManualPrincipal",
+      "principalMomentsKgM2": [
+        0.014,
+        0.026,
+        0.018
+      ],
+      "principalAxesRotationXyzw": [
+        0,
+        0.17364817766693033,
+        0,
+        0.984807753012208
+      ]
+    }
+  },
+  "massKg": 1,
+  "centerOfMassLocalM": [
+    0,
+    0,
+    0
+  ],
+  "dimensionsM": [
+    0.4,
+    0.1,
+    0.4
+  ],
+  "inertia": {
+    "mode": "ManualPrincipal",
+    "principalMomentsKgM2": [
+      0.014,
+      0.026,
+      0.018
+    ],
+    "principalAxesRotationXyzw": [
+      0,
+      0.17364817766693033,
+      0,
+      0.984807753012208
+    ]
+  },
+  "mode": "ManualPrincipal",
+  "principalMomentsKgM2": [
+    0.014,
+    0.026,
+    0.018
+  ],
+  "principalAxesRotationXyzw": [
+    0,
+    0,
+    0,
+    1
+  ],
+  "rotors": [
+    {
+      "rotorId": "FL",
+      "geometry": {
+        "positionLocalM": [
+          -0.14,
+          0,
+          0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35,
+          "thermal": {
+            "heatCapacityJPerK": 15,
+            "heatTransferWPerK": 0.25,
+            "airflowHeatTransferWPerKPerMps": 0.04,
+            "maxAirSpeedMps": 25,
+            "initialTemperatureK": 293.15,
+            "derateStartTemperatureK": 343.15,
+            "cutoffTemperatureK": 373.15
+          },
+          "escThermal": {
+            "heatCapacityJPerK": 10,
+            "heatTransferWPerK": 0.12,
+            "airflowHeatTransferWPerKPerMps": 0.02,
+            "maxAirSpeedMps": 25,
+            "initialTemperatureK": 293.15,
+            "derateStartTemperatureK": 333.15,
+            "cutoffTemperatureK": 353.15
+          },
+          "resistanceReferenceTemperatureK": 293.15,
+          "resistanceTemperatureCoefficientPerK": 0.0039
+        },
+        "dynamicsModel": "RotorInertia",
+        "rotatingInertiaKgM2": 5e-06
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "CtCq",
+        "ct": 1.1082060981260822,
+        "cq": 0.17452064537418616
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001,
+        "bladeFlappingCoefficient": 5e-06,
+        "inducedDragCoefficient": 0.0001,
+        "translationalLiftCoefficientKgPerM": 0.002,
+        "referenceAirDensityKgM3": 1.225,
+        "maxAirSpeedMps": 15,
+        "maxThrustCorrectionFraction": 0.25,
+        "maxFlappingMomentRatio": 0.2
+      }
+    },
+    {
+      "rotorId": "FR",
+      "geometry": {
+        "positionLocalM": [
+          0.14,
+          0,
+          0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35,
+          "thermal": {
+            "heatCapacityJPerK": 15,
+            "heatTransferWPerK": 0.25,
+            "airflowHeatTransferWPerKPerMps": 0.04,
+            "maxAirSpeedMps": 25,
+            "initialTemperatureK": 293.15,
+            "derateStartTemperatureK": 343.15,
+            "cutoffTemperatureK": 373.15
+          },
+          "escThermal": {
+            "heatCapacityJPerK": 10,
+            "heatTransferWPerK": 0.12,
+            "airflowHeatTransferWPerKPerMps": 0.02,
+            "maxAirSpeedMps": 25,
+            "initialTemperatureK": 293.15,
+            "derateStartTemperatureK": 333.15,
+            "cutoffTemperatureK": 353.15
+          },
+          "resistanceReferenceTemperatureK": 293.15,
+          "resistanceTemperatureCoefficientPerK": 0.0039
+        },
+        "dynamicsModel": "RotorInertia",
+        "rotatingInertiaKgM2": 5e-06
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "CtCq",
+        "ct": 1.1082060981260822,
+        "cq": 0.17452064537418616
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001,
+        "bladeFlappingCoefficient": 5e-06,
+        "inducedDragCoefficient": 0.0001,
+        "translationalLiftCoefficientKgPerM": 0.002,
+        "referenceAirDensityKgM3": 1.225,
+        "maxAirSpeedMps": 15,
+        "maxThrustCorrectionFraction": 0.25,
+        "maxFlappingMomentRatio": 0.2
+      }
+    },
+    {
+      "rotorId": "RR",
+      "geometry": {
+        "positionLocalM": [
+          0.14,
+          0,
+          -0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35,
+          "thermal": {
+            "heatCapacityJPerK": 15,
+            "heatTransferWPerK": 0.25,
+            "airflowHeatTransferWPerKPerMps": 0.04,
+            "maxAirSpeedMps": 25,
+            "initialTemperatureK": 293.15,
+            "derateStartTemperatureK": 343.15,
+            "cutoffTemperatureK": 373.15
+          },
+          "escThermal": {
+            "heatCapacityJPerK": 10,
+            "heatTransferWPerK": 0.12,
+            "airflowHeatTransferWPerKPerMps": 0.02,
+            "maxAirSpeedMps": 25,
+            "initialTemperatureK": 293.15,
+            "derateStartTemperatureK": 333.15,
+            "cutoffTemperatureK": 353.15
+          },
+          "resistanceReferenceTemperatureK": 293.15,
+          "resistanceTemperatureCoefficientPerK": 0.0039
+        },
+        "dynamicsModel": "RotorInertia",
+        "rotatingInertiaKgM2": 5e-06
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "CtCq",
+        "ct": 1.1082060981260822,
+        "cq": 0.17452064537418616
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001,
+        "bladeFlappingCoefficient": 5e-06,
+        "inducedDragCoefficient": 0.0001,
+        "translationalLiftCoefficientKgPerM": 0.002,
+        "referenceAirDensityKgM3": 1.225,
+        "maxAirSpeedMps": 15,
+        "maxThrustCorrectionFraction": 0.25,
+        "maxFlappingMomentRatio": 0.2
+      }
+    },
+    {
+      "rotorId": "RL",
+      "geometry": {
+        "positionLocalM": [
+          -0.14,
+          0,
+          -0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35,
+          "thermal": {
+            "heatCapacityJPerK": 15,
+            "heatTransferWPerK": 0.25,
+            "airflowHeatTransferWPerKPerMps": 0.04,
+            "maxAirSpeedMps": 25,
+            "initialTemperatureK": 293.15,
+            "derateStartTemperatureK": 343.15,
+            "cutoffTemperatureK": 373.15
+          },
+          "escThermal": {
+            "heatCapacityJPerK": 10,
+            "heatTransferWPerK": 0.12,
+            "airflowHeatTransferWPerKPerMps": 0.02,
+            "maxAirSpeedMps": 25,
+            "initialTemperatureK": 293.15,
+            "derateStartTemperatureK": 333.15,
+            "cutoffTemperatureK": 353.15
+          },
+          "resistanceReferenceTemperatureK": 293.15,
+          "resistanceTemperatureCoefficientPerK": 0.0039
+        },
+        "dynamicsModel": "RotorInertia",
+        "rotatingInertiaKgM2": 5e-06
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "CtCq",
+        "ct": 1.1082060981260822,
+        "cq": 0.17452064537418616
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001,
+        "bladeFlappingCoefficient": 5e-06,
+        "inducedDragCoefficient": 0.0001,
+        "translationalLiftCoefficientKgPerM": 0.002,
+        "referenceAirDensityKgM3": 1.225,
+        "maxAirSpeedMps": 15,
+        "maxThrustCorrectionFraction": 0.25,
+        "maxFlappingMomentRatio": 0.2
+      }
+    }
+  ],
+  "rotorId": "FL",
+  "geometry": {
+    "positionLocalM": [
+      -0.14,
+      0,
+      0.14
+    ],
+    "thrustAxisLocal": [
+      0,
+      1,
+      0
+    ],
+    "spinDirection": "CW"
+  },
+  "positionLocalM": [
+    -0.14,
+    0,
+    0.14
+  ],
+  "thrustAxisLocal": [
+    0,
+    1,
+    0
+  ],
+  "spinDirection": "CW",
+  "motor": {
+    "minRpm": 0,
+    "idleRpm": 0,
+    "maxRpm": 10000,
+    "responseTimeUpS": 0.06,
+    "responseTimeDownS": 0.08,
+    "electrical": {
+      "motorKvRpmPerVolt": 900,
+      "motorResistanceOhm": 0.08,
+      "noLoadCurrentA": 0.4,
+      "maxCurrentA": 30,
+      "maxPowerW": 400,
+      "motorEfficiency": 0.85,
+      "escEfficiency": 0.95,
+      "escMaxCurrentA": 35,
+      "thermal": {
+        "heatCapacityJPerK": 15,
+        "heatTransferWPerK": 0.25,
+        "airflowHeatTransferWPerKPerMps": 0.04,
+        "maxAirSpeedMps": 25,
+        "initialTemperatureK": 293.15,
+        "derateStartTemperatureK": 343.15,
+        "cutoffTemperatureK": 373.15
+      },
+      "escThermal": {
+        "heatCapacityJPerK": 10,
+        "heatTransferWPerK": 0.12,
+        "airflowHeatTransferWPerKPerMps": 0.02,
+        "maxAirSpeedMps": 25,
+        "initialTemperatureK": 293.15,
+        "derateStartTemperatureK": 333.15,
+        "cutoffTemperatureK": 353.15
+      },
+      "resistanceReferenceTemperatureK": 293.15,
+      "resistanceTemperatureCoefficientPerK": 0.0039
+    },
+    "dynamicsModel": "RotorInertia",
+    "rotatingInertiaKgM2": 5e-06
+  },
+  "minRpm": 0,
+  "idleRpm": 0,
+  "maxRpm": 10000,
+  "responseTimeUpS": 0.06,
+  "responseTimeDownS": 0.08,
+  "electrical": {
+    "motorKvRpmPerVolt": 900,
+    "motorResistanceOhm": 0.08,
+    "noLoadCurrentA": 0.4,
+    "maxCurrentA": 30,
+    "maxPowerW": 400,
+    "motorEfficiency": 0.85,
+    "escEfficiency": 0.95,
+    "escMaxCurrentA": 35,
+    "thermal": {
+      "heatCapacityJPerK": 15,
+      "heatTransferWPerK": 0.25,
+      "airflowHeatTransferWPerKPerMps": 0.04,
+      "maxAirSpeedMps": 25,
+      "initialTemperatureK": 293.15,
+      "derateStartTemperatureK": 343.15,
+      "cutoffTemperatureK": 373.15
+    },
+    "escThermal": {
+      "heatCapacityJPerK": 10,
+      "heatTransferWPerK": 0.12,
+      "airflowHeatTransferWPerKPerMps": 0.02,
+      "maxAirSpeedMps": 25,
+      "initialTemperatureK": 293.15,
+      "derateStartTemperatureK": 333.15,
+      "cutoffTemperatureK": 353.15
+    },
+    "resistanceReferenceTemperatureK": 293.15,
+    "resistanceTemperatureCoefficientPerK": 0.0039
+  },
+  "motorKvRpmPerVolt": 900,
+  "motorResistanceOhm": 0.08,
+  "noLoadCurrentA": 0.4,
+  "maxCurrentA": 30,
+  "maxPowerW": 400,
+  "motorEfficiency": 0.85,
+  "escEfficiency": 0.95,
+  "escMaxCurrentA": 35,
+  "thermal": {
+    "heatCapacityJPerK": 15,
+    "heatTransferWPerK": 0.25,
+    "airflowHeatTransferWPerKPerMps": 0.04,
+    "maxAirSpeedMps": 25,
+    "initialTemperatureK": 293.15,
+    "derateStartTemperatureK": 343.15,
+    "cutoffTemperatureK": 373.15
+  },
+  "heatCapacityJPerK": 15,
+  "heatTransferWPerK": 0.25,
+  "airflowHeatTransferWPerKPerMps": 0.04,
+  "maxAirSpeedMps": 25,
+  "initialTemperatureK": 293.15,
+  "derateStartTemperatureK": 343.15,
+  "cutoffTemperatureK": 373.15,
+  "escThermal": {
+    "heatCapacityJPerK": 10,
+    "heatTransferWPerK": 0.12,
+    "airflowHeatTransferWPerKPerMps": 0.02,
+    "maxAirSpeedMps": 25,
+    "initialTemperatureK": 293.15,
+    "derateStartTemperatureK": 333.15,
+    "cutoffTemperatureK": 353.15
+  },
+  "resistanceReferenceTemperatureK": 293.15,
+  "resistanceTemperatureCoefficientPerK": 0.0039,
+  "dynamicsModel": "RotorInertia",
+  "rotatingInertiaKgM2": 5e-06,
+  "propeller": {
+    "diameterM": 0.127,
+    "pitchM": 0.0762,
+    "bladeCount": 3
+  },
+  "diameterM": 0.127,
+  "pitchM": 0.0762,
+  "bladeCount": 3,
+  "performance": {
+    "model": "CtCq",
+    "ct": 1.1082060981260822,
+    "cq": 0.17452064537418616
+  },
+  "ct": 1.1082060981260822,
+  "cq": 0.17452064537418616,
+  "advancedAerodynamics": {
+    "rotorDragCoefficientKgPerRad": 0.0001,
+    "bladeFlappingCoefficient": 5e-06,
+    "inducedDragCoefficient": 0.0001,
+    "translationalLiftCoefficientKgPerM": 0.002,
+    "referenceAirDensityKgM3": 1.225,
+    "maxAirSpeedMps": 15,
+    "maxThrustCorrectionFraction": 0.25,
+    "maxFlappingMomentRatio": 0.2
+  },
+  "rotorDragCoefficientKgPerRad": 0.0001,
+  "bladeFlappingCoefficient": 5e-06,
+  "inducedDragCoefficient": 0.0001,
+  "translationalLiftCoefficientKgPerM": 0.002,
+  "referenceAirDensityKgM3": 1.225,
+  "maxThrustCorrectionFraction": 0.25,
+  "maxFlappingMomentRatio": 0.2,
+  "bodyAerodynamics": {
+    "model": "ProjectedArea",
+    "dragCoefficient": 1,
+    "projectedArea": {
+      "mode": "ManualDirectionalLUT",
+      "samples": [
+        {
+          "directionLocal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "areaM2": 0.04000000000000001
+        },
+        {
+          "directionLocal": [
+            0.0,
+            0.7071067811865475,
+            -0.7071067811865475
+          ],
+          "areaM2": 0.14142135623730953
+        },
+        {
+          "directionLocal": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "areaM2": 0.16000000000000003
+        },
+        {
+          "directionLocal": [
+            0.0,
+            0.7071067811865475,
+            0.7071067811865475
+          ],
+          "areaM2": 0.14142135623730953
+        },
+        {
+          "directionLocal": [
+            0.5773502691896258,
+            -0.5773502691896258,
+            -0.5773502691896258
+          ],
+          "areaM2": 0.13856406460551024
+        },
+        {
+          "directionLocal": [
+            0.7071067811865475,
+            -0.7071067811865475,
+            0.0
+          ],
+          "areaM2": 0.14142135623730953
+        },
+        {
+          "directionLocal": [
+            0.5773502691896258,
+            -0.5773502691896258,
+            0.5773502691896258
+          ],
+          "areaM2": 0.13856406460551024
+        },
+        {
+          "directionLocal": [
+            0.7071067811865475,
+            0.0,
+            -0.7071067811865475
+          ],
+          "areaM2": 0.05656854249492381
+        },
+        {
+          "directionLocal": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "areaM2": 0.04000000000000001
+        },
+        {
+          "directionLocal": [
+            0.7071067811865475,
+            0.0,
+            0.7071067811865475
+          ],
+          "areaM2": 0.05656854249492381
+        },
+        {
+          "directionLocal": [
+            0.5773502691896258,
+            0.5773502691896258,
+            -0.5773502691896258
+          ],
+          "areaM2": 0.13856406460551024
+        },
+        {
+          "directionLocal": [
+            0.7071067811865475,
+            0.7071067811865475,
+            0.0
+          ],
+          "areaM2": 0.14142135623730953
+        },
+        {
+          "directionLocal": [
+            0.5773502691896258,
+            0.5773502691896258,
+            0.5773502691896258
+          ],
+          "areaM2": 0.13856406460551024
+        }
+      ]
+    },
+    "dragApplicationPointLocalM": [
+      0,
+      0.01,
+      0
+    ]
+  },
+  "dragCoefficient": 1,
+  "projectedArea": {
+    "mode": "ManualDirectionalLUT",
+    "samples": [
+      {
+        "directionLocal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "areaM2": 0.04000000000000001
+      },
+      {
+        "directionLocal": [
+          0.0,
+          0.7071067811865475,
+          -0.7071067811865475
+        ],
+        "areaM2": 0.14142135623730953
+      },
+      {
+        "directionLocal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "areaM2": 0.16000000000000003
+      },
+      {
+        "directionLocal": [
+          0.0,
+          0.7071067811865475,
+          0.7071067811865475
+        ],
+        "areaM2": 0.14142135623730953
+      },
+      {
+        "directionLocal": [
+          0.5773502691896258,
+          -0.5773502691896258,
+          -0.5773502691896258
+        ],
+        "areaM2": 0.13856406460551024
+      },
+      {
+        "directionLocal": [
+          0.7071067811865475,
+          -0.7071067811865475,
+          0.0
+        ],
+        "areaM2": 0.14142135623730953
+      },
+      {
+        "directionLocal": [
+          0.5773502691896258,
+          -0.5773502691896258,
+          0.5773502691896258
+        ],
+        "areaM2": 0.13856406460551024
+      },
+      {
+        "directionLocal": [
+          0.7071067811865475,
+          0.0,
+          -0.7071067811865475
+        ],
+        "areaM2": 0.05656854249492381
+      },
+      {
+        "directionLocal": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "areaM2": 0.04000000000000001
+      },
+      {
+        "directionLocal": [
+          0.7071067811865475,
+          0.0,
+          0.7071067811865475
+        ],
+        "areaM2": 0.05656854249492381
+      },
+      {
+        "directionLocal": [
+          0.5773502691896258,
+          0.5773502691896258,
+          -0.5773502691896258
+        ],
+        "areaM2": 0.13856406460551024
+      },
+      {
+        "directionLocal": [
+          0.7071067811865475,
+          0.7071067811865475,
+          0.0
+        ],
+        "areaM2": 0.14142135623730953
+      },
+      {
+        "directionLocal": [
+          0.5773502691896258,
+          0.5773502691896258,
+          0.5773502691896258
+        ],
+        "areaM2": 0.13856406460551024
+      }
+    ]
+  },
+  "samples": [
+    {
+      "directionLocal": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "areaM2": 0.04000000000000001
+    },
+    {
+      "directionLocal": [
+        0.0,
+        0.7071067811865475,
+        -0.7071067811865475
+      ],
+      "areaM2": 0.14142135623730953
+    },
+    {
+      "directionLocal": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "areaM2": 0.16000000000000003
+    },
+    {
+      "directionLocal": [
+        0.0,
+        0.7071067811865475,
+        0.7071067811865475
+      ],
+      "areaM2": 0.14142135623730953
+    },
+    {
+      "directionLocal": [
+        0.5773502691896258,
+        -0.5773502691896258,
+        -0.5773502691896258
+      ],
+      "areaM2": 0.13856406460551024
+    },
+    {
+      "directionLocal": [
+        0.7071067811865475,
+        -0.7071067811865475,
+        0.0
+      ],
+      "areaM2": 0.14142135623730953
+    },
+    {
+      "directionLocal": [
+        0.5773502691896258,
+        -0.5773502691896258,
+        0.5773502691896258
+      ],
+      "areaM2": 0.13856406460551024
+    },
+    {
+      "directionLocal": [
+        0.7071067811865475,
+        0.0,
+        -0.7071067811865475
+      ],
+      "areaM2": 0.05656854249492381
+    },
+    {
+      "directionLocal": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "areaM2": 0.04000000000000001
+    },
+    {
+      "directionLocal": [
+        0.7071067811865475,
+        0.0,
+        0.7071067811865475
+      ],
+      "areaM2": 0.05656854249492381
+    },
+    {
+      "directionLocal": [
+        0.5773502691896258,
+        0.5773502691896258,
+        -0.5773502691896258
+      ],
+      "areaM2": 0.13856406460551024
+    },
+    {
+      "directionLocal": [
+        0.7071067811865475,
+        0.7071067811865475,
+        0.0
+      ],
+      "areaM2": 0.14142135623730953
+    },
+    {
+      "directionLocal": [
+        0.5773502691896258,
+        0.5773502691896258,
+        0.5773502691896258
+      ],
+      "areaM2": 0.13856406460551024
+    }
+  ],
+  "directionLocal": [
+    1,
+    0,
+    0
+  ],
+  "areaM2": 0.04000000000000001,
+  "dragApplicationPointLocalM": [
+    0,
+    0.01,
+    0
+  ],
+  "powerSystem": {
+    "battery": {
+      "mode": "Electrical",
+      "cellCount": 4,
+      "nominalVoltageV": 14.8,
+      "capacityAh": 1.3,
+      "initialSoc": 1,
+      "internalResistanceOhm": 0.06,
+      "maxDischargeCurrentA": 80,
+      "ocvCurve": [
+        {
+          "soc": 0,
+          "voltageV": 12
+        },
+        {
+          "soc": 0.2,
+          "voltageV": 14
+        },
+        {
+          "soc": 0.8,
+          "voltageV": 15.6
+        },
+        {
+          "soc": 1,
+          "voltageV": 16.8
+        }
+      ],
+      "thermal": {
+        "heatCapacityJPerK": 200,
+        "heatTransferWPerK": 0.3,
+        "airflowHeatTransferWPerKPerMps": 0.015,
+        "maxAirSpeedMps": 25,
+        "initialTemperatureK": 293.15,
+        "derateStartTemperatureK": 313.15,
+        "cutoffTemperatureK": 333.15
+      }
+    },
+    "thermalEnabled": true
+  },
+  "battery": {
+    "mode": "Electrical",
+    "cellCount": 4,
+    "nominalVoltageV": 14.8,
+    "capacityAh": 1.3,
+    "initialSoc": 1,
+    "internalResistanceOhm": 0.06,
+    "maxDischargeCurrentA": 80,
+    "ocvCurve": [
+      {
+        "soc": 0,
+        "voltageV": 12
+      },
+      {
+        "soc": 0.2,
+        "voltageV": 14
+      },
+      {
+        "soc": 0.8,
+        "voltageV": 15.6
+      },
+      {
+        "soc": 1,
+        "voltageV": 16.8
+      }
+    ],
+    "thermal": {
+      "heatCapacityJPerK": 200,
+      "heatTransferWPerK": 0.3,
+      "airflowHeatTransferWPerKPerMps": 0.015,
+      "maxAirSpeedMps": 25,
+      "initialTemperatureK": 293.15,
+      "derateStartTemperatureK": 313.15,
+      "cutoffTemperatureK": 333.15
+    }
+  },
+  "cellCount": 4,
+  "nominalVoltageV": 14.8,
+  "capacityAh": 1.3,
+  "initialSoc": 1,
+  "internalResistanceOhm": 0.06,
+  "maxDischargeCurrentA": 80,
+  "ocvCurve": [
+    {
+      "soc": 0,
+      "voltageV": 12
+    },
+    {
+      "soc": 0.2,
+      "voltageV": 14
+    },
+    {
+      "soc": 0.8,
+      "voltageV": 15.6
+    },
+    {
+      "soc": 1,
+      "voltageV": 16.8
+    }
+  ],
+  "soc": 0,
+  "voltageV": 12,
+  "thermalEnabled": true,
+  "parameterProvenance": [
+    {
+      "path": "rotors",
+      "sourceType": "Estimated",
+      "source": "Synthetic symmetric test quad; not manufacturer data",
+      "confidence": 0.3
+    },
+    {
+      "path": "groundEffect / rotors.advancedAerodynamics",
+      "sourceType": "Estimated",
+      "source": "Demo coefficients for bounded ground effect and linear rotor drag; not measurements",
+      "confidence": 0.3
+    },
+    {
+      "path": "powerSystem / rotors.motor.electrical",
+      "sourceType": "Estimated",
+      "source": "Synthetic 4S / 1.3Ah battery and motor power demo; not calibrated hardware data.",
+      "confidence": 0.2
+    },
+    {
+      "path": "massProperties.inertia / rotors.performance / bodyAerodynamics",
+      "sourceType": "Estimated",
+      "source": "Synthetic combined acceptance fixture; manual principal inertia and analytic box directional areas, not measured mesh or hardware.",
+      "confidence": 0.2
+    },
+    {
+      "path": "rotors.advancedAerodynamics",
+      "sourceType": "Estimated",
+      "source": "Stage 10 empirical rotor-flow regression coefficients and envelope; synthetic estimates, not measured aircraft data.",
+      "confidence": 0.2
+    },
+    {
+      "path": "rotors.motor.dynamicsModel / rotatingInertiaKgM2",
+      "sourceType": "Estimated",
+      "source": "Synthetic stage 11 spin-axis inertia for motor rotor plus propeller; not measured aircraft data.",
+      "confidence": 0.2
+    },
+    {
+      "path": "powerSystem.battery.thermal / rotors.motor.electrical.thermal / escThermal",
+      "sourceType": "Estimated",
+      "source": "Synthetic lumped thermal capacities, cooling and derating thresholds for regression. Copper resistance coefficient 0.0039/K from maxon Product Range 2026/27, p.94; no real-drone calibration.",
+      "confidence": 0.2
+    }
+  ],
+  "path": "rotors",
+  "sourceType": "User",
+  "source": "Ввод в конфигураторе",
+  "confidence": 1,
+  "coefficient": 1,
+  "minHeightRadiusRatio": 0.25,
+  "maxMultiplier": 1.5,
+  "kThrustNPerRadPerSecSquared": 8.945647303782003e-06,
+  "kTorqueNmPerRadPerSecSquared": 1.7891294607564007e-07,
+  "dragCd": [
+    1.1,
+    1.2,
+    1.1
+  ],
+  "referenceAreaM2": [
+    0.04,
+    0.16,
+    0.04
+  ],
+  "outOfRangePolicy": "Clamp",
+  "rpmTable": [
+    {
+      "rpm": 0,
+      "thrustN": 0,
+      "torqueNm": 0,
+      "currentA": 0
+    },
+    {
+      "rpm": 2500,
+      "thrustN": 0.613125,
+      "torqueNm": 0.0122625,
+      "currentA": 1
+    },
+    {
+      "rpm": 5000,
+      "thrustN": 2.4525,
+      "torqueNm": 0.04905,
+      "currentA": 3
+    },
+    {
+      "rpm": 7500,
+      "thrustN": 5.518125,
+      "torqueNm": 0.121,
+      "currentA": 7
+    },
+    {
+      "rpm": 10000,
+      "thrustN": 9.81,
+      "torqueNm": 0.25,
+      "currentA": 12
+    }
+  ],
+  "rpm": 0,
+  "thrustN": 0,
+  "torqueNm": 0,
+  "currentA": 0,
+  "performanceMap": [
+    {
+      "rpm": 2500,
+      "advanceRatio": -0.5,
+      "ct": 1.2190267079386905,
+      "cq": 0.18324667764289548
+    },
+    {
+      "rpm": 2500,
+      "advanceRatio": 0,
+      "ct": 1.1082060981260822,
+      "cq": 0.17452064537418616
+    },
+    {
+      "rpm": 2500,
+      "advanceRatio": 0.5,
+      "ct": 0.7757442686882575,
+      "cq": 0.14834254856805823
+    },
+    {
+      "rpm": 5000,
+      "advanceRatio": -0.5,
+      "ct": 1.2190267079386905,
+      "cq": 0.18324667764289548
+    },
+    {
+      "rpm": 5000,
+      "advanceRatio": 0,
+      "ct": 1.1082060981260822,
+      "cq": 0.17452064537418616
+    },
+    {
+      "rpm": 5000,
+      "advanceRatio": 0.5,
+      "ct": 0.7757442686882575,
+      "cq": 0.14834254856805823
+    },
+    {
+      "rpm": 10000,
+      "advanceRatio": -0.5,
+      "ct": 1.2190267079386905,
+      "cq": 0.18324667764289548
+    },
+    {
+      "rpm": 10000,
+      "advanceRatio": 0,
+      "ct": 1.1082060981260822,
+      "cq": 0.17452064537418616
+    },
+    {
+      "rpm": 10000,
+      "advanceRatio": 0.5,
+      "ct": 0.7757442686882575,
+      "cq": 0.14834254856805823
+    }
+  ],
+  "advanceRatio": -0.5,
+  "surfaces": [
+    {
+      "surfaceId": "right",
+      "positionLocalM": [
+        0.2,
+        0,
+        0
+      ],
+      "normalLocal": [
+        0,
+        0,
+        1
+      ],
+      "areaM2": 0.020000000000000004,
+      "dragCoefficient": 1
+    },
+    {
+      "surfaceId": "left",
+      "positionLocalM": [
+        -0.2,
+        0,
+        0
+      ],
+      "normalLocal": [
+        0,
+        0,
+        1
+      ],
+      "areaM2": 0.020000000000000004,
+      "dragCoefficient": 1
+    },
+    {
+      "surfaceId": "front",
+      "positionLocalM": [
+        0,
+        0,
+        0.2
+      ],
+      "normalLocal": [
+        1,
+        0,
+        0
+      ],
+      "areaM2": 0.020000000000000004,
+      "dragCoefficient": 1
+    },
+    {
+      "surfaceId": "rear",
+      "positionLocalM": [
+        0,
+        0,
+        -0.2
+      ],
+      "normalLocal": [
+        1,
+        0,
+        0
+      ],
+      "areaM2": 0.020000000000000004,
+      "dragCoefficient": 1
+    },
+    {
+      "surfaceId": "top",
+      "positionLocalM": [
+        0,
+        0.05,
+        0
+      ],
+      "normalLocal": [
+        0,
+        1,
+        0
+      ],
+      "areaM2": 0.08000000000000002,
+      "dragCoefficient": 1
+    },
+    {
+      "surfaceId": "bottom",
+      "positionLocalM": [
+        0,
+        -0.05,
+        0
+      ],
+      "normalLocal": [
+        0,
+        1,
+        0
+      ],
+      "areaM2": 0.08000000000000002,
+      "dragCoefficient": 1
+    }
+  ],
+  "surfaceId": "right",
+  "normalLocal": [
+    0,
+    1,
+    0
+  ],
+  "rotationEulerDeg": [
+    0,
+    0,
+    0
+  ]
+}

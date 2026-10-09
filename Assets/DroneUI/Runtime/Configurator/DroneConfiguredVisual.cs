@@ -1,0 +1,39 @@
+using System;
+using DroneLab.Configurator;
+using DroneLab.Simulation;
+using UnityEngine;
+
+namespace DroneLab.UI
+{
+    /// <summary>Loads only visual assets; the existing body owns all physical forces and its unit-scale root.</summary>
+    internal sealed class DroneConfiguredVisual : MonoBehaviour
+    {
+        private DroneProfileDocument document;
+        private GameObject visual;
+        private RuntimeGltfModelLoader loader;
+        public void Configure(DroneProfileDocument value)
+        {
+            document=value.Copy();
+            foreach(var renderer in GetComponentsInChildren<Renderer>())renderer.enabled=false;
+            foreach(var collider in GetComponentsInChildren<Collider>())collider.enabled=false;
+            var box=GetComponent<BoxCollider>();if(box==null)box=gameObject.AddComponent<BoxCollider>();box.enabled=true;box.center=Vector3.zero;
+            box.size=DroneModelViewport.Vec(document.profile["massProperties"]["dimensionsM"]);
+            visual=new GameObject("Configured drone visual");visual.transform.SetParent(transform,false);
+            var shell=GameObject.CreatePrimitive(PrimitiveType.Cube);shell.name="Profile envelope";shell.transform.SetParent(visual.transform,false);
+            shell.transform.localScale=box.size;Destroy(shell.GetComponent<Collider>());shell.GetComponent<Renderer>().sharedMaterial=Resources.Load<Material>("DroneLab/ConfiguratorSchematic");
+        }
+        private async void Start()
+        {
+            try {
+                string path=DroneProfileLibrary.ModelPath(document);if(string.IsNullOrEmpty(path))return;
+                DroneModelFiles.ValidateLocalModel(path);
+                loader=gameObject.AddComponent<RuntimeGltfModelLoader>();var loaded=await loader.LoadAsync(path,visual.transform);
+                if(this==null)return;if(!loaded.success){Debug.LogWarning("DroneLab model: "+loaded.error,this);return;}
+                var t=loader.LoadedRoot;t.localScale=Vector3.one*(float)(double)document.profile["coordinateSystem"]["modelScaleMetersPerUnit"];
+                t.localRotation=Quaternion.Euler(DroneModelViewport.Vec(document.visual["rotationEulerDeg"]));
+                if((bool?)document.visual["centerModel"]??true)if(RuntimeGltfModelLoader.TryGetBoundsInFrame(t,visual.transform,out var bounds))t.localPosition=-bounds.center;
+                foreach(var renderer in visual.GetComponentsInChildren<Renderer>())if(!renderer.transform.IsChildOf(t))renderer.enabled=false;
+            }catch(Exception ex){Debug.LogWarning("DroneLab model: "+ex.Message,this);}
+        }
+    }
+}

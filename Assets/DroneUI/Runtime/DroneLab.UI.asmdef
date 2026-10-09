@@ -1,4 +1,14 @@
 {
   "name": "DroneLab.UI",
-  "references": ["DroneLab.Physics", "DroneLab.Simulation", "DroneLab.Demo", "DroneLab.Environment.Enviro", "Enviro3.Runtime", "Unity.InputSystem"]
+  "references": [
+    "DroneLab.Physics",
+    "DroneLab.Simulation",
+    "DroneLab.Demo",
+    "DroneLab.Environment.Enviro",
+    "Enviro3.Runtime",
+    "Unity.InputSystem",
+    "DroneLab.Configurator",
+    "Unity.RenderPipelines.HighDefinition.Runtime",
+    "Unity.RenderPipelines.Core.Runtime"
+  ]
 }

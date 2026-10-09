@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using DroneLab.Simulation;
 using UnityEngine;
 using UnityEngine.Events;
@@ -42,6 +43,7 @@ namespace DroneLab.UI
         private Button firstButton, returnFocus;
         private bool loading;
         private DroneScenariosScreen scenarioScreen;
+        private DroneDronesScreen dronesScreen;
 
         private void OnEnable()
         {
@@ -71,7 +73,7 @@ namespace DroneLab.UI
             SetBackground(background);
             stack = new VisualElement(); stack.AddToClassList("menu-stack"); stage.Add(stack);
             firstButton = AddMenuButton("НОВАЯ СИМУЛЯЦИЯ", MenuIconKind.Play, StartFlight, true);
-            AddMenuButton("КАТАЛОГ ДРОНОВ", MenuIconKind.Drone, () => OpenScreen(configureDrone, "Каталог дронов"));
+            AddMenuButton("КАТАЛОГ ДРОНОВ", MenuIconKind.Drone, OpenDrones);
             AddMenuButton("СЦЕНАРИИ И ОКРУЖЕНИЕ", MenuIconKind.Landscape, OpenScenarios);
             AddMenuButton("ЛАБОРАТОРИЯ", MenuIconKind.Laboratory, () => OpenScreen(laboratory, "Лаборатория"));
             var divider = new VisualElement(); divider.AddToClassList("menu-divider"); stack.Add(divider);
@@ -145,6 +147,7 @@ namespace DroneLab.UI
         private void OnKeyDown(KeyDownEvent evt)
         {
             if (evt.keyCode != KeyCode.Escape) return;
+            if (dronesScreen != null) { dronesScreen.RequestClose(); evt.StopPropagation(); return; }
             if (scenarioScreen != null) { scenarioScreen.RequestClose(); evt.StopPropagation(); return; }
             if (modal != null) CloseModal(); else ConfirmExit();
             evt.StopPropagation();
@@ -188,6 +191,11 @@ namespace DroneLab.UI
             var catalog = GetCatalog();
             scenarioScreen = new DroneScenariosScreen(stage, catalog, () => { scenarioScreen = null; stack.SetEnabled(!loading); (returnFocus ?? firstButton)?.Focus(); });
         }
+        private void OpenDrones()
+        {
+            CloseModal(); stack.SetEnabled(false);
+            dronesScreen = new DroneDronesScreen(stage, () => { dronesScreen = null; stack.SetEnabled(!loading); (returnFocus ?? firstButton)?.Focus(); });
+        }
         private void PrepareFlight(DroneScenarioCatalog catalog)
         {
             if (loading) return;
@@ -197,11 +205,15 @@ namespace DroneLab.UI
             var card = OpenModal("НОВАЯ СИМУЛЯЦИЯ", "launch-card");
             var map = Dropdown(card, "Карта", maps.ConvertAll(m => m.title), 0);
             var environment = Dropdown(card, "Профиль среды", profiles.ConvertAll(p => p.name), 0);
+            var drones = DroneProfileLibrary.LoadAll(out _).Where(d => !d.draft).ToList();
+            if (drones.Count == 0) { Text(card, "Сначала сохраните готовый профиль в каталоге дронов.", "muted-text"); return; }
+            string selectedId = PlayerPrefs.GetString("DroneLab.SelectedDrone", "");
+            var drone = Dropdown(card, "Дрон", drones.ConvertAll(d => d.Name), Mathf.Max(0,drones.FindIndex(d=>d.id == selectedId)));
             var error = Text(card, "Карта и профиль среды выбираются независимо.", "muted-text");
             var actions = Actions(card); ActionButton(actions, "НАЗАД", CloseModal);
             ActionButton(actions, "ЗАПУСТИТЬ", () => {
                 try {
-                    var operation = DroneScenarioLaunch.Load(maps[map.index], profiles[environment.index], catalog);
+                    var operation = DroneScenarioLaunch.Load(maps[map.index], profiles[environment.index], catalog, drones[drone.index]);
                     if (operation == null) throw new InvalidOperationException("Не удалось начать загрузку карты.");
                     loading = true; card.SetEnabled(false); status.text = "Загрузка симуляции…";
                 } catch (Exception ex) { error.text = ex.Message; }
@@ -329,6 +341,7 @@ namespace DroneLab.UI
         }
         private void OnDisable()
         {
+            dronesScreen?.Dispose(); dronesScreen = null;
             if (root != null)
             {
                 root.UnregisterCallback<GeometryChangedEvent>(Resize);

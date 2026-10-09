@@ -12,21 +12,21 @@ namespace DroneLab.UI
     internal static class DroneFileDialog
     {
         internal sealed class Result { public string Path; public bool Failed; public string Error; }
-        public static Task<Result> Pick(bool save, string directory)
+        public static Task<Result> Pick(bool save, string directory, string title = "Профиль среды", string fileName = "environment.json", string extensions = "json")
         {
             Directory.CreateDirectory(directory);
 #if UNITY_EDITOR
             try {
-                string path = save ? UnityEditor.EditorUtility.SaveFilePanel("Экспорт профиля среды", directory, "environment.json", "json") :
-                    UnityEditor.EditorUtility.OpenFilePanel("Импорт профиля среды", directory, "json");
+                string path = save ? UnityEditor.EditorUtility.SaveFilePanel("Экспорт: " + title, directory, fileName, extensions.Split(',')[0]) :
+                    UnityEditor.EditorUtility.OpenFilePanelWithFilters("Импорт: " + title, directory, new[] {title,extensions});
                 return Task.FromResult(new Result { Path = path });
             } catch (Exception ex) { return Task.FromResult(new Result { Failed = true, Error = ex.Message }); }
 #elif UNITY_STANDALONE_WIN
             var completion = new TaskCompletionSource<Result>(); var owner = GetActiveWindow();
-            var thread = new Thread(() => { try { completion.SetResult(Windows(save,directory,owner)); } catch (Exception ex) { completion.SetResult(new Result { Failed = true, Error = ex.Message }); } });
+            var thread = new Thread(() => { try { completion.SetResult(Windows(save,directory,owner,title,fileName,extensions)); } catch (Exception ex) { completion.SetResult(new Result { Failed = true, Error = ex.Message }); } });
             thread.IsBackground = true; thread.SetApartmentState(ApartmentState.STA); thread.Start(); return completion.Task;
 #elif UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
-            return Task.Run(() => Unix(save,directory));
+            return Task.Run(() => Unix(save,directory,title,fileName,extensions));
 #else
             return Task.FromResult(new Result { Failed = true, Error = "Системный файловый диалог недоступен на этой платформе." });
 #endif
@@ -47,14 +47,14 @@ namespace DroneLab.UI
         private static extern bool GetSaveFileNameW([In,Out] OpenFileName data);
         [DllImport("comdlg32.dll")] private static extern int CommDlgExtendedError();
         [DllImport("user32.dll")] private static extern IntPtr GetActiveWindow();
-        private static Result Windows(bool save,string directory,IntPtr owner)
+        private static Result Windows(bool save,string directory,IntPtr owner,string title,string fileName,string extensions)
         {
             const int capacity = 32768; IntPtr buffer = Marshal.AllocHGlobal(capacity * 2);
             try {
-                byte[] initial = Encoding.Unicode.GetBytes((save ? "environment.json" : "") + "\0"); Marshal.Copy(initial,0,buffer,initial.Length);
+                byte[] initial = Encoding.Unicode.GetBytes((save ? fileName : "") + "\0"); Marshal.Copy(initial,0,buffer,initial.Length);
                 var data = new OpenFileName { owner = owner, size = Marshal.SizeOf(typeof(OpenFileName)), file = buffer, fileSize = capacity,
-                    filter = "Профиль среды (*.json)\0*.json\0\0", filterIndex = 1, directory = directory, extension = "json",
-                    title = save ? "Экспорт профиля среды" : "Импорт профиля среды",
+                    filter = title + "\0" + string.Join(";",Array.ConvertAll(extensions.Split(','),e=>"*."+e)) + "\0\0", filterIndex = 1, directory = directory, extension = extensions.Split(',')[0],
+                    title = (save ? "Экспорт: " : "Импорт: ") + title,
                     flags = 0x00080000 | 0x00000008 | 0x00000800 | (save ? 0x00000002 : 0x00001000) };
                 bool ok = save ? GetSaveFileNameW(data) : GetOpenFileNameW(data);
                 int error = ok ? 0 : CommDlgExtendedError();
@@ -79,22 +79,22 @@ namespace DroneLab.UI
                 }
             } catch (Exception ex) { return new Result { Failed = true, Error = ex.Message }; }
         }
-        private static Result Unix(bool save,string directory)
+        private static Result Unix(bool save,string directory,string title,string fileName,string extensions)
         {
 #if UNITY_STANDALONE_OSX
             // Fixed AppleScript; the directory is a separate argument, never source code.
             string script = "on run argv\ntry\nset baseFolder to (POSIX file (item 1 of argv)) as alias\n" +
-                (save ? "set chosen to choose file name with prompt \"Экспорт профиля среды\" default name \"environment.json\" default location baseFolder\n" :
-                        "set chosen to choose file with prompt \"Импорт профиля среды\" of type {\"json\"} default location baseFolder\n") +
+                (save ? "set chosen to choose file name with prompt (item 2 of argv) default name (item 3 of argv) default location baseFolder\n" :
+                        "set chosen to choose file with prompt (item 2 of argv) default location baseFolder\n") +
                 "return POSIX path of chosen\non error number -128\nreturn \"\"\nend try\nend run";
-            return Run("/usr/bin/osascript",new[] { "-",directory },script);
+            return Run("/usr/bin/osascript",new[] { "-",directory,title,fileName },script);
 #else
-            var args = new System.Collections.Generic.List<string> { "--file-selection", "--title=" + (save ? "Экспорт профиля среды" : "Импорт профиля среды"),
-                "--filename=" + Path.Combine(directory,save ? "environment.json" : ""),"--file-filter=JSON | *.json" };
+            var args = new System.Collections.Generic.List<string> { "--file-selection", "--title=" + (save ? "Экспорт: " : "Импорт: ") + title,
+                "--filename=" + Path.Combine(directory,save ? fileName : ""),"--file-filter=" + title + " | " + string.Join(" ",Array.ConvertAll(extensions.Split(','),e=>"*."+e)) };
             if (save) { args.Add("--save"); args.Add("--confirm-overwrite"); }
             var result = Run("zenity",args.ToArray());
             if (!result.Failed) return result;
-            return Run("kdialog",new[] { save ? "--getsavefilename" : "--getopenfilename", Path.Combine(directory,save ? "environment.json" : ""),"*.json|Профиль среды" });
+            return Run("kdialog",new[] { save ? "--getsavefilename" : "--getopenfilename", Path.Combine(directory,save ? fileName : ""),string.Join(" ",Array.ConvertAll(extensions.Split(','),e=>"*."+e))+"|"+title });
 #endif
         }
 #endif

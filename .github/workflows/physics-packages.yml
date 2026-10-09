@@ -35,6 +35,12 @@ jobs:
         run: dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj --configuration Release
       - name: Weather units and direction tests (not Unity PlayMode)
         run: dotnet test Tests/Environment/DroneLab.Environment.Tests.csproj --configuration Release
+      - name: Configurator profiles, model resources and CSV tests (not Unity PlayMode)
+        run: dotnet test Tests/Configurator/DroneLab.Configurator.Tests.csproj --configuration Release
+      - name: Verify configurator help catalog
+        run: |
+          python Tools/generate_configurator_catalog.py
+          git diff --exit-code -- Assets/DroneUI/Resources/DroneLab/DroneParameters.json Assets/DroneUI/Resources/DroneLab/DroneParameterDefaults.json
       - name: Verify regenerated contract
         run: |
           python Tools/generate_physics_contract.py

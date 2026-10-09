@@ -14,8 +14,9 @@ namespace DroneLab.UI
         private static DroneEnvironmentDocument active;
         private static string scenePath;
         private static DroneScenarioCatalog activeCatalog;
+        private static DroneProfileDocument activeDrone;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Reset() { active = null; scenePath = null; activeCatalog = null; }
+        private static void Reset() { active = null; scenePath = null; activeCatalog = null; activeDrone = null; }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Register()
         {
@@ -24,11 +25,18 @@ namespace DroneLab.UI
             SceneManager.sceneLoaded -= SceneLoaded;
             SceneManager.sceneLoaded += SceneLoaded;
         }
-        public static AsyncOperation Load(DroneMapEntry map, DroneEnvironmentDocument profile, DroneScenarioCatalog catalog = null)
+        public static AsyncOperation Load(DroneMapEntry map, DroneEnvironmentDocument profile, DroneScenarioCatalog catalog = null, DroneProfileDocument drone = null)
         {
             if (map == null || string.IsNullOrWhiteSpace(map.scenePath) || !Application.CanStreamedLevelBeLoaded(map.scenePath))
                 throw new ArgumentException("Карта не включена в список сцен сборки.");
             DroneEnvironmentProfiles.Validate(profile,null,catalog);
+            if (drone != null) {
+                if (drone.draft) throw new ArgumentException("Сначала сохраните готовый профиль дрона.");
+                var checkedDrone = DroneProfileLibrary.Validate(drone, DroneEnvironmentProfiles.PhysicsJson(profile));
+                if (!checkedDrone.Success) throw new ArgumentException("Дрон несовместим с выбранной средой: " + string.Join("; ", checkedDrone.Issues.FindAll(x=>x.Severity == "Error").ConvertAll(x=>DroneValidationText.Path(x.Path) + ": " + DroneValidationText.Message(x.Message))));
+                try { new QuadAllocator(checkedDrone.Parameters); }
+                catch (ArgumentException ex) { throw new ArgumentException("Текущий пилот требует четыре управляемых ротора с осями +Y. " + DroneValidationText.Message(ex.Message)); }
+            }
             var physical = DroneEnvironmentProfiles.Effective(profile.environment);
             var air = (string)physical["airDensityMode"] == "StandardAtmosphere" ?
                 Atmosphere.Troposphere((double)physical["altitudeM"], (double)physical["temperatureK"], (double)physical["pressurePa"]) :
@@ -39,13 +47,19 @@ namespace DroneLab.UI
             string presetId = (string)profile.visual["weatherPresetId"];
             if (!string.IsNullOrEmpty(presetId) && activeCatalog?.Weather(presetId)?.preset == null)
                 throw new ArgumentException("Погодный пресет профиля отсутствует в каталоге.");
-            active = profile.Copy(); scenePath = map.scenePath;
+            active = profile.Copy(); activeDrone = drone?.Copy(); scenePath = map.scenePath;
             try { var operation = SceneManager.LoadSceneAsync(scenePath); if (operation == null) throw new InvalidOperationException("Не удалось загрузить карту."); return operation; }
-            catch { active = null; scenePath = null; throw; }
+            catch { active = null; activeDrone = null; scenePath = null; throw; }
         }
         private static void PrepareBody(DronePhysicsBody body)
         {
             if (active == null || body.gameObject.scene.path != scenePath) return;
+            if (activeDrone != null) {
+                var droneAsset = new TextAsset(activeDrone.profile.ToString()) { name = activeDrone.Name };
+                body.droneProfile = droneAsset;
+                var droneLifetime = body.gameObject.AddComponent<DroneProfileAssetLifetime>(); droneLifetime.asset = droneAsset;
+                body.gameObject.AddComponent<DroneConfiguredVisual>().Configure(activeDrone);
+            }
             DroneEnvironmentProfiles.Validate(active, body.droneProfile,activeCatalog);
             var asset = new TextAsset(DroneEnvironmentProfiles.PhysicsJson(active)) { name = active.name };
             body.environmentProfile = asset;
