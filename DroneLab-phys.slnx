@@ -13,8 +13,10 @@
   <Project Path="DroneLab.UI.Editor.csproj" />
   <Project Path="DroneLab.UI.Tests.csproj" />
   <Project Path="DroneLab.Environment.csproj" />
+  <Project Path="DroneLab.Sensors.csproj" />
   <Project Path="DroneLab.Environment.Enviro.csproj" />
   <Project Path="DroneLab.Configurator.csproj" />
+  <Project Path="DroneLab.Sensors.Tests.csproj" />
   <Project Path="DroneLab.Environment.Editor.csproj" />
   <Project Path="DroneLab.Environment.Tests.csproj" />
   <Project Path="DroneLab.Demo.Editor.csproj" />

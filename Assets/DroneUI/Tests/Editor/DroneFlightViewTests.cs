@@ -56,14 +56,33 @@ namespace DroneLab.UI.Tests
             Assert.That(root.Q<VisualElement>(className: "pilot-hud").style.display.value, Is.EqualTo(DisplayStyle.None));
             hud.SetView(DroneFlightViewMode.Pilot);
             Assert.That(root.Q<VisualElement>(className: "pilot-hud").style.display.value, Is.EqualTo(DisplayStyle.Flex));
-            Assert.That(root.Query<Button>().ToList().Count, Is.EqualTo(5));
+            Assert.That(root.Q<VisualElement>(className: "pilot-navigation").Query<Button>().ToList().Count, Is.EqualTo(3));
+        }
+        [Test] public void WheelTicksAndLegacyWheelValuesZoomEqually()
+        {
+            Assert.That(DroneFlightMath.ZoomDistance(5, 1, .22f, 1, 30), Is.EqualTo(DroneFlightMath.ZoomDistance(5, 120, .22f, 1, 30)).Within(.0001f));
+            Assert.That(DroneFlightMath.ZoomDistance(5, 1, .22f, 1, 30), Is.LessThan(4.1f));
+        }
+        [Test] public void ZoomRespectsDistanceLimits()
+        {
+            Assert.That(DroneFlightMath.ZoomDistance(2, 10000, .55f, 1, 20), Is.EqualTo(1));
+            Assert.That(DroneFlightMath.ZoomDistance(15, -10000, .55f, 1, 20), Is.EqualTo(20));
+        }
+        [Test] public void EngineerKeepsNavigationAndHidesPilotInstruments()
+        {
+            var root = new VisualElement();
+            var hud = new DroneFlightHud(root, null, "Test", "Map", "Weather", _ => { }, () => { }, () => { });
+            hud.SetView(DroneFlightViewMode.Engineer);
+            Assert.That(root.Q<VisualElement>(className: "pilot-hud").style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            Assert.That(root.Q<VisualElement>(className: "pilot-instruments").style.display.value, Is.EqualTo(DisplayStyle.None));
+            Assert.That(root.Q<VisualElement>(className: "pilot-navigation").Query<Button>().ToList().Count, Is.EqualTo(3));
         }
         [Test] public void CreatingHudWithoutAReadyBodyOrCameraDoesNotInventTelemetry()
         {
             var root = new VisualElement();
             new DroneFlightHud(root, null, "Test", "Map", "Weather", _ => { }, () => { }, () => { });
-            Assert.That(root.Q<Label>(className: "pilot-source").text, Does.Contain("ДАННЫЕ ФИЗИКИ"));
-            Assert.That(root.Q<Label>(className: "pilot-map-title").text, Is.EqualTo("ПЛАН ПОЛЁТА"));
+            Assert.That(root.Q<Label>(className: "pilot-source"), Is.Null);
+            Assert.That(root.Q<Label>(className: "pilot-map-title").text, Is.EqualTo("МАРШРУТ ПОЛЁТА"));
         }
     }
 }

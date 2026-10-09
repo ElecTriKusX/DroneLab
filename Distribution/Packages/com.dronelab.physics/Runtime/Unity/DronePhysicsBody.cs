@@ -13,6 +13,8 @@ namespace DroneLab.Simulation
         [Tooltip("For CustomField only: component implementing DroneLab.Physics.IWindProvider.")]
         public MonoBehaviour customWindProvider;
         public IWindProvider CustomWindProvider { get; set; }
+        // Runtime engineering override. Wind interaction must still be enabled by the profile.
+        public IWindProvider RuntimeWindOverride { get; set; }
         [Tooltip("Optional live atmosphere. Requires IAirProvider and CtCq/PerformanceMap rotors; assign before initialization.")]
         public MonoBehaviour customAirProvider;
         public IAirProvider CustomAirProvider { get; set; }
@@ -227,7 +229,7 @@ namespace DroneLab.Simulation
                 Weather=activeWeather!=null && activeWeather.TrySampleWeather(out var weather) ? weather : ProfileWeather();
                 Weather=new WeatherSample(Weather.Precipitation,Weather.IntensityMmPerHour);
                 WindVelocityWorld=WindAt(Body.worldCenterOfMass);
-                WindSamplingRatio=Parameters.Environment.WindSamplingRatio(FromUnity(Body.linearVelocity),dt);
+                WindSamplingRatio=RuntimeWindOverride == null ? Parameters.Environment.WindSamplingRatio(FromUnity(Body.linearVelocity),dt) : null;
                 for(int i=0;i<Parameters.Rotors.Count;i++)
                 {
                     var r=Parameters.Rotors[i];
@@ -322,7 +324,8 @@ namespace DroneLab.Simulation
         }
         private Vector3 WindAt(Vector3 point)
         {
-            var wind=activeWind.Sample(FromUnity(point),SimulationTimeS); EnvironmentMath.Finite(wind);
+            var provider=RuntimeWindOverride != null && Parameters.Environment.WindEnabled ? RuntimeWindOverride : activeWind;
+            var wind=provider.Sample(FromUnity(point),SimulationTimeS); EnvironmentMath.Finite(wind);
             if(Math.Abs(wind.X)>1e6 || Math.Abs(wind.Y)>1e6 || Math.Abs(wind.Z)>1e6)
                 throw new ArgumentOutOfRangeException(nameof(wind),"Wind provider exceeds runtime safety bound 1e6 m/s.");
             return ToUnity(wind);

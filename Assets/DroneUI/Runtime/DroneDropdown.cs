@@ -21,6 +21,8 @@ namespace DroneLab.UI
     public sealed class DroneDropdown : BaseField<string>
     {
         public List<string> choices { get; }
+        public bool IsOpen => overlay != null;
+        public void ClosePopup() => Close();
         public event Action Reselected;
         public int index {
             get => choices.IndexOf(value);

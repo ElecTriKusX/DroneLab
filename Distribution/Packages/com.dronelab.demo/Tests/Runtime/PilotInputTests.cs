@@ -8,17 +8,39 @@ namespace DroneLab.Physics.Tests
 {
     public sealed class PilotInputTests : InputTestFixture
     {
+        private string savedBindings;
+        private bool hadBindings;
         private Keyboard keyboard;
         private Gamepad gamepad;
         public override void Setup()
         {
             base.Setup();
+            hadBindings=PlayerPrefs.HasKey("DroneLab.FlightKeys.v1"); savedBindings=PlayerPrefs.GetString("DroneLab.FlightKeys.v1"); DroneKeyBindings.RestoreDefaults();
             InputSystem.settings.updateMode=InputSettings.UpdateMode.ProcessEventsManually;
             keyboard=InputSystem.AddDevice<Keyboard>(); gamepad=InputSystem.AddDevice<Gamepad>();
             InputSystem.Update();
             // Register edge tracking on fresh ButtonControls before sending the first press.
             DronePilotInput.Read(PilotDevice.Keyboard,0.38);
             DronePilotInput.Read(PilotDevice.Gamepad,0.38);
+        }
+        public override void TearDown()
+        {
+            if(hadBindings) PlayerPrefs.SetString("DroneLab.FlightKeys.v1",savedBindings); else PlayerPrefs.DeleteKey("DroneLab.FlightKeys.v1");
+            PlayerPrefs.Save(); DroneKeyBindings.Reload(); base.TearDown();
+        }
+        [Test] public void RemappedClimbUsesNewKeyAndStopsUsingSpace()
+        {
+            Assert.That(DroneKeyBindings.TryAssign(FlightKeyAction.Climb,Key.R,out _),Is.True);
+            InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.R)); InputSystem.Update();
+            Assert.That(DronePilotInput.Read(PilotDevice.Keyboard,.38).Command.Climb,Is.EqualTo(1));
+            InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.Space)); InputSystem.Update();
+            Assert.That(DronePilotInput.Read(PilotDevice.Keyboard,.38).Command.Climb,Is.Zero);
+        }
+        [Test] public void BindingRejectsEscapeAndConflictsWithoutChangingMap()
+        {
+            Assert.That(DroneKeyBindings.TryAssign(FlightKeyAction.Climb,Key.Escape,out _),Is.False);
+            Assert.That(DroneKeyBindings.TryAssign(FlightKeyAction.Climb,Key.W,out _),Is.False);
+            Assert.That(DroneKeyBindings.Get(FlightKeyAction.Climb),Is.EqualTo(Key.Space));
         }
         [Test] public void KeyboardMapsSignsActionsAndZeroThrottleOnRelease()
         {

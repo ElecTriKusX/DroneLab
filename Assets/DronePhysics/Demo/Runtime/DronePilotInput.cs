@@ -28,13 +28,13 @@ namespace DroneLab.Simulation
             }
             var kb=Keyboard.current;
             if(kb==null) return default;
-            double roll=(kb.dKey.isPressed?1:0)-(kb.aKey.isPressed?1:0);
-            double pitch=(kb.wKey.isPressed?1:0)-(kb.sKey.isPressed?1:0);
-            double yaw=(kb.eKey.isPressed?1:0)-(kb.qKey.isPressed?1:0);
-            double climb=(kb.spaceKey.isPressed?1:0)-((kb.leftCtrlKey.isPressed||kb.rightCtrlKey.isPressed)?1:0);
+            double roll=(DroneKeyBindings.Held(kb,FlightKeyAction.RollRight)?1:0)-(DroneKeyBindings.Held(kb,FlightKeyAction.RollLeft)?1:0);
+            double pitch=(DroneKeyBindings.Held(kb,FlightKeyAction.PitchForward)?1:0)-(DroneKeyBindings.Held(kb,FlightKeyAction.PitchBack)?1:0);
+            double yaw=(DroneKeyBindings.Held(kb,FlightKeyAction.YawRight)?1:0)-(DroneKeyBindings.Held(kb,FlightKeyAction.YawLeft)?1:0);
+            double climb=(DroneKeyBindings.Held(kb,FlightKeyAction.Climb)?1:0)-(DroneKeyBindings.Held(kb,FlightKeyAction.Descend)?1:0);
             return new PilotInputFrame(new FlightInput(roll,pitch,yaw,climb,climb>0 ? keyboardThrust : 0),
-                true,kb.fKey.wasPressedThisFrame,kb.zKey.wasPressedThisFrame,
-                kb.hKey.wasPressedThisFrame,kb.backspaceKey.wasPressedThisFrame,kb.deviceId);
+                true,DroneKeyBindings.Pressed(kb,FlightKeyAction.Arm),DroneKeyBindings.Pressed(kb,FlightKeyAction.ControlMode),
+                DroneKeyBindings.Pressed(kb,FlightKeyAction.AltitudeHold),DroneKeyBindings.Pressed(kb,FlightKeyAction.Reset),kb.deviceId);
         }
     }
 }

@@ -5,6 +5,11 @@ namespace DroneLab.UI
     /// <summary>Read-only display coordinates: Unity +Y is up and +Z is the scene's north.</summary>
     internal static class DroneFlightMath
     {
+        public static float ZoomDistance(float distance, float scroll, float sensitivity, float min, float max)
+        {
+            float steps = Mathf.Abs(scroll) >= 100 ? scroll / 120 : scroll;
+            return Mathf.Clamp(distance * Mathf.Exp(-Mathf.Clamp(steps, -8, 8) * sensitivity), min, max);
+        }
         public static float Heading(Vector3 forward, float fallback = 0)
         {
             if (forward.x * forward.x + forward.z * forward.z < .000001f) return Mathf.Repeat(fallback, 360);

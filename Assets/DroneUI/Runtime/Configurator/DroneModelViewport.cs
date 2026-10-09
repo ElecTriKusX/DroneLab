@@ -125,7 +125,7 @@ namespace DroneLab.UI
             // Temporary preview cameras use one graphics queue. This is a local mitigation,
             // not proof of the cause of an intermittent HDRP GPUFence error.
             hd.customRenderingSettings=true;
-            hd.renderingPathCustomFrameSettingsOverrideMask.mask[(int)FrameSettingsField.AsyncCompute]=true;
+            hd.renderingPathCustomFrameSettingsOverrideMask.mask[(uint)FrameSettingsField.AsyncCompute]=true;
             hd.renderingPathCustomFrameSettings.SetEnabled(FrameSettingsField.AsyncCompute,false);
             var volume=Child("Isolated preview exposure").AddComponent<Volume>(); volume.isGlobal=true; volume.priority=10000;
             volumeProfile=ScriptableObject.CreateInstance<VolumeProfile>(); volume.sharedProfile=volumeProfile;
@@ -366,7 +366,20 @@ namespace DroneLab.UI
             procedural.SetActive(!HasImportedModel);
             for(int i=procedural.transform.childCount-1;i>=0;i--) { var go=procedural.transform.GetChild(i).gameObject;go.SetActive(false);Object.Destroy(go); }
             if(document==null)return;
-            DroneSchematicModel.Build(procedural.transform,document,false,PreviewLayer);
+            var dimensions=Vec(document.profile["massProperties"]["dimensionsM"]);
+            Primitive(PrimitiveType.Cube,Vector3.zero,new Vector3(Mathf.Max(.01f,dimensions.x*.4f),Mathf.Max(.01f,dimensions.y),Mathf.Max(.01f,dimensions.z*.4f)));
+            foreach(var rotor in Rotors) {
+                var p=Vec(rotor["geometry"]["positionLocalM"]); float diameter=(float?)rotor["propeller"]?["diameterM"]??.127f;
+                Primitive(PrimitiveType.Cylinder,p,new Vector3(diameter,.004f,diameter));
+                var arm=Primitive(PrimitiveType.Cube,p*.5f,new Vector3(.015f,.01f,Mathf.Max(.01f,p.magnitude)));arm.transform.localRotation=Quaternion.LookRotation(p.sqrMagnitude>0?p:Vector3.forward);
+            }
+        }
+        private GameObject Primitive(PrimitiveType type,Vector3 position,Vector3 scale)
+        {
+            var go=GameObject.CreatePrimitive(type);go.layer=PreviewLayer;go.transform.SetParent(procedural.transform,false);
+            go.transform.localPosition=position;go.transform.localScale=scale;Object.Destroy(go.GetComponent<Collider>());
+            // A shared HDRP material is loaded from Resources and retained by the build.
+            go.GetComponent<Renderer>().sharedMaterial=Resources.Load<Material>("DroneLab/ConfiguratorSchematic");return go;
         }
         public void Dispose()
         {

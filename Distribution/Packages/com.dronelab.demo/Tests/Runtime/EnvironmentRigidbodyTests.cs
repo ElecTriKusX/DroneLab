@@ -22,6 +22,20 @@ namespace DroneLab.Physics.Tests
         }
         private static LinearWindField Field(DVector3 gradientY=default,DVector3 gradientZ=default)
             =>new LinearWindField(new DVector3(5,0,0),new DVector3(0,100,0),default,gradientY,gradientZ,100);
+        [UnityTest] public IEnumerator RuntimeWindOverrideChangesExistingFlowAndCanBeRemoved()
+        {
+            var p=Create(); p.RuntimeWindOverride=new LinearWindField(new DVector3(12,0,0),default,default,default,default,100);
+            rig.Step(); Assert.That(p.WindVelocityWorld.x,Is.EqualTo(12).Within(1e-5));
+            Assert.That(p.RotorWindVelocityWorld[0].x,Is.EqualTo(12).Within(1e-5)); Assert.That(p.WindSamplingRatio.HasValue,Is.False);
+            p.RuntimeWindOverride=null; p.Body.linearVelocity=Vector3.zero; rig.Step();
+            Assert.That(p.WindVelocityWorld.x,Is.LessThan(8)); yield break;
+        }
+        [UnityTest] public IEnumerator RuntimeWindOverrideHonorsDisabledWindInteraction()
+        {
+            var p=Create(edit:j=>j["physicsConfiguration"]["modules"]["windInteraction"]=false);
+            p.RuntimeWindOverride=new LinearWindField(new DVector3(12,0,0),default,default,default,default,100);
+            rig.Step(); Assert.That(p.WindVelocityWorld.magnitude+p.DragForce.magnitude+p.RotorDragForce.magnitude,Is.Zero); yield break;
+        }
         [UnityTest] public IEnumerator GustActuallyChangesWindAndBodyDrag()
         {
             var p=Create(); rig.Step(); double before=p.DragForce.x; Assert.That(p.WindVelocityWorld.x,Is.EqualTo(5).Within(1e-6));

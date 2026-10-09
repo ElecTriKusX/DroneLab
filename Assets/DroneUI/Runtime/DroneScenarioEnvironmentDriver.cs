@@ -30,7 +30,7 @@ namespace DroneLab.UI
             try {
                 if (!applied) ApplyPreset();
                 IWindProvider windSource = body != null && body.IsReady ?
-                    (body.Parameters.Environment.WindMode == "CustomField" ? body.CustomWindProvider ?? body.customWindProvider as IWindProvider : body.Parameters.Environment) : null;
+                    (body.RuntimeWindOverride ?? (body.Parameters.Environment.WindMode == "CustomField" ? body.CustomWindProvider ?? body.customWindProvider as IWindProvider : body.Parameters.Environment)) : null;
                 if (body != null && body.IsReady && windSource != null && !ReferenceEquals(windSource, bridge)) {
                     var wind = windSource.Sample(DronePhysicsBody.FromUnity(body.transform.position), body.SimulationTimeS);
                     var horizontal = new DVector3(wind.X, 0, wind.Z);

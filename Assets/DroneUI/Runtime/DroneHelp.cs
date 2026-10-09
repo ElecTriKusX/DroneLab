@@ -8,7 +8,7 @@ namespace DroneLab.UI
     {
         public static VisualElement Stage(VisualElement element)
         {
-            for (var parent = element; parent != null; parent = parent.parent) if (parent.ClassListContains("stage")) return parent;
+            for (var parent = element; parent != null; parent = parent.parent) if (parent.ClassListContains("stage") || parent.ClassListContains("flight-ui")) return parent;
             return element.panel.visualTree;
         }
         public static void Attach(VisualElement field, Func<string> text)

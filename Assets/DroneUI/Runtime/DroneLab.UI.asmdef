@@ -9,6 +9,7 @@
     "Unity.InputSystem",
     "DroneLab.Configurator",
     "Unity.RenderPipelines.HighDefinition.Runtime",
-    "Unity.RenderPipelines.Core.Runtime"
+    "Unity.RenderPipelines.Core.Runtime",
+    "DroneLab.Sensors"
   ]
 }

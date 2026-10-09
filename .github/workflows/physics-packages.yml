@@ -35,6 +35,8 @@ jobs:
         run: dotnet test Tests/DotNet/DroneLab.Physics.Tests.csproj --configuration Release
       - name: Weather units and direction tests (not Unity PlayMode)
         run: dotnet test Tests/Environment/DroneLab.Environment.Tests.csproj --configuration Release
+      - name: Discrete sensor models (not Unity PlayMode)
+        run: dotnet test Tests/Sensors/DroneLab.Sensors.Tests.csproj --configuration Release
       - name: Configurator profiles, model resources and CSV tests (not Unity PlayMode)
         run: dotnet test Tests/Configurator/DroneLab.Configurator.Tests.csproj --configuration Release
       - name: Verify configurator help catalog

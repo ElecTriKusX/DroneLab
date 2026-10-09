@@ -1,33 +1,34 @@
 using System;
 using System.Globalization;
 using DroneLab.Simulation;
+using DroneLab.Sensors;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace DroneLab.UI
 {
-    public enum DroneFlightViewMode { Cinema, Pilot }
+    public enum DroneFlightViewMode { Cinema, Pilot, Engineer, Diagnostics }
 
     /// <summary>Compact pilot HUD and cinema visibility. Reads a single telemetry snapshot.</summary>
     internal sealed class DroneFlightHud
     {
-        private readonly VisualElement pilotRoot, cinemaHint, help, fpvRoot, charge;
-        private readonly Label mode, battery, temperature, time, ground, vertical, home, attitude, wind, warning, cameraCaption, source;
-        private readonly Button cinemaButton, pilotButton, cameraButton;
+        private readonly VisualElement pilotRoot, pilotInstruments, cinemaHint, modePicker, fpvRoot, charge, mapPanel, mapBody;
+        private readonly Label mode, battery, temperature, time, ground, vertical, home, attitude, wind, warning, cameraCaption, sensorStatus;
+        private readonly Button modeButton, cameraButton, mapToggle;
+        private bool mapCollapsed;
         private readonly DroneFlightInstrument compass, horizon, altitude, speed, map, fpv;
         private readonly DroneFlightCamera camera;
         private readonly Action<DroneFlightViewMode> changeView;
         private float hintUntil;
         public DroneFlightViewMode View { get; private set; } = DroneFlightViewMode.Pilot;
         public DroneFlightHud(VisualElement parent, DroneFlightCamera flightCamera, string drone, string scene, string weather,
-            Action<DroneFlightViewMode> onView, Action onCamera, Action onPause)
+            Action<DroneFlightViewMode> onView, Action onCamera, Action onControls)
         {
             camera = flightCamera; changeView = onView;
             pilotRoot = Element(parent, "pilot-hud");
             var branding = Element(pilotRoot, "pilot-branding");
             Text(branding, "ДРОНЛАБ", "pilot-brand");
             Text(branding, drone + "  /  " + scene + "  /  " + weather, "pilot-caption");
-            source = Text(branding, "ДАННЫЕ ФИЗИКИ · СЕВЕР КАРТЫ +Z", "pilot-source");
             compass = Instrument(pilotRoot, FlightInstrumentKind.Heading, "pilot-compass");
             var status = Element(pilotRoot, "pilot-status");
             mode = Text(status, "ANGLE", "pilot-status-cell");
@@ -36,36 +37,41 @@ namespace DroneLab.UI
             var track = Element(power, "pilot-charge-track"); charge = Element(track, "pilot-charge-fill");
             temperature = Text(status, "", "pilot-status-cell");
             time = Text(status, "00:00", "pilot-status-cell");
-            var tapes = Element(pilotRoot, "pilot-tapes");
+            pilotInstruments = Element(pilotRoot, "pilot-instruments");
+            var tapes = Element(pilotInstruments, "pilot-tapes");
             Text(tapes, "ВЫСОТА ОТ СТАРТА · м", "pilot-tape-caption");
             altitude = Instrument(tapes, FlightInstrumentKind.Altitude, "pilot-tape");
             Text(tapes, "СКОРОСТЬ ПО ЗЕМЛЕ · м/с", "pilot-tape-caption");
             speed = Instrument(tapes, FlightInstrumentKind.Speed, "pilot-tape");
             ground = Text(tapes, "", "pilot-surface");
-            horizon = Instrument(pilotRoot, FlightInstrumentKind.Horizon, "pilot-horizon");
-            attitude = Text(pilotRoot, "", "pilot-attitude");
-            fpvRoot = Element(pilotRoot, "pilot-fpv");
+            horizon = Instrument(pilotInstruments, FlightInstrumentKind.Horizon, "pilot-horizon");
+            attitude = Text(pilotInstruments, "", "pilot-attitude");
+            fpvRoot = Element(pilotInstruments, "pilot-fpv");
             fpv = Instrument(fpvRoot, FlightInstrumentKind.Fpv, "pilot-fpv-ladder");
-            var mapPanel = Element(pilotRoot, "pilot-map-panel");
-            Text(mapPanel, "ПЛАН ПОЛЁТА", "pilot-map-title");
-            map = Instrument(mapPanel, FlightInstrumentKind.Map, "pilot-map");
-            home = Text(mapPanel, "ДО СТАРТА 0 м", "pilot-map-home");
-            vertical = Text(pilotRoot, "", "pilot-climb");
-            wind = Text(pilotRoot, "", "pilot-wind");
+            mapPanel = Element(pilotInstruments, "pilot-map-panel");
+            var mapHeader = Element(mapPanel, "pilot-map-header");
+            Text(mapHeader, "МАРШРУТ ПОЛЁТА", "pilot-map-title");
+            mapToggle = Button(mapHeader, "-", () => SetMapCollapsed(!mapCollapsed)); mapToggle.AddToClassList("pilot-map-toggle");
+            mapToggle.tooltip = "Свернуть карту";
+            mapBody = Element(mapPanel, "pilot-map-body");
+            map = Instrument(mapBody, FlightInstrumentKind.Map, "pilot-map");
+            home = Text(mapBody, "ДО СТАРТА 0 м", "pilot-map-home");
+            sensorStatus = Text(mapBody, "", "pilot-sensor-status");
+            vertical = Text(pilotInstruments, "", "pilot-climb");
+            wind = Text(pilotInstruments, "", "pilot-wind");
             warning = Text(pilotRoot, "", "pilot-warning");
             var navigation = Element(pilotRoot, "pilot-navigation");
-            cinemaButton = Button(navigation, "F1  Кино", () => changeView(DroneFlightViewMode.Cinema));
-            pilotButton = Button(navigation, "F2  Пилот", () => changeView(DroneFlightViewMode.Pilot));
-            cameraButton = Button(navigation, "C  Камера", onCamera);
-            Button(navigation, "Управление", () => help.style.display = help.resolvedStyle.display == DisplayStyle.None ? DisplayStyle.Flex : DisplayStyle.None);
-            Button(navigation, "Esc  Пауза", onPause);
+            modeButton = Button(navigation, "F2  Пилот ▴", () => modePicker.style.display = modePicker.style.display.value == DisplayStyle.None ? DisplayStyle.Flex : DisplayStyle.None);
+            cameraButton = Button(navigation, "C  FPV", onCamera);
+            Button(navigation, "Управление", onControls);
+            modePicker = Element(pilotRoot, "flight-mode-picker"); modePicker.style.display = DisplayStyle.None;
+            for (int i = 0; i < 4; i++) {
+                var view = (DroneFlightViewMode)i;
+                Button(modePicker, ViewCaption(view), () => changeView(view));
+            }
             cameraCaption = Text(pilotRoot, "", "pilot-camera-caption");
-            help = Element(pilotRoot, "pilot-help"); help.style.display = DisplayStyle.None;
-            Text(help, "УПРАВЛЕНИЕ ДРОНОМ", "pilot-help-title");
-            Text(help, "F — моторы · W/S — тангаж · A/D — крен · Q/E — рыскание\nSpace — тяга / подъём · Ctrl — снижение при удержании высоты\nH — удержание высоты · Z — Angle / ручной режим · Backspace — на старт\nГеймпад: Start — моторы · правый стик — наклон · левый — рыскание / подъём\nRT — ручная тяга · X — режим · A — высота · Y — на старт", "pilot-help-text");
-            Text(help, "КАМЕРА: C — третье лицо / FPV · ПКМ — обзор · колесо — расстояние · СКМ — вернуть обзор", "pilot-help-text");
             cinemaHint = Element(parent, "cinema-hint");
-            Text(cinemaHint, "F1 КИНО  ·  F2 ПИЛОТ  ·  C КАМЕРА  ·  ESC ПАУЗА", "cinema-hint-text");
+            Text(cinemaHint, "F1 КИНО · F2 ПИЛОТ · F3 ИНЖЕНЕР · F4 ДИАГНОСТИКА · C КАМЕРА · ESC ПАУЗА", "cinema-hint-text");
             SetView(DroneFlightViewMode.Pilot);
         }
         private static VisualElement Element(VisualElement parent, string css)
@@ -90,16 +96,24 @@ namespace DroneLab.UI
         }
         public void SetView(DroneFlightViewMode view)
         {
-            View = view; pilotRoot.style.display = view == DroneFlightViewMode.Pilot ? DisplayStyle.Flex : DisplayStyle.None;
-            cinemaButton.EnableInClassList("selected", view == DroneFlightViewMode.Cinema);
-            pilotButton.EnableInClassList("selected", view == DroneFlightViewMode.Pilot);
-            help.style.display = DisplayStyle.None;
+            View = view; pilotRoot.style.display = view != DroneFlightViewMode.Cinema ? DisplayStyle.Flex : DisplayStyle.None;
+            pilotInstruments.style.display = view == DroneFlightViewMode.Pilot ? DisplayStyle.Flex : DisplayStyle.None;
+            modeButton.text = ViewCaption(view) + " ▴";
+            modePicker.style.display = DisplayStyle.None;
             if (camera != null) camera.PointerOverUI = false;
             hintUntil = Time.unscaledTime + 2.5f;
             cinemaHint.style.display = view == DroneFlightViewMode.Cinema ? DisplayStyle.Flex : DisplayStyle.None;
         }
         public void TickHint(bool paused)
         { cinemaHint.style.display = View == DroneFlightViewMode.Cinema && !paused && Time.unscaledTime < hintUntil ? DisplayStyle.Flex : DisplayStyle.None; }
+        internal void SetMapCollapsed(bool collapsed)
+        {
+            mapCollapsed = collapsed;
+            mapBody.style.display = collapsed ? DisplayStyle.None : DisplayStyle.Flex;
+            mapPanel.EnableInClassList("collapsed", collapsed);
+            mapToggle.text = collapsed ? "+" : "-";
+            mapToggle.tooltip = collapsed ? "Развернуть карту" : "Свернуть карту";
+        }
         public void Refresh(DroneFlightTelemetry data, DroneTestPilot pilot)
         {
             bool isFpv = camera != null && camera.Mode == DroneFlightCameraMode.Fpv;
@@ -123,16 +137,29 @@ namespace DroneLab.UI
             attitude.text = "КРЕН " + Signed(data.Roll) + "°  ·  ТАНГАЖ " + Signed(data.Pitch) + "°";
             float windSpeed = data.Wind.magnitude;
             float flowHeading = DroneFlightMath.Heading(data.Wind);
-            wind.text = "ВЕТЕР " + Number(windSpeed, "0.0") + " м/с" + (windSpeed > .05f ? "  ·  КУДА " + Number(flowHeading, "000") + "°" : "");
+            wind.text = "ВЕТЕР " + Number(windSpeed, "0.0") + " м/с" + (windSpeed > .05f ? "  ·  НАПРАВЛЕНИЕ " + Number(flowHeading, "000") + "°" : "");
             wind.tooltip = "Фактическая скорость воздушного потока у дрона. Направление показывает, куда дует ветер.";
             cameraCaption.text = isFpv ? "FPV · 90°" : "КАМЕРА ПРЕСЛЕДОВАНИЯ";
-            cameraButton.text = isFpv ? "C  Третье лицо" : "C  FPV";
-            source.tooltip = "Приборы показывают истинное состояние Rigidbody. Модели GPS, IMU, барометра и радиоканала будут подключены отдельным этапом.";
+            cameraButton.text = isFpv ? DroneKeyBindings.Caption(FlightKeyAction.Camera) + "  Третье лицо" : DroneKeyBindings.Caption(FlightKeyAction.Camera) + "  FPV";
             string message = data.MotorFault ? "ОТКАЗ ДВИГАТЕЛЯ" : data.PowerLimited ? "ОГРАНИЧЕНИЕ МОЩНОСТИ" :
-                data.BatteryPercent.HasValue && data.BatteryPercent.Value <= 20 ? "НИЗКИЙ ЗАРЯД БАТАРЕИ" : !data.Armed ? "МОТОРЫ ВЫКЛЮЧЕНЫ · F" : "";
+                data.BatteryPercent.HasValue && data.BatteryPercent.Value <= 20 ? "НИЗКИЙ ЗАРЯД БАТАРЕИ" : !data.Armed ? "МОТОРЫ ВЫКЛЮЧЕНЫ · " + DroneKeyBindings.Caption(FlightKeyAction.Arm) : "";
             warning.text = message; warning.style.display = message.Length > 0 ? DisplayStyle.Flex : DisplayStyle.None;
             warning.EnableInClassList("critical", data.MotorFault || data.PowerLimited || data.BatteryPercent <= 20);
+            modeButton.text = ViewCaption(View) + " ▴";
             compass.SetData(data); altitude.SetData(data); speed.SetData(data); horizon.SetData(data); map.SetData(data); fpv.SetData(data);
+        }
+        private static string ViewCaption(DroneFlightViewMode view)
+        {
+            var actions = new[] { FlightKeyAction.Cinema, FlightKeyAction.Pilot, FlightKeyAction.Engineer, FlightKeyAction.Diagnostics };
+            var names = new[] { "Кино", "Пилот", "Инженер", "Диагностика" };
+            return DroneKeyBindings.Caption(actions[(int)view]) + "  " + names[(int)view];
+        }
+        public void RefreshSensors(DroneSensorRig sensors)
+        {
+            var gps = sensors.Channel(SensorKind.Gps); var range = sensors.Channel(SensorKind.Rangefinder);
+            string fix = !gps.Settings.enabled ? "выкл." : gps.Faulted ? "потеря данных" : gps.Latest?.Valid == true ? "доступен" : "ожидание";
+            string distance = range.Latest?.Valid == true ? Number(range.Latest.Value.Value.X, "0.00") + " м" : "нет измерения";
+            sensorStatus.text = "GPS " + fix + " · ДАЛЬНОМЕР " + distance;
         }
         private static string Number(double value, string format) => value.ToString(format, CultureInfo.InvariantCulture);
         private static string Signed(float value) => value.ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture);

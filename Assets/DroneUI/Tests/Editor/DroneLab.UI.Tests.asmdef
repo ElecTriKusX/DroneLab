@@ -4,7 +4,11 @@
     "DroneLab.UI",
     "DroneLab.Physics",
     "Enviro3.Runtime",
-    "DroneLab.Configurator"
+    "DroneLab.Configurator",
+    "DroneLab.Sensors",
+    "DroneLab.Simulation",
+    "DroneLab.Demo",
+    "Unity.InputSystem"
   ],
   "includePlatforms": [
     "Editor"

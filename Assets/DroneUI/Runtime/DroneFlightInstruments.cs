@@ -20,7 +20,7 @@ namespace DroneLab.UI
         {
             kind = selectedKind; pickingMode = PickingMode.Ignore;
             AddToClassList("flight-instrument");
-            ticks = new Label[selectedKind == FlightInstrumentKind.Heading ? 9 : selectedKind == FlightInstrumentKind.Altitude || selectedKind == FlightInstrumentKind.Speed ? 7 : 5];
+            ticks = new Label[selectedKind == FlightInstrumentKind.Heading ? 9 : selectedKind == FlightInstrumentKind.Altitude || selectedKind == FlightInstrumentKind.Speed ? 7 : 19];
             for (int i = 0; i < ticks.Length; i++) { ticks[i] = Text(); Add(ticks[i]); }
             value = Text(); value.AddToClassList("flight-instrument-value"); Add(value);
             generateVisualContent += Draw;
@@ -76,7 +76,7 @@ namespace DroneLab.UI
                 float scale = kind == FlightInstrumentKind.Fpv ? 5 : 2;
                 for (int i = 0; i < ticks.Length; i++)
                 {
-                    float angle = (i - 2) * 10;
+                    float angle = (i - 9) * 10;
                     if (Mathf.Abs(angle) < .1f) continue;
                     var point = HorizonPoint(new Vector2(36, (data.Pitch - angle) * scale), w, h);
                     bool inside = kind == FlightInstrumentKind.Fpv ? point.y > 30 && point.y < h - 30 : (point - new Vector2(w / 2, h / 2)).magnitude < Mathf.Min(w, h) * .39f;
@@ -85,7 +85,7 @@ namespace DroneLab.UI
             }
             else if (kind == FlightInstrumentKind.Map)
             {
-                Put(ticks[0], "С (+Z)", w / 2 - 38, 2, 76);
+                Put(ticks[0], "СЕВЕР", w / 2 - 50, 2, 100);
                 float range = DroneFlightMath.MapRange(data.Position, data.Start);
                 Put(ticks[1], (range / 4).ToString("0") + " м", w - 76, h - 28, 70);
             }
@@ -164,7 +164,7 @@ namespace DroneLab.UI
                     painter.fillColor = new Color(.12f, .17f, .20f, .95f); Polygon(sky, true);
                     painter.strokeColor = Dim; Polygon(disk, false); painter.strokeColor = Ink;
                 }
-                for (int degree = -30; degree <= 30; degree += 5)
+                for (int degree = -90; degree <= 90; degree += 5)
                 {
                     float y = (data.Pitch - degree) * scale;
                     float half = degree == 0 ? radius * .8f : degree % 10 == 0 ? 30 : 17;
