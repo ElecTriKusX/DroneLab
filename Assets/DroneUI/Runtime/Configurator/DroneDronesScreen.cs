@@ -22,6 +22,7 @@ namespace DroneLab.UI
         private DroneProfileDocument selected,document;
         private string original,section="Model",inspectorSection;
         private bool newProfile,busy,disposed;
+        private Button galleryExport;
         private int rotorIndex,galleryRevision;
         private string[] bindingRotorIds=Array.Empty<string>();
         private VisualElement navigation,inspector,prompt;
@@ -78,6 +79,8 @@ namespace DroneLab.UI
             DroneProfileFields.Label(body,"Каталог доступных дронов","scenario-hint");
             var toolbar=Box(body,"drone-gallery-toolbar");galleryCreate=DroneProfileFields.Button(toolbar,"Создать дрон",()=>{if(!busy)Open(DroneProfileLibrary.Create(),true);});
             galleryImport=DroneProfileFields.Button(toolbar,"Импорт профиля",ImportProfile);
+            galleryExport=DroneProfileFields.Button(toolbar,"Экспорт профиля",ExportSelected);
+            galleryExport.tooltip="Выберите дрон в галерее для экспорта профиля вместе с моделью.";
             var search=new TextField("Поиск");search.SetValueWithoutNotify(gallerySearch);DroneTextInput.Configure(search);search.AddToClassList("scenario-search");toolbar.Add(search);
             search.tooltip="Поиск по названию или категории дрона";
             var categories=new List<string>{"Все дроны"};categories.AddRange(documents.Select(d=>d.Category).Distinct().OrderBy(c=>c,StringComparer.CurrentCulture));
@@ -193,6 +196,7 @@ namespace DroneLab.UI
             viewport.Changed+=()=> {if(viewport.LastEditedField!=null)fields.ClearErrors(viewport.LastEditedField);Changed();if(section=="Rotor" || section=="Mass" && viewport.LastEditedField!=null)RebuildInspector();};
             viewport.SelectionCleared+=()=>{if(section=="Rotor"){BuildNavigation();RebuildInspector();}};
             viewport.Status+=s=>Status(s);BuildNavigation();RebuildInspector();UpdateState();
+            viewport.SilhouetteChanged+=()=>{if(disposed)return;UpdateState();if(section=="Aero")RebuildInspector();};
             string model=DroneProfileLibrary.ModelPath(document);if(model!=null)LoadExisting(model);
         }
         private async void LoadExisting(string path)
@@ -239,6 +243,16 @@ namespace DroneLab.UI
                     var remove=DroneProfileFields.Button(scroll,"Удалить ротор «"+(string)rotor["rotorId"]+"»",()=>Ask("Удалить ротор?","Точка ротора, двигатель, винт и характеристики будут удалены из текущего профиля.",("Отмена",()=>{}),("Удалить",RemoveRotor)));remove.SetEnabled(rotors.Count>1);
                 }else DroneProfileFields.Label(scroll,"Выберите ротор в списке слева или его точку на 3D-виде. Щелчок по свободному фону снимает выбор.","scenario-hint");break;
                 case "Aero":Group("bodyAerodynamics","BodyAerodynamicsProfile");
+                    var recalculate=DroneProfileFields.Button(scroll,"Пересчитать силуэт",RecalculateSilhouette);
+                    recalculate.SetEnabled(viewport.HasImportedModel && !viewport.SilhouetteBusy && !busy);
+                    recalculate.tooltip="Повторно рассчитывает силуэт загруженной модели с текущим масштабом, поворотом, привязками и разрешением. Сначала загрузите GLB/glTF.";
+                    if(viewport.HasImportedModel) {
+                        var resolutions=new[]{64,128,256,512,viewport.ProjectionResolution}.Distinct().OrderBy(n=>n).ToList();
+                        var resolution=new DroneDropdown("Разрешение силуэта",resolutions.Select(n=>n.ToString()).ToList(),resolutions.IndexOf(viewport.ProjectionResolution));
+                        scroll.Add(resolution);resolution.RegisterValueChangedCallback(evt=>{if(evt.target!=resolution)return;document.visual["silhouetteResolution"]=resolutions[resolution.index];Changed();});
+                        DroneHelp.Attach(resolution,()=>"Число пикселей по большей стороне каждой проекции. 13 осей соответствуют 26 направлениям. Большее разрешение точнее описывает мелкие детали и дольше считается. Рассчитывается объединение силуэтов неподвижной геометрии; привязанные лопасти исключаются. Cd из формы модели не определяется.");
+                        DroneProfileFields.Label(scroll,viewport.SilhouetteBusy?"Пересчёт силуэта…":viewport.SilhouetteError!=null?"Силуэт не рассчитан: "+viewport.SilhouetteError:"Силуэт пересчитывается при загрузке модели, изменении масштаба, поворота, привязок винтов и разрешения.","scenario-hint");
+                    }
                     if(document.profile["groundEffect"]!=null)fields.Field(scroll,"groundEffect",DroneParameterSchema.ObjectRule("DroneProfile")["properties"]["groundEffect"],document.profile["groundEffect"],"groundEffect",t=>document.profile["groundEffect"]=t);
                     else DroneProfileFields.Button(scroll,"+ Параметры экрана",()=>{document.profile["groundEffect"]=DroneParameterSchema.Default(DroneParameterSchema.ObjectRule("DroneProfile")["properties"]["groundEffect"]);Changed();RebuildInspector();});break;
                 case "Power":
@@ -391,17 +405,17 @@ namespace DroneLab.UI
             bool editing=document!=null;state.text=!editing?"":Dirty?"Изменения не сохранены":document.draft?"Черновик":"Профиль сохранён";
             identity.text=document?.Name??"";identity.style.display=editing?DisplayStyle.Flex:DisplayStyle.None;
             galleryCount.style.display=editing?DisplayStyle.None:DisplayStyle.Flex;
-            foreach(var button in new[]{galleryOpen,galleryCopy,galleryDelete}) {button.style.display=editing?DisplayStyle.None:DisplayStyle.Flex;button.SetEnabled(!busy&&selected!=null);}
+            foreach(var button in new[]{galleryOpen,galleryCopy,galleryExport,galleryDelete}) {button.style.display=editing?DisplayStyle.None:DisplayStyle.Flex;button.SetEnabled(!busy&&selected!=null);}
             galleryCreate?.SetEnabled(!busy);galleryImport?.SetEnabled(!busy);
             save.style.display=editing && (Dirty || document.draft)?DisplayStyle.Flex:DisplayStyle.None;
             draftSave.style.display=editing && Dirty?DisplayStyle.Flex:DisplayStyle.None;cancel.style.display=editing && Dirty?DisplayStyle.Flex:DisplayStyle.None;
-            bool available=!busy && dataWindow==null && validationWindow==null;
+            bool available=!busy && viewport?.SilhouetteBusy!=true && dataWindow==null && validationWindow==null;
             save.SetEnabled(available);draftSave.SetEnabled(available);cancel.SetEnabled(available);
             body.SetEnabled(!busy && validationWindow==null);
         }
         private bool Save(bool asDraft,string approvedSnapshot=null)
         {
-            if(document==null || busy)return false;
+            if(document==null || busy || viewport?.SilhouetteBusy==true)return false;
             if(!asDraft && !DroneProfileEdits.MatchesValidation(document,approvedSnapshot)){CloseValidation();Validate();return false;}
             if(!asDraft && errors.Count>0){Status("Исправьте незавершённые значения или сохраните черновик.",true);return false;}
             try {
@@ -512,8 +526,29 @@ namespace DroneLab.UI
         private async void ImportProfile()
         {
             if(busy)return;busy=true;UpdateState();
-            try {var chosen=await DroneFileDialog.Pick(false,DroneProfileLibrary.Root,"Профиль дрона","profile.json","json");if(chosen.Failed)throw new IOException(chosen.Error);if(!string.IsNullOrEmpty(chosen.Path)&&!disposed)Open(DroneProfileLibrary.Import(chosen.Path),true);}
+            try {var chosen=await DroneFileDialog.Pick(false,DroneProfileLibrary.Root,"Профиль дрона","profile.json","json,zip");if(chosen.Failed)throw new IOException(chosen.Error);if(!string.IsNullOrEmpty(chosen.Path)&&!disposed)Open(Path.GetExtension(chosen.Path).Equals(".zip",StringComparison.OrdinalIgnoreCase)?DroneProfilePackages.Import(chosen.Path):DroneProfileLibrary.Import(chosen.Path),true);}
             catch(Exception ex){Status(ex.Message,true);}finally{busy=false;if(!disposed)UpdateState();}
+        }
+        private async void RecalculateSilhouette()
+        {
+            var target=viewport;
+            if(disposed || busy || target==null || !target.HasImportedModel || target.SilhouetteBusy)return;
+            try {await target.RecalculateSilhouette();}
+            catch(Exception ex){if(!disposed && viewport==target)Status("Не удалось пересчитать силуэт: "+ex.Message,true);}
+        }
+        private async void ExportSelected()
+        {
+            if(selected==null || busy)return;var exporting=selected.Copy();busy=true;UpdateState();
+            try {
+                var chosen=await DroneFileDialog.Pick(true,DroneProfileLibrary.Root,"Профиль дрона с моделью","drone-profile.zip","zip");
+                if(chosen.Failed)throw new IOException(chosen.Error);if(string.IsNullOrEmpty(chosen.Path) || disposed)return;
+                // Resolve the built-in model on the main thread before doing file compression in the background.
+                exporting.sourceModel=DroneProfileLibrary.ModelPath(exporting);
+                string previewPath=Path.Combine(DroneProfileLibrary.Folder(exporting.id),"preview.png");
+                await Task.Run(()=>DroneProfilePackages.ExportResolved(exporting,chosen.Path,exporting.sourceModel,previewPath));
+                if(!disposed)Status("Профиль, модель, текстуры, привязки и превью экспортированы в ZIP.");
+            }catch(Exception ex){if(!disposed)Status("Не удалось экспортировать профиль: "+ex.Message,true);}
+            finally{busy=false;if(!disposed)UpdateState();}
         }
         private void Status(string text,bool error=false)
         {

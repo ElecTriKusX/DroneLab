@@ -1,9 +1,10 @@
 {
   "profiles": [
     {
+      "version": "1.0.0",
       "id": "builtin-dji_mavic_3",
-      "category": "Камерные",
       "draft": false,
+      "category": "Камерные",
       "profile": {
         "schemaVersion": "1.0.0",
         "metadata": {
@@ -347,23 +348,26 @@
             "@/0/0/0/0/0/4/0/9"
           ]
         },
-        "previewYaw": 35,
-        "previewPitch": 25,
-        "previewDistance": 0.9035,
-        "previewTarget": [
-          0,
-          0,
-          0
-        ],
         "previewOrthographic": false,
+        "previewYaw": 35.0,
+        "previewPitch": 25.0,
+        "previewDistance": 0.6642575,
+        "previewTarget": [
+          0.0,
+          0.0,
+          0.0
+        ],
         "bundledModel": "dji_mavic_3"
       },
-      "unfinishedInputs": {}
+      "sourceModel": null,
+      "unfinishedInputs": {},
+      "Name": "DJI Mavic 3 · приближённый"
     },
     {
+      "version": "1.0.0",
       "id": "builtin-dji_mini_3",
-      "category": "Камерные",
       "draft": false,
+      "category": "Камерные",
       "profile": {
         "schemaVersion": "1.0.0",
         "metadata": {
@@ -703,23 +707,26 @@
             "@/0/0/0/0/2/0/0/1"
           ]
         },
-        "previewYaw": 35,
-        "previewPitch": 25,
-        "previewDistance": 0.9412,
-        "previewTarget": [
-          0,
-          0,
-          0
-        ],
         "previewOrthographic": false,
+        "previewYaw": 216.193665,
+        "previewPitch": 23.7673874,
+        "previewDistance": 0.5484826,
+        "previewTarget": [
+          -0.003911455161869526,
+          -0.008390940725803375,
+          0.007440805900841951
+        ],
         "bundledModel": "dji_mini_3"
       },
-      "unfinishedInputs": {}
+      "sourceModel": null,
+      "unfinishedInputs": {},
+      "Name": "DJI Mini 3 · приближённый"
     },
     {
+      "version": "1.0.0",
       "id": "builtin-dji_avata2",
-      "category": "FPV",
       "draft": false,
+      "category": "FPV",
       "profile": {
         "schemaVersion": "1.0.0",
         "metadata": {
@@ -731,7 +738,7 @@
         "coordinateSystem": {
           "convention": "UnityLeftHandedYUpZForward",
           "lengthUnit": "m",
-          "modelScaleMetersPerUnit": 1
+          "modelScaleMetersPerUnit": 1.000515972793318
         },
         "physicsConfiguration": {
           "fidelity": "Basic",
@@ -770,9 +777,9 @@
             "rotorId": "FL",
             "geometry": {
               "positionLocalM": [
-                -0.057,
-                0.0114541,
-                0.044
+                -0.05700000002980232,
+                -0.001198040321469307,
+                0.04399999976158142
               ],
               "thrustAxisLocal": [
                 0,
@@ -817,7 +824,7 @@
             "geometry": {
               "positionLocalM": [
                 0.057,
-                0.0114541,
+                -0.001198040321,
                 0.044
               ],
               "thrustAxisLocal": [
@@ -863,7 +870,7 @@
             "geometry": {
               "positionLocalM": [
                 0.057,
-                0.0114541,
+                -0.001198040321,
                 -0.044
               ],
               "thrustAxisLocal": [
@@ -909,7 +916,7 @@
             "geometry": {
               "positionLocalM": [
                 -0.057,
-                0.0114541,
+                -0.001198040321,
                 -0.044
               ],
               "thrustAxisLocal": [
@@ -1039,45 +1046,35 @@
         ]
       },
       "visual": {
-        "modelFile": "model/dji_avata2_with_propellers.glb",
-        "scale": 1,
+        "modelFile": "model/dji_avata2.glb",
+        "scale": 1.000515972793318,
         "rotationEulerDeg": [
           0,
           0,
           0
         ],
         "centerModel": true,
-        "rotorNodes": {
-          "FL": [
-            "@/1"
-          ],
-          "FR": [
-            "@/2"
-          ],
-          "RR": [
-            "@/3"
-          ],
-          "RL": [
-            "@/4"
-          ]
-        },
-        "previewYaw": 35,
-        "previewPitch": 25,
-        "previewDistance": 0.5512,
-        "previewTarget": [
-          0,
-          0,
-          0
-        ],
+        "rotorNodes": {},
         "previewOrthographic": false,
+        "previewYaw": 41.57378,
+        "previewPitch": 34.4499931,
+        "previewDistance": 0.367637426,
+        "previewTarget": [
+          -0.0030782721005380154,
+          -0.01772969588637352,
+          0.0009479612926952541
+        ],
         "bundledModel": "dji_avata2"
       },
-      "unfinishedInputs": {}
+      "sourceModel": null,
+      "unfinishedInputs": {},
+      "Name": "DJI Avata 2 · приближённый"
     },
     {
+      "version": "1.0.0",
       "id": "builtin-dji_m600_ul_ver",
-      "category": "Промышленные",
       "draft": false,
+      "category": "Промышленные",
       "profile": {
         "schemaVersion": "1.0.0",
         "metadata": {
@@ -1511,18 +1508,20 @@
             "@/0/0/0/15"
           ]
         },
-        "previewYaw": 35,
-        "previewPitch": 25,
-        "previewDistance": 4.3368,
-        "previewTarget": [
-          0,
-          0,
-          0
-        ],
         "previewOrthographic": false,
+        "previewYaw": 35.0,
+        "previewPitch": 25.0,
+        "previewDistance": 2.2511797,
+        "previewTarget": [
+          -0.0173963513225317,
+          -0.05272410437464714,
+          -0.01783248595893383
+        ],
         "bundledModel": "dji_m600_ul_ver"
       },
-      "unfinishedInputs": {}
+      "sourceModel": null,
+      "unfinishedInputs": {},
+      "Name": "DJI Matrice 600 · baseline · приближённый"
     }
   ],
   "models": {
@@ -1540,9 +1539,9 @@
     },
     "dji_avata2": {
       "archive": "dji_avata2.zip",
-      "file": "dji_avata2_with_propellers.glb",
-      "sha256": "03c517398baaf14d70168acb197a772407baaffa7ac474914b2903258e78a948",
-      "sizeBytes": 26519700
+      "file": "dji_avata2.glb",
+      "sha256": "9434cbab2de5be10020bc00aebf9ac490365f83564c51241fa98bd2aa8f46de9",
+      "sizeBytes": 26515612
     },
     "dji_m600_ul_ver": {
       "archive": "dji_m600_ul_ver.zip",

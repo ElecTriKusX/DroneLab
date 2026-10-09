@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 using DroneLab.Configurator;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -16,6 +17,54 @@ namespace DroneLab.UI
     /// <summary>RenderTexture camera plus screen-space gizmos. All edited geometry stays in physical metres.</summary>
     internal sealed class DroneModelViewport : VisualElement, IDisposable
     {
+        private CancellationTokenSource silhouetteCancellation;
+        private IVisualElementScheduledItem silhouetteTimer;
+        private int silhouetteRevision;
+        private string silhouetteStamp;
+        private bool loadingModel;
+        public bool SilhouetteBusy {get;private set;}
+        public string SilhouetteError {get;private set;}
+        public event Action SilhouetteChanged;
+        private string GeometryStamp()=>ModelRoot.GetInstanceID()+"|"+document.visual["scale"]+"|"+document.visual["rotationEulerDeg"]+"|"+document.visual["rotorNodes"]+"|"+ProjectionResolution;
+        public int ProjectionResolution=>Mathf.Clamp((int?)document.visual["silhouetteResolution"]??128,16,512);
+        private void CancelSilhouette()
+        {
+            silhouetteTimer?.Pause();silhouetteRevision++;silhouetteCancellation?.Cancel();silhouetteCancellation?.Dispose();silhouetteCancellation=null;SilhouetteBusy=false;
+        }
+        private void QueueSilhouette()
+        {
+            if(disposed || loadingModel || !HasImportedModel)return;
+            string stamp=GeometryStamp();
+            if(stamp==silhouetteStamp) {
+                if(!SilhouetteBusy && document.profile["derived"]?["projectedAreaLut"] is JArray samples && DroneMeshProjection.Apply(document.profile,samples))SilhouetteChanged?.Invoke();
+                return;
+            }
+            CancelSilhouette();silhouetteStamp=stamp;SilhouetteBusy=true;SilhouetteError=null;DroneMeshProjection.Invalidate(document.profile);
+            silhouetteTimer=schedule.Execute(async()=>await BakeSilhouette()).StartingIn(300);
+        }
+        public Task RecalculateSilhouette()=>BakeSilhouette();
+        private async Task BakeSilhouette()
+        {
+            if(disposed || !HasImportedModel)return;
+            silhouetteTimer?.Pause();CancelSilhouette();int revision=silhouetteRevision;
+            silhouetteStamp=GeometryStamp();SilhouetteBusy=true;SilhouetteError=null;
+            DroneMeshProjection.Invalidate(document.profile);SilhouetteChanged?.Invoke();
+            silhouetteCancellation=new CancellationTokenSource();var cancellation=silhouetteCancellation.Token;
+            var targetDocument=document;
+            try {
+                rotorVisuals.Restore();
+                DroneMeshSnapshot.Read(ModelRoot,modelFrame.transform,(JObject)document.visual["rotorNodes"],out var vertices,out var triangles);
+                int resolution=ProjectionResolution;
+                var samples=await Task.Run(()=>DroneMeshProjection.Bake(vertices,triangles,resolution,cancellation),cancellation);
+                if(disposed || revision!=silhouetteRevision || targetDocument!=document)return;
+                DroneMeshProjection.Apply(document.profile,samples);
+                Status?.Invoke($"Силуэт корпуса пересчитан: 13 осей · разрешение {resolution}."+
+                    (((JObject)document.visual["rotorNodes"]).Count==0?" Винты не привязаны: их геометрия пока включена в силуэт.":""));
+            } catch(OperationCanceledException) { }
+            catch(Exception ex) {
+                if(!disposed && revision==silhouetteRevision){SilhouetteError=ex.Message;Status?.Invoke("Не удалось пересчитать силуэт: "+ex.Message);}
+            } finally {if(!disposed && revision==silhouetteRevision){SilhouetteBusy=false;SilhouetteChanged?.Invoke();}}
+        }
         private const int PreviewLayer = 31;
         private readonly GameObject stage, modelFrame, procedural;
         private readonly Scene previewScene;
@@ -117,6 +166,7 @@ namespace DroneLab.UI
         }
         public void SetDocument(DroneProfileDocument value)
         {
+            CancelSilhouette();silhouetteStamp=null;SilhouetteError=null;
             document=value; SelectedRotor=-1;CenterOfMassSelected=false;
             selectedModelNode=null;TestRotorSpin=false;rotorVisuals.Restore();
             if(value.profile["coordinateSystem"]?["modelScaleMetersPerUnit"] is JValue scale)value.visual["scale"]=scale.DeepClone();
@@ -128,6 +178,7 @@ namespace DroneLab.UI
         }
         public async Task<bool> LoadModel(string path,bool normalize)
         {
+            CancelSilhouette();silhouetteStamp=null;
             DroneModelFiles.ValidateLocalModel(path);
             var result=await loader.LoadAsync(path,modelFrame.transform);
             if(disposed)return false;
@@ -143,9 +194,10 @@ namespace DroneLab.UI
                 document.visual["centerModel"]=true;
                 document.profile["coordinateSystem"]["modelScaleMetersPerUnit"]=document.visual["scale"].DeepClone();
             }
-            procedural.SetActive(false); ApplyTransform(); if(normalize)Frame();else UpdateCamera();
+            loadingModel=true;procedural.SetActive(false);try{ApplyTransform();}finally{loadingModel=false;}if(normalize)Frame();else UpdateCamera();
             RefreshRotorBindings();
             Status?.Invoke(normalize ? "Модель вписана в габарит профиля. Проверьте её реальный размер в метрах." : "Модель загружена с сохранённым масштабом и материалами.");
+            await BakeSilhouette();
             return true;
         }
         public void ApplyTransform()
@@ -159,6 +211,7 @@ namespace DroneLab.UI
                 if(RuntimeGltfModelLoader.TryGetBoundsInFrame(t,modelFrame.transform,out var bounds))t.localPosition=-bounds.center;
             }
             overlay.MarkDirtyRepaint();
+            QueueSilhouette();
         }
         public Bounds ModelBounds()
         {
@@ -330,7 +383,7 @@ namespace DroneLab.UI
         }
         public void Dispose()
         {
-            if(disposed)return;disposed=true;tick.Pause();camera.enabled=false;loader.Clear();
+            if(disposed)return;disposed=true;CancelSilhouette();tick.Pause();camera.enabled=false;loader.Clear();
             camera.targetTexture=null;image.image=null;if(texture!=null){Object.Destroy(texture);texture=null;} Object.Destroy(volumeProfile);Object.Destroy(stage);
             if(previewScene.IsValid() && previewScene.isLoaded)SceneManager.UnloadSceneAsync(previewScene);
             foreach(var pair in otherCameras)if(pair.Key!=null)pair.Key.cullingMask=pair.Value;

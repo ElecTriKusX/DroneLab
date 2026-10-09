@@ -9,6 +9,75 @@ using NUnit.Framework;
 
 public sealed class ConfiguratorDataTests
 {
+    [Test] public void ExportAndImportPreserveEditedProfilePreviewModelDependenciesAndBindings()
+    {
+        var document=DroneProfileLibrary.Create();document.profile["metadata"]["name"]="Edited by user";
+        document.profile["massProperties"]["massKg"]=1.25;
+        document.visual["rotorNodes"]=new JObject{["FL"]=new JArray("@/0/1","@/0/2")};document.visual["bundledModel"]="unused";
+        var source=Path.Combine(temp,"source");Directory.CreateDirectory(Path.Combine(source,"buffers"));Directory.CreateDirectory(Path.Combine(source,"textures"));
+        document.sourceModel=Path.Combine(source,"edited.gltf");
+        File.WriteAllText(document.sourceModel,"{\"buffers\":[{\"uri\":\"buffers/mesh.bin\"}],\"images\":[{\"uri\":\"textures/paint.png\"}]}");
+        File.WriteAllBytes(Path.Combine(source,"buffers/mesh.bin"),new byte[]{1,2,3,4});File.WriteAllBytes(Path.Combine(source,"textures/paint.png"),new byte[]{5,6,7});
+        string folder=DroneProfileLibrary.Folder(document.id);Directory.CreateDirectory(folder);File.WriteAllBytes(Path.Combine(folder,"preview.png"),new byte[]{8,9,10});
+        string before=document.Snapshot(),archive=Path.Combine(temp,"export.zip");DroneProfilePackages.Export(document,archive);
+        Assert.That(document.Snapshot(),Is.EqualTo(before));
+        using(var zip=System.IO.Compression.ZipFile.OpenRead(archive)) {
+            Assert.That(zip.GetEntry("model/textures/paint.png"),Is.Not.Null);Assert.That(zip.GetEntry("model/buffers/mesh.bin"),Is.Not.Null);
+            using(var reader=new StreamReader(zip.GetEntry("document.json").Open())) {
+                var exported=JObject.Parse(reader.ReadToEnd());Assert.That(exported["sourceModel"].Type,Is.EqualTo(JTokenType.Null));Assert.That(exported["visual"]["bundledModel"],Is.Null);
+            }
+        }
+        var imported=DroneProfilePackages.Import(archive);
+        Assert.That(imported.profile.ToString(),Is.EqualTo(document.profile.ToString()));Assert.That(imported.id,Is.Not.EqualTo(document.id));
+        Assert.That(imported.visual["rotorNodes"].ToString(),Is.EqualTo(document.visual["rotorNodes"].ToString()));
+        DroneProfileLibrary.Save(imported,true);
+        string model=DroneProfileLibrary.ModelPath(imported);Assert.That(File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(model),"textures/paint.png")),Is.EqualTo(new byte[]{5,6,7}));
+        Assert.That(File.ReadAllBytes(Path.Combine(DroneProfileLibrary.Folder(imported.id),"preview.png")),Is.EqualTo(new byte[]{8,9,10}));
+    }
+    [Test] public void FailedExportDoesNotOverwriteExistingArchive()
+    {
+        var document=DroneProfileLibrary.Create();document.sourceModel=Path.Combine(temp,"missing.glb");
+        string archive=Path.Combine(temp,"export.zip");File.WriteAllText(archive,"previous archive");
+        Assert.Throws<FileNotFoundException>(()=>DroneProfilePackages.Export(document,archive));Assert.That(File.ReadAllText(archive),Is.EqualTo("previous archive"));
+    }
+    [Test] public void ZipImportDoesNotFollowAbsoluteSourceModelFromAnotherComputer()
+    {
+        var document=DroneProfileLibrary.Create();document.sourceModel=Path.Combine(temp,"secret.glb");
+        string archive=Path.Combine(temp,"source-path.zip");
+        using(var zip=System.IO.Compression.ZipFile.Open(archive,System.IO.Compression.ZipArchiveMode.Create))
+            using(var writer=new StreamWriter(zip.CreateEntry("document.json").Open()))writer.Write(JsonConvert.SerializeObject(document));
+        var imported=DroneProfilePackages.Import(archive);Assert.That(imported.sourceModel,Is.Null);
+    }
+    [TestCase("../escaped.txt")][TestCase("%2e%2e/escaped.txt")][TestCase("../document.json")]
+    public void ImportedArchiveCannotWriteOutsideItsDirectory(string entry)
+    {
+        string archive=Path.Combine(temp,"unsafe.zip");
+        using(var zip=System.IO.Compression.ZipFile.Open(archive,System.IO.Compression.ZipArchiveMode.Create))
+            using(var writer=new StreamWriter(zip.CreateEntry(entry).Open()))writer.Write("outside");
+        Assert.Throws<ArgumentException>(()=>DroneProfilePackages.Import(archive));
+        Assert.That(Directory.GetDirectories(Path.Combine(DroneProfileLibrary.Root,".imports")),Is.Empty);
+    }
+    [Test] public void ModelProjectionRebakesChangedDimensionsAndUpdatesOnlyMeshMode()
+    {
+        var vertices=new[]{new DroneLab.Physics.DVector3(-1,-1,-1),new DroneLab.Physics.DVector3(1,-1,-1),new DroneLab.Physics.DVector3(1,1,-1),new DroneLab.Physics.DVector3(-1,1,-1),new DroneLab.Physics.DVector3(-1,-1,1),new DroneLab.Physics.DVector3(1,-1,1),new DroneLab.Physics.DVector3(1,1,1),new DroneLab.Physics.DVector3(-1,1,1)};
+        var triangles=new[]{0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,1,5,6,1,6,2,2,6,7,2,7,3,3,7,4,3,4,0};
+        var original=DroneMeshProjection.Bake(vertices,triangles,64);var scaled=DroneMeshProjection.Bake(vertices.Select(v=>v*2).ToArray(),triangles,64);
+        Assert.That(original.Count,Is.EqualTo(13));
+        for(int i=0;i<13;i++)Assert.That((double)scaled[i]["areaM2"],Is.EqualTo(4*(double)original[i]["areaM2"]).Within(1e-10));
+        var profile=DroneProfileLibrary.Create().profile;
+        profile["bodyAerodynamics"]=new JObject{["model"]="ProjectedArea",["dragCoefficient"]=.7,["projectedArea"]=new JObject{["mode"]="MeshDirectionalLUT",["samples"]=original}};
+        DroneMeshProjection.Apply(profile,scaled);Assert.That(JToken.DeepEquals(profile["bodyAerodynamics"]["projectedArea"]["samples"],scaled),Is.True);
+        profile["bodyAerodynamics"]["projectedArea"]["mode"]="ManualDirectionalLUT";
+        DroneMeshProjection.Apply(profile,original);Assert.That(JToken.DeepEquals(profile["bodyAerodynamics"]["projectedArea"]["samples"],scaled),Is.True);
+        DroneMeshProjection.Invalidate(profile);Assert.That(profile["derived"]["projectedAreaLut"],Is.Null);
+        Assert.That(profile["bodyAerodynamics"]["projectedArea"]["samples"],Is.Not.Null);
+        Assert.Throws<OperationCanceledException>(()=>DroneMeshProjection.Bake(vertices,triangles,64,new System.Threading.CancellationToken(true)));
+    }
+    [TestCase(0)][TestCase(513)] public void ImportedSilhouetteResolutionMustBeValid(int value)
+    {
+        var document=DroneProfileLibrary.Create();document.visual["silhouetteResolution"]=value;
+        Assert.Throws<ArgumentException>(()=>DroneProfileLibrary.PrepareForEditing(document));
+    }
     [TestCase("dji_mavic_3")][TestCase("dji_mini_3")][TestCase("dji_avata2")][TestCase("dji_m600_ul_ver")]
     public void DjiDefaultsIncludeValidatedProfileAndOriginalModelWithoutImport(string key)
     {

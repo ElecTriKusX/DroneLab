@@ -74,7 +74,7 @@
 .drone-status.error, .drone-error { color: rgb(239, 145, 129); }
 .drone-error, .drone-warning { white-space: normal; font-size: 14px; margin-bottom: 16px; padding: 12px; border-width: 1px; border-color: rgb(81, 93, 102); border-radius: 4px; background-color: rgb(28, 34, 39); }
 .drone-warning { color: rgb(215, 204, 176); }
-.drone-gallery-toolbar { flex-direction: row; align-items: center; flex-shrink: 0; margin-bottom: 20px; }
+.drone-gallery-toolbar { flex-direction: row; flex-wrap: wrap; align-items: center; flex-shrink: 0; margin-bottom: 20px; }
 .drone-gallery-scroll { flex-grow: 1; flex-basis: 0; min-height: 0; }
 .drone-card-preview { height: 310px; flex-shrink: 0; background-color: rgb(30, 31, 32); }
 .drone-card-title { font-size: 22px; -unity-font-style: bold; margin: 14px 18px 8px; }
@@ -271,9 +271,10 @@
 .drone-field-group > .drone-group-header > .unity-foldout__toggle { flex-direction: row; align-items: center; }
 .drone-field-group > .drone-group-header > .unity-foldout__toggle > .unity-base-field__input { width: 20px; min-width: 20px; flex-shrink: 0; }
 .drone-group-title { flex-grow: 1; flex-basis: 0; min-width: 0; white-space: normal; margin: 0 0 0 6px; font-size: 16px; color: rgb(227, 230, 229); -unity-font-style: bold; }
-.drone-viewport-snap { flex-direction: row; align-items: center; justify-content: flex-end; flex-grow: 1; min-width: 265px; margin-left: 12px; }
+.drone-viewport-snap { flex-direction: row; align-items: center; justify-content: flex-end; flex-grow: 1; flex-shrink: 0; min-width: 280px; margin-left: 12px; }
 .drone-viewport-snap .drone-switch { flex-grow: 0; flex-basis: auto; min-height: 34px; padding: 4px 8px; }
-.drone-viewport-snap .drone-switch-label { font-size: 13px; margin-right: 10px; }
+.drone-viewport-snap .drone-switch-label { flex-basis: auto; flex-shrink: 0; min-width: 190px; white-space: nowrap; font-size: 13px; margin-right: 10px; }
+.drone-viewport-snap .drone-switch { flex-shrink: 0; min-width: 245px; }
 .drone-viewport-snap > .parameter-help { flex-shrink: 0; }
 
 /* Draw the expand indicator with the established vector icon, independent of skin. */

@@ -219,6 +219,8 @@ namespace DroneLab.UI
             if((double)visual["scale"]<=0 || (double)visual["previewDistance"]<=0 || visual["rotorNodes"] is not JObject || visual["modelFile"].Type!=JTokenType.String || visual["centerModel"].Type!=JTokenType.Boolean || visual["previewOrthographic"].Type!=JTokenType.Boolean)
                 throw new ArgumentException("Некорректные настройки визуальной модели.");
             DroneVisualBindings.Validate((JObject)visual["rotorNodes"]);
+            if(visual["silhouetteResolution"]!=null && (visual["silhouetteResolution"].Type!=JTokenType.Integer || (long)visual["silhouetteResolution"]<16 || (long)visual["silhouetteResolution"]>512))
+                throw new ArgumentException("Разрешение силуэта должно быть целым числом от 16 до 512.");
             item.visual=visual;item.unfinishedInputs??=new Dictionary<string,string>();
             item.category=item.Category;
         }

@@ -18,6 +18,8 @@
     <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneProfileEdits.cs" />
     <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneVisualBindings.cs" />
     <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneBundledModels.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneProfilePackages.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneMeshProjection.cs" />
     <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneArrayEdits.cs" />
     <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneValidationText.cs" />
     <Compile Include="../../Distribution/Packages/com.dronelab.configurator/Runtime/DroneConfiguratorData.cs" />
