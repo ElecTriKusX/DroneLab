@@ -44,6 +44,7 @@ namespace DroneLab.UI
         private bool loading;
         private DroneScenariosScreen scenarioScreen;
         private DroneDronesScreen dronesScreen;
+        private DroneSimulationSetupScreen simulationScreen;
 
         private void OnEnable()
         {
@@ -147,6 +148,7 @@ namespace DroneLab.UI
         private void OnKeyDown(KeyDownEvent evt)
         {
             if (evt.keyCode != KeyCode.Escape) return;
+            if (simulationScreen != null) { simulationScreen.RequestClose(); evt.StopPropagation(); return; }
             if (dronesScreen != null) { dronesScreen.RequestClose(); evt.StopPropagation(); return; }
             if (scenarioScreen != null) { scenarioScreen.RequestClose(); evt.StopPropagation(); return; }
             if (modal != null) CloseModal(); else ConfirmExit();
@@ -168,9 +170,7 @@ namespace DroneLab.UI
         }
         public void StartFlight()
         {
-            var catalog = GetCatalog();
-            if (catalog != null && catalog.maps.Count > 0) { PrepareFlight(catalog); return; }
-            LoadLegacyFlight();
+            PrepareFlight(GetCatalog());
         }
         private void LoadLegacyFlight()
         {
@@ -199,26 +199,13 @@ namespace DroneLab.UI
         private void PrepareFlight(DroneScenarioCatalog catalog)
         {
             if (loading) return;
-            var maps = catalog.maps.FindAll(m => m != null && !string.IsNullOrWhiteSpace(m.scenePath));
-            var profiles = DroneEnvironmentProfiles.LoadAll(out _);
-            if (maps.Count == 0 || profiles.Count == 0) { status.text = "Добавьте карту и профиль среды в каталог."; return; }
-            var card = OpenModal("НОВАЯ СИМУЛЯЦИЯ", "launch-card");
-            var map = Dropdown(card, "Карта", maps.ConvertAll(m => m.title), 0);
-            var environment = Dropdown(card, "Профиль среды", profiles.ConvertAll(p => p.name), 0);
-            var drones = DroneProfileLibrary.LoadAll(out _).Where(d => !d.draft).ToList();
-            if (drones.Count == 0) { Text(card, "Сначала сохраните готовый профиль в каталоге дронов.", "muted-text"); return; }
-            string selectedId = PlayerPrefs.GetString("DroneLab.SelectedDrone", "");
-            var drone = Dropdown(card, "Дрон", drones.ConvertAll(d => d.Name), Mathf.Max(0,drones.FindIndex(d=>d.id == selectedId)));
-            var error = Text(card, "Карта и профиль среды выбираются независимо.", "muted-text");
-            var actions = Actions(card); ActionButton(actions, "НАЗАД", CloseModal);
-            ActionButton(actions, "ЗАПУСТИТЬ", () => {
-                try {
-                    var operation = DroneScenarioLaunch.Load(maps[map.index], profiles[environment.index], catalog, drones[drone.index]);
-                    if (operation == null) throw new InvalidOperationException("Не удалось начать загрузку карты.");
-                    loading = true; card.SetEnabled(false); status.text = "Загрузка симуляции…";
-                } catch (Exception ex) { error.text = ex.Message; }
-            });
+            CloseModal(); stack.SetEnabled(false);
+            simulationScreen?.Dispose();
+            simulationScreen = new DroneSimulationSetupScreen(stage, catalog,
+                () => { simulationScreen = null; stack.SetEnabled(!loading); (returnFocus ?? firstButton)?.Focus(); },
+                () => { loading = true; status.text = "Загрузка симуляции…"; });
         }
+
         private void OpenScreen(UnityEvent handler, string title)
         {
             if (handler.GetPersistentEventCount() > 0) handler.Invoke();
@@ -341,6 +328,7 @@ namespace DroneLab.UI
         }
         private void OnDisable()
         {
+            simulationScreen?.Dispose(); simulationScreen = null;
             dronesScreen?.Dispose(); dronesScreen = null;
             if (root != null)
             {

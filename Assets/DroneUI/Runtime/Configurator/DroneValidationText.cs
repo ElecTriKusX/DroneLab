@@ -7,6 +7,13 @@ namespace DroneLab.UI
     public static class DroneValidationText
     {
         private static readonly Dictionary<string,string> Messages=new Dictionary<string,string> {
+            ["Pilot requires at least four rotors."]="Для этого управления нужны не менее четырёх роторов.",
+            ["Test pilot requires +Y rotor axes."]="Оси тяги всех роторов должны смотреть вверх (+Y).",
+            ["Rotor layout cannot control all four axes."]="Расположение роторов не позволяет независимо управлять тягой, креном, тангажом и рысканием.",
+            ["Rotor layout cannot produce positive collective with zero torque."]="Расположение роторов не позволяет создать положительную тягу без вращающего момента.",
+            ["Table/map test pilot requires minRpm=0."]="Для табличной модели установите минимальные обороты 0.",
+            ["Table/map test pilot requires minRpm=0 for every rotor."]="Для табличной модели установите минимальные обороты каждого ротора 0.",
+            ["Table/map test pilot needs a monotone yaw null-space for this rotor layout."]="Табличная модель и направления вращения роторов не позволяют независимо управлять рысканием в этой конфигурации.",
             ["Required field is missing."]="Обязательный параметр отсутствует.",
             ["Required for the selected model."]="Этот параметр нужен для выбранной модели расчёта.",
             ["Required for an enabled battery."]="Параметр обязателен при включённой батарее.",

@@ -39,8 +39,8 @@ namespace DroneLab.Simulation
         DVector3 IFlightControlTelemetry.DesiredRateLocal=>DronePhysicsBody.FromUnity(DesiredAngularRateLocal);
         string IFlightControlTelemetry.ExportSettingsJson()=>JsonUtility.ToJson(this);
         private DronePhysicsBody physicsBody;
-        private QuadAllocator allocator;
-        private readonly double[] commands=new double[4];
+        private MultirotorAllocator allocator;
+        private double[] commands;
         private FlightInput input;
         private readonly FlightController controller=new FlightController();
         private Vector3 smoothedRate;
@@ -63,7 +63,7 @@ namespace DroneLab.Simulation
             if(allocator!=null) return;
             physicsBody=GetComponent<DronePhysicsBody>();
             if(!physicsBody.IsReady) { enabled=false; return; }
-            try { allocator=new QuadAllocator(physicsBody.Parameters); }
+            try { allocator=new MultirotorAllocator(physicsBody.Parameters); commands=new double[physicsBody.Parameters.Rotors.Count]; }
             catch(ArgumentException ex) { Debug.LogError(ex.Message,this); enabled=false; return; }
             startPosition=transform.position; startRotation=transform.rotation;
             targetAltitude=transform.position.y; previousAltitudeHold=altitudeHold;
@@ -141,7 +141,7 @@ namespace DroneLab.Simulation
             // A manual zero throttle and unsafe upside-down altitude hold override transition smoothing.
             if(collective<=0)
             {
-                for(int i=0;i<4;i++) physicsBody.SetMotorCommand(i,0);
+                for(int i=0;i<commands.Length;i++) physicsBody.SetMotorCommand(i,0);
                 ResetControl(); targetAltitude=body.position.y; return;
             }
             if(transitionRemaining>0 && modeTransitionSeconds>0)
@@ -180,7 +180,7 @@ namespace DroneLab.Simulation
             Vector3 torque=MultiplyInertia(acceleration)+Vector3.Cross(rate,MultiplyInertia(rate));
             RequestedTorqueLocal=torque;
             Saturated=allocator.Allocate(collective/densityScale,DronePhysicsBody.FromUnity(torque)/densityScale,commands);
-            for(int i=0;i<4;i++) physicsBody.SetMotorCommand(i,commands[i]);
+            for(int i=0;i<commands.Length;i++) physicsBody.SetMotorCommand(i,commands[i]);
         }
         private void OnApplicationFocus(bool focus) { if(DisarmOnFocusLoss && !focus && physicsBody != null) { physicsBody.SetArmed(false); input=default; ResetControl(); } }
         private void OnDisable() { if(physicsBody != null) { physicsBody.SetArmed(false); ResetControl(); } }

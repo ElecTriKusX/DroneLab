@@ -98,6 +98,15 @@ public sealed class ConfiguratorDataTests
         DroneProfileLibrary.Delete(reloaded);
         Assert.That(DroneProfileLibrary.LoadAll(out _).Any(d=>d.id==document.id),Is.False);
     }
+    [Test] public void EveryReadyBuiltinCanInitializeTheMultirotorPilot()
+    {
+        var documents=DroneProfileLibrary.LoadAll(out var warnings);Assert.That(warnings,Is.Empty);
+        Assert.That(documents.Any(d=>((JArray)d.profile["rotors"]).Count==6),Is.True);
+        foreach(var document in documents.Where(d=>!d.draft)) {
+            var checkedProfile=DroneProfileLibrary.Validate(document);Assert.That(checkedProfile.Success,Is.True,document.Name);
+            Assert.DoesNotThrow(()=>new DroneLab.Physics.MultirotorAllocator(checkedProfile.Parameters),document.Name);
+        }
+    }
     [Test] public void BundledModelRejectsChangedBytesAndLeavesNoPartialModel()
     {
         using(var zip=System.IO.Compression.ZipFile.Open(Path.Combine(temp,"model.zip"),System.IO.Compression.ZipArchiveMode.Create))

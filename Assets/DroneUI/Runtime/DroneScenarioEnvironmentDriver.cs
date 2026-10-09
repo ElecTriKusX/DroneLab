@@ -20,7 +20,7 @@ namespace DroneLab.UI
         private EnviroWeatherType weatherClone;
         private bool applied;
         private DroneScenarioCatalog catalog;
-        public void Configure(DroneEnvironmentDocument profile, DroneScenarioCatalog sourceCatalog) { document = profile.Copy(); catalog = sourceCatalog; }
+        public void Configure(DroneEnvironmentDocument profile, DroneScenarioCatalog sourceCatalog, DronePhysicsBody selectedBody = null) { document = profile.Copy(); catalog = sourceCatalog; body = selectedBody; }
         private void LateUpdate()
         {
             if (document == null) return;

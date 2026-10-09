@@ -17,6 +17,8 @@ namespace DroneLab.UI
         public Texture2D screenshot;
         [Tooltip("Full build scene path, for example Assets/Scenes/Forest.unity.")]
         public string scenePath;
+        [Tooltip("Optional DroneSpawnPoint id in this scene. Leave empty only when there is exactly one active point.")]
+        public string spawnPointId;
     }
 
     [Serializable]

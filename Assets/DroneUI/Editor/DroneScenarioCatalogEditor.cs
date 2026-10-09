@@ -78,7 +78,7 @@ namespace DroneLab.UI.Editor
     [CustomPropertyDrawer(typeof(DroneMapEntry))]
     public sealed class DroneMapEntryDrawer : PropertyDrawer
     {
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => (EditorGUIUtility.singleLineHeight + 4) * 8;
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => (EditorGUIUtility.singleLineHeight + 4) * 9;
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
@@ -98,6 +98,7 @@ namespace DroneLab.UI.Editor
                 scenePath.stringValue = scene == null ? "" : AssetDatabase.GetAssetPath(scene);
                 var id = property.FindPropertyRelative("id"); if (scene != null && string.IsNullOrWhiteSpace(id.stringValue)) id.stringValue = AssetDatabase.AssetPathToGUID(scenePath.stringValue);
             }
+            row.y += row.height + 4; EditorGUI.PropertyField(row, property.FindPropertyRelative("spawnPointId"), new GUIContent("Точка старта · Id"));
             row.y += row.height + 4; EditorGUI.LabelField(row, scenePath.stringValue, EditorStyles.miniLabel);
             EditorGUI.EndProperty();
         }

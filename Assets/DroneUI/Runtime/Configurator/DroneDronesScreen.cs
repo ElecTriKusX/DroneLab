@@ -45,16 +45,22 @@ namespace DroneLab.UI
         private VisualElement dataReturnFocus;
         private byte[] preview;
         private IVisualElementScheduledItem statusTimer;
+        private readonly Action<DroneProfileDocument> picked;
+        private Button choose;
+        public VisualElement Element => page;
 
-        public DroneDronesScreen(VisualElement host,Action closed)
+        public DroneDronesScreen(VisualElement host,Action closed,Action<DroneProfileDocument> picked=null,string selectedId=null)
         {
-            this.closed=closed;documents=DroneProfileLibrary.LoadAll(out var warnings);
+            this.closed=closed;this.picked=picked;documents=DroneProfileLibrary.LoadAll(out var warnings);
+            if(picked!=null)documents.RemoveAll(d=>d.draft);
+            gallerySelection=selectedId;
             page=new VisualElement();page.AddToClassList("scenario-page");page.AddToClassList("drone-page");host.Add(page);
             var sheet=Resources.Load<StyleSheet>("DroneLab/Configurator");if(sheet!=null)page.styleSheets.Add(sheet);
             var header=Box(page,"drone-header");DroneProfileFields.Label(header,"ДРОНЛАБ","scenario-brand");Box(header,"scenario-header-divider");
             heading=DroneProfileFields.Label(header,"КАТАЛОГ ДРОНОВ","scenario-title");
             identity=DroneProfileFields.Label(header,"","drone-profile-identity");
             state=DroneProfileFields.Label(header,"","drone-state");body=Box(page,"drone-body");footer=Box(page,"drone-footer");
+            if(picked!=null){page.AddToClassList("simulation-drone-selection");DroneLaunchSteps.Add(page,1);}
             back=DroneProfileFields.Button(footer,"Назад",RequestClose);back.AddToClassList("drone-back");
             galleryCount=DroneProfileFields.Label(footer,"","scenario-muted");galleryCount.AddToClassList("drone-gallery-count");
             message=DroneProfileFields.Label(footer,"","drone-status");
@@ -64,6 +70,7 @@ namespace DroneLab.UI
             cancel=DroneProfileFields.Button(footer,"Отменить",Cancel);
             draftSave=DroneProfileFields.Button(footer,"Сохранить черновик",()=>Save(true));
             save=DroneProfileFields.Button(footer,"Проверить и сохранить",Validate);save.AddToClassList("primary");
+            if(picked!=null){choose=DroneProfileFields.Button(footer,"Выбрать дрон",Pick);choose.AddToClassList("primary");}
             BuildGallery();
             if(!string.IsNullOrEmpty(warnings))Status(warnings,true);
         }
@@ -81,6 +88,7 @@ namespace DroneLab.UI
             galleryImport=DroneProfileFields.Button(toolbar,"Импорт профиля",ImportProfile);
             galleryExport=DroneProfileFields.Button(toolbar,"Экспорт профиля",ExportSelected);
             galleryExport.tooltip="Выберите дрон в галерее для экспорта профиля вместе с моделью.";
+            if(picked!=null)foreach(var button in new[]{galleryCreate,galleryImport,galleryExport})button.style.display=DisplayStyle.None;
             var search=new TextField("Поиск");search.SetValueWithoutNotify(gallerySearch);DroneTextInput.Configure(search);search.AddToClassList("scenario-search");toolbar.Add(search);
             search.tooltip="Поиск по названию или категории дрона";
             var categories=new List<string>{"Все дроны"};categories.AddRange(documents.Select(d=>d.Category).Distinct().OrderBy(c=>c,StringComparer.CurrentCulture));
@@ -108,11 +116,11 @@ namespace DroneLab.UI
                     DroneProfileFields.Label(card,item.Name,"drone-card-title");
                     DroneProfileFields.Label(card,item.Category+" · "+(item.draft?"Черновик":"Профиль"),"drone-card-category");
                     DroneProfileFields.Label(card,$"{((JArray)item.profile["rotors"]).Count} ротора · {(double?)item.profile["massProperties"]?["massKg"]:0.###} кг","map-meta");
-                    card.RegisterCallback<ClickEvent>(evt=>{if(evt.button!=0)return;Select(item);card.Focus();if(evt.clickCount==2)Open(item);});
+                    card.RegisterCallback<ClickEvent>(evt=>{if(evt.button!=0)return;Select(item);card.Focus();if(evt.clickCount==2){if(picked!=null)Pick();else Open(item);}});
                     card.RegisterCallback<FocusInEvent>(_=>Select(item));
                     card.RegisterCallback<KeyDownEvent>(evt=>{
-                        if(evt.keyCode==KeyCode.Return||evt.keyCode==KeyCode.KeypadEnter){Open(item);evt.StopPropagation();}
-                        else if(evt.keyCode==KeyCode.Delete){Select(item);DeleteSelected();evt.StopPropagation();}
+                        if(evt.keyCode==KeyCode.Return||evt.keyCode==KeyCode.KeypadEnter){Select(item);if(picked!=null)Pick();else Open(item);evt.StopPropagation();}
+                        else if(evt.keyCode==KeyCode.Delete&&picked==null){Select(item);DeleteSelected();evt.StopPropagation();}
                         else {
                             int delta=evt.keyCode==KeyCode.RightArrow?1:evt.keyCode==KeyCode.LeftArrow?-1:evt.keyCode==KeyCode.DownArrow?3:evt.keyCode==KeyCode.UpArrow?-3:0;
                             if(delta!=0){int next=Mathf.Clamp(visible.IndexOf(item)+delta,0,visible.Count-1);var target=galleryCards[visible[next].id];target.Focus();scroll.ScrollTo(target);evt.StopPropagation();}
@@ -121,7 +129,7 @@ namespace DroneLab.UI
                 }
                 if(count==0) {
                     var empty=Box(grid,"drone-gallery-empty");DroneProfileFields.Label(empty,documents.Count==0?"В каталоге пока нет дронов":"Дроны не найдены","drone-panel-title");
-                    DroneProfileFields.Label(empty,documents.Count==0?"Создайте дрон или импортируйте профиль.":"Измените запрос или выберите другую категорию.","scenario-hint");
+                    DroneProfileFields.Label(empty,documents.Count==0?(picked==null?"Создайте дрон или импортируйте профиль.":"Сохраните готовый профиль в каталоге дронов главного меню."):"Измените запрос или выберите другую категорию.","scenario-hint");
                     if(documents.Count>0)DroneProfileFields.Button(empty,"Сбросить фильтры",()=>{gallerySearch="";galleryCategory="Все дроны";search.SetValueWithoutNotify("");kind.SetValueWithoutNotify(galleryCategory);Fill();});
                 }
                 Select(visible.FirstOrDefault(x=>x.id==gallerySelection));
@@ -167,6 +175,7 @@ namespace DroneLab.UI
         }
         private void Open(DroneProfileDocument value,bool created=false)
         {
+            if(picked!=null)return;
             ++galleryRevision;galleryRenderer?.Dispose();galleryRenderer?.RemoveFromHierarchy();galleryRenderer=null;
             viewport?.Dispose();CloseValidation();CloseDataWindow();selected=value;document=value.Copy();newProfile=created;original=document.Snapshot();preview=null;errors.Clear();input.Clear();rotorIndex=0;section="Model";inspectorSection=null;inspectorOffsets.Clear();expandedGroups.Clear();
             bindingRotorIds=((JArray)document.profile["rotors"]).Select(r=>(string)r["rotorId"]).ToArray();
@@ -405,7 +414,8 @@ namespace DroneLab.UI
             bool editing=document!=null;state.text=!editing?"":Dirty?"Изменения не сохранены":document.draft?"Черновик":"Профиль сохранён";
             identity.text=document?.Name??"";identity.style.display=editing?DisplayStyle.Flex:DisplayStyle.None;
             galleryCount.style.display=editing?DisplayStyle.None:DisplayStyle.Flex;
-            foreach(var button in new[]{galleryOpen,galleryCopy,galleryExport,galleryDelete}) {button.style.display=editing?DisplayStyle.None:DisplayStyle.Flex;button.SetEnabled(!busy&&selected!=null);}
+            foreach(var button in new[]{galleryOpen,galleryCopy,galleryExport,galleryDelete}) {button.style.display=editing||picked!=null?DisplayStyle.None:DisplayStyle.Flex;button.SetEnabled(!busy&&selected!=null);}
+            choose?.SetEnabled(!busy&&selected!=null&&!selected.draft);
             galleryCreate?.SetEnabled(!busy);galleryImport?.SetEnabled(!busy);
             save.style.display=editing && (Dirty || document.draft)?DisplayStyle.Flex:DisplayStyle.None;
             draftSave.style.display=editing && Dirty?DisplayStyle.Flex:DisplayStyle.None;cancel.style.display=editing && Dirty?DisplayStyle.Flex:DisplayStyle.None;
@@ -443,6 +453,7 @@ namespace DroneLab.UI
             if(dataWindow!=null){RequestDataClose();return;}
             Guard(()=> {if(document!=null){BuildGallery();}else{Dispose();page.RemoveFromHierarchy();closed();}});
         }
+        private void Pick(){if(!disposed&&!busy&&selected!=null&&!selected.draft)picked?.Invoke(selected.Copy());}
         private void Ask(string title,string text,params (string name,Action action)[] actions)
         {
             prompt?.RemoveFromHierarchy();prompt=Box(page,"scenario-prompt");var card=Box(prompt,"scenario-prompt-card");DroneProfileFields.Label(card,title,"scenario-panel-title");DroneProfileFields.Label(card,text,"scenario-hint");

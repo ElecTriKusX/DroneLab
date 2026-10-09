@@ -120,3 +120,26 @@
 .environment-field.drone-dropdown > .unity-base-field__input { padding: 0; border-width: 0; background-color: transparent; }
 .environment-field > .unity-base-field__input { min-width: 0; flex-grow: 1; flex-basis: 0; }
 .map-filter .drone-dropdown-trigger { height: 48px; }
+
+.simulation-steps { flex-direction: row; align-items: center; height: 72px; border-bottom-width: 1px; border-bottom-color: rgb(76, 79, 80); margin-bottom: 26px; flex-shrink: 0; }
+.simulation-step { color: rgb(126, 132, 136); font-size: 22px; padding: 0 0 0 2px; }
+.simulation-step.active { color: rgb(239, 240, 237); -unity-font-style: bold; }
+.simulation-step-arrow { width: 24px; height: 24px; margin: 0 32px; color: rgb(140, 145, 146); }
+.simulation-columns { flex-direction: row; flex-grow: 1; min-height: 0; }
+.simulation-maps { flex-grow: 1; min-width: 0; margin-right: 28px; }
+.simulation-maps > .scenario-search { flex-grow: 0; margin: 0 0 22px; }
+.simulation-map-card { width: 48.9%; margin-right: 2%; }
+.simulation-map-card.selected { border-color: rgb(235, 235, 231); }
+.simulation-map-card:hover, .simulation-map-card:focus { border-color: rgb(183, 187, 184); background-color: rgb(35, 36, 37); }
+.simulation-weather { width: 32%; margin-right: 0; flex-shrink: 0; }
+.simulation-footer { flex-shrink: 0; margin-top: 22px; padding-top: 18px; border-top-width: 1px; border-top-color: rgb(85, 87, 88); }
+.simulation-summary { color: rgb(221, 225, 221); font-size: 19px; white-space: normal; margin-bottom: 10px; }
+.simulation-status { color: rgb(151, 158, 160); font-size: 17px; white-space: normal; max-height: 70px; margin-bottom: 12px; }
+.simulation-status.error { color: rgb(227, 112, 108); }
+.simulation-actions { flex-direction: row; justify-content: space-between; }
+.simulation-actions > .scenario-button { margin-left: 0; min-width: 160px; }
+.simulation-drone-selection .drone-gallery-toolbar > .scenario-search { margin-left: 0; }
+.simulation-drone-selection > .simulation-steps { margin: 0 28px; }
+.flight-hud { position: absolute; left: 30px; top: 26px; right: 30px; flex-direction: row; align-items: center; padding: 12px 16px; border-width: 1px; border-color: rgba(172, 183, 182, .5); border-radius: 8px; background-color: rgba(17, 20, 21, .8); }
+.flight-caption { color: rgb(226, 232, 228); font-size: 18px; flex-grow: 1; white-space: normal; margin-right: 20px; }
+.flight-controls { position: absolute; left: 30px; right: 30px; bottom: 26px; padding: 12px 18px; color: rgb(206, 216, 212); background-color: rgba(17, 20, 21, .8); border-width: 1px; border-color: rgba(172, 183, 182, .4); border-radius: 7px; font-size: 17px; white-space: normal; }
