@@ -30,7 +30,8 @@ namespace DroneLab.UI
         private SensorKind selected = SensorKind.Barometer;
         private DroneFlightViewMode view;
         private bool previousArmed, previousLimited;
-        private bool ownsKeyboard, previousReadKeyboard;
+        private bool ownsKeyboard, previousReadKeyboard, editRequested, inputSuspended;
+        private readonly VisualElement stage;
         private UniformWind wind;
         private double windSpeed, windFrom;
         private Label recordStatus;
@@ -43,16 +44,32 @@ namespace DroneLab.UI
         }
         public DroneFlightWorkbench(VisualElement parent, DronePhysicsBody selectedBody, DroneTestPilot selectedPilot, DroneSensorRig sensors, DroneFlightCamera flightCamera, Action<DroneFlightViewMode> onView)
         {
+            stage=parent; parent.focusable=true; parent.tabIndex=-1;
             body = selectedBody; pilot = selectedPilot; rig = sensors; camera = flightCamera; changeView = onView;
             recording = new DroneFlightRecording(body, pilot, rig);
             sceneOverlay = new DroneFlightSceneOverlay(body, rig, camera); parent.Add(sceneOverlay);
-            root = Element(parent, "flight-workbench"); panel = Element(root, "flight-workbench-panel");
+            root = Element(parent, "flight-workbench"); root.pickingMode=PickingMode.Position; panel = Element(root, "flight-workbench-panel");
             panel.pickingMode = PickingMode.Position;
             panel.RegisterCallback<PointerEnterEvent>(_ => { if (camera != null) camera.PointerOverUI = true; });
             panel.RegisterCallback<PointerLeaveEvent>(_ => { if (camera != null) camera.PointerOverUI = false; });
-            // Editing fields must never also command the drone or switch views.
-            parent.RegisterCallback<FocusInEvent>(evt => { if (ContainsEditor(evt.target as VisualElement) && pilot != null) { if (!ownsKeyboard) previousReadKeyboard = pilot.readKeyboard; ownsKeyboard = true; pilot.readKeyboard = false; pilot.SetFlightInput(default); } }, TrickleDown.TrickleDown);
-            parent.RegisterCallback<FocusOutEvent>(evt => { if (!ContainsEditor(evt.relatedTarget as VisualElement)) ReleaseKeyboard(); }, TrickleDown.TrickleDown);
+            // UI navigation maps WASD/Space too: only an explicit pointer selection may grant text input.
+            parent.RegisterCallback<PointerDownEvent>(evt => {
+                if(!InputGateActive || evt.button != 0) return;
+                editRequested=ContainsEditor(evt.target as VisualElement);
+                if(editRequested) AcquireKeyboard(); else ClearInputFocus();
+            },TrickleDown.TrickleDown);
+            parent.RegisterCallback<FocusInEvent>(evt => {
+                if(!InputGateActive) return;
+                if((editRequested || DropdownOpen) && ContainsEditor(evt.target as VisualElement)) AcquireKeyboard();
+                else if(!Editing) ReleaseKeyboard();
+            },TrickleDown.TrickleDown);
+            parent.RegisterCallback<FocusOutEvent>(evt => {
+                if(editRequested && !ContainsEditor(evt.relatedTarget as VisualElement) && !DropdownOpen) { editRequested=false; ReleaseKeyboard(); }
+            },TrickleDown.TrickleDown);
+            parent.RegisterCallback<KeyDownEvent>(BlockFlightNavigation,TrickleDown.TrickleDown);
+            parent.RegisterCallback<NavigationMoveEvent>(BlockFlightNavigation,TrickleDown.TrickleDown);
+            parent.RegisterCallback<NavigationSubmitEvent>(BlockFlightNavigation,TrickleDown.TrickleDown);
+            parent.RegisterCallback<NavigationCancelEvent>(BlockFlightNavigation,TrickleDown.TrickleDown);
             title = Text(panel, "", "flight-title");
             purpose = Text(panel, "", "flight-note"); purpose.AddToClassList("flight-purpose");
             var tabs = Element(panel, "flight-workbench-tabs");
@@ -70,14 +87,47 @@ namespace DroneLab.UI
             graph = new DroneSensorPlot(); graphCard.Add(graph); graph.SetSource(rig, selected);
             SetView(DroneFlightViewMode.Pilot);
         }
+        private bool InputGateActive => !inputSuspended && root.style.display.value!=DisplayStyle.None;
+        private bool DropdownOpen => root.Query<DroneDropdown>().ToList().Exists(field=>field.IsOpen);
         private bool ContainsEditor(VisualElement element)
         {
-            if (element == null || root.style.display.value == DisplayStyle.None) return false;
-            for (var parent = element; parent != null; parent = parent.parent)
-                if (parent is DoubleField || parent is FloatField || parent is IntegerField || parent is TextField || parent.ClassListContains("drone-dropdown-overlay")) return true;
+            if(element==null) return false;
+            // Open popup options live at stage level; closed dropdowns do not own the keyboard.
+            for(var ancestor=element;ancestor!=null;ancestor=ancestor.parent)
+                if(ancestor.ClassListContains("drone-dropdown-overlay")) return DropdownOpen;
+            if(!panel.Contains(element) && !graphCard.Contains(element)) return false;
+            for(var ancestor=element;ancestor!=null;ancestor=ancestor.parent)
+                if(ancestor is DoubleField || ancestor is FloatField || ancestor is IntegerField || ancestor is TextField || ancestor is DroneDropdown) return true;
             return false;
         }
-        public bool Editing => ContainsEditor(panel.panel?.focusController?.focusedElement as VisualElement);
+        private void BlockFlightNavigation<T>(T evt) where T : EventBase<T>, new()
+        {
+            if(!InputGateActive || Editing) return;
+            stage.panel?.focusController?.IgnoreEvent(evt);
+            evt.StopImmediatePropagation();
+        }
+        private void AcquireKeyboard()
+        {
+            if(pilot==null) return;
+            if(!ownsKeyboard) previousReadKeyboard=pilot.readKeyboard;
+            ownsKeyboard=true; pilot.readKeyboard=false; pilot.SetFlightInput(default);
+        }
+        public void ClearInputFocus()
+        {
+            editRequested=false;
+            var focused=stage.panel?.focusController?.focusedElement as VisualElement;
+            if(focused!=null && (panel.Contains(focused) || graphCard.Contains(focused))) focused.Blur();
+            ReleaseKeyboard();
+            if(InputGateActive) stage.Focus();
+        }
+        public void SetInputSuspended(bool value) { inputSuspended=value; ClearInputFocus(); }
+        public void TickInputFocus()
+        {
+            if(!InputGateActive) return;
+            if(Editing) AcquireKeyboard();
+            else if(ownsKeyboard) { editRequested=false; ReleaseKeyboard(); }
+        }
+        public bool Editing => InputGateActive && (DropdownOpen || editRequested && ContainsEditor(stage.panel?.focusController?.focusedElement as VisualElement));
         private static List<string> SensorNames() { var names = new List<string>(); for (int i = 0; i < 7; i++) names.Add(DroneSensorRig.Title((SensorKind)i)); return names; }
         private void SelectSensor(SensorKind sensor) { selected = sensor; graphSensor.SetValueWithoutNotify(DroneSensorRig.Title(sensor)); graph.SetSource(rig, selected); Build(); }
         public void SetView(DroneFlightViewMode mode)
@@ -86,12 +136,12 @@ namespace DroneLab.UI
             root.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
             sceneOverlay.style.display = mode == DroneFlightViewMode.Engineer ? DisplayStyle.Flex : DisplayStyle.None;
             if (panel.panel?.focusController?.focusedElement is VisualElement focused && (panel.Contains(focused) || graphCard.Contains(focused))) focused.Blur();
-            ReleaseKeyboard();
+            ClearInputFocus();
             if (camera != null) camera.PointerOverUI = false;
             if (!visible) return;
             tab = mode == DroneFlightViewMode.Engineer ? engineerTab : diagnosticsTab;
             title.text = mode == DroneFlightViewMode.Engineer ? DroneKeyBindings.Caption(FlightKeyAction.Engineer) + " · ИНЖЕНЕР" : DroneKeyBindings.Caption(FlightKeyAction.Diagnostics) + " · ДИАГНОСТИКА";
-            purpose.text = mode == DroneFlightViewMode.Engineer ? "Настройка эксперимента · изменения применяются во время полёта" : "Анализ результатов · показания, силы, события и запись";
+            purpose.text = "Клик в поле — ввод · клик вне поля / Esc — управление дроном";
             panel.EnableInClassList("diagnostics", mode == DroneFlightViewMode.Diagnostics);
             graphCard.style.display = mode == DroneFlightViewMode.Diagnostics ? DisplayStyle.Flex : DisplayStyle.None;
             var engineer = new HashSet<string> { "Среда", "Оборудование", "Контроллер", "Отказы" };

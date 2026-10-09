@@ -54,16 +54,23 @@ namespace DroneLab.UI
         {
             body = selectedBody; origin = body.Body.position;
             ReferencePressure = body.Air.PressurePa; ReferenceTemperature = body.Air.TemperatureK; ReferenceAltitude = body.Air.AltitudeM;
-            for (int i = 0; i < channels.Length; i++) channels[i] = new SensorChannel(SensorSettings.Default((SensorKind)i), i == (int)SensorKind.Camera ? 0 : i == (int)SensorKind.Barometer || i == (int)SensorKind.Rangefinder ? 1 : 3);
+            for (int i = 0; i < channels.Length; i++) channels[i] = new SensorChannel(SensorSettings.Default((SensorKind)i, true), i == (int)SensorKind.Camera ? 0 : i == (int)SensorKind.Barometer || i == (int)SensorKind.Rangefinder ? 1 : 3);
             Channel(SensorKind.Barometer).MinimumValue = 1;
             Channel(SensorKind.Rangefinder).MinimumValue = 0;
             // The camera starts outside the nose; rangefinder starts just beneath the hull.
             Settings(SensorKind.Camera).positionM[2] = body.Parameters.Dimensions.Z * .5 + .06;
             Settings(SensorKind.Rangefinder).positionM[1] = -body.Parameters.Dimensions.Y * .5 - .02;
-            Load(); Channel(SensorKind.Rangefinder).MaximumValue = Settings(SensorKind.Rangefinder).maxRangeM; body.StepPrepared += SampleStep;
+            Load();
+            // Preserve hardware placement and frequencies, but every new flight starts without measurement errors.
+            foreach(var channel in channels) {
+                var setting=channel.Settings;
+                setting.enabled=true; setting.noiseStd=0; setting.latencyMs=0; setting.bias=new double[3];
+                channel.Apply(setting); channel.SetFault(false);
+            }
+            Channel(SensorKind.Rangefinder).MaximumValue = Settings(SensorKind.Rangefinder).maxRangeM; body.StepPrepared += SampleStep;
             Channel(SensorKind.Gps).Delivered += GpsDelivered;
             SensorCamera = gameObject.AddComponent<DroneSensorCamera>(); SensorCamera.Configure(this, body, sourceCamera);
-            Log("Сессия начата. GPS: условная геопривязка; IMU: оси крепления; барометр: сухая атмосфера.");
+            Log("Сессия начата: датчики без помех. GPS: условная геопривязка; IMU: оси крепления; барометр: сухая атмосфера.");
         }
         public Vector3 LocalPosition(SensorKind kind) => DronePhysicsBody.ToUnity(DVector3.From(Settings(kind).positionM));
         public Quaternion LocalRotation(SensorKind kind) => Quaternion.Euler(DronePhysicsBody.ToUnity(DVector3.From(Settings(kind).rotationDeg)));

@@ -72,7 +72,7 @@ namespace DroneLab.UI
             if (returning || paused == value || error != null && !value) return;
             if (value) { previousTimeScale = Time.timeScale; Time.timeScale = 0; if (pilot != null) { previousAutomaticControl = pilot.AutomaticControl; pilot.AutomaticControl = false; pilot.SetFlightInput(default); } }
             else { Time.timeScale = previousTimeScale; if (pilot != null) pilot.AutomaticControl = previousAutomaticControl; }
-            paused = value; overlay.style.display = value ? DisplayStyle.Flex : DisplayStyle.None; if(value) overlay.BringToFront();
+            paused = value; workbench?.SetInputSuspended(value); overlay.style.display = value ? DisplayStyle.Flex : DisplayStyle.None; if(value) overlay.BringToFront();
             if (cameraController != null) { cameraController.Paused = value; cameraController.PointerOverUI = false; }
         }
         private void SetView(DroneFlightViewMode view) { if (!paused && !returning) { hud?.SetView(view); workbench?.SetView(view); route?.SetView(view); } }
@@ -97,9 +97,11 @@ namespace DroneLab.UI
                 var openDropdown = document.rootVisualElement.Query<DroneDropdown>().ToList().Find(field => field.IsOpen);
                 if (openDropdown != null) openDropdown.ClosePopup();
                 else if (controls?.IsOpen == true) { if (controls.IsCapturing) controls.CancelCapture(); else CloseControls(); }
-                else if (workbench?.Editing == true || route?.Editing==true) document.rootVisualElement.focusController?.focusedElement?.Blur();
+                else if(workbench?.Editing==true) workbench.ClearInputFocus();
+                else if(route?.Editing==true) document.rootVisualElement.focusController?.focusedElement?.Blur();
                 else SetPaused(!paused);
             }
+            workbench?.TickInputFocus();
             controls?.Tick(keyboard);
             if (!paused && hud != null && workbench?.Editing != true && route?.Editing!=true) {
                 if (DroneKeyBindings.Pressed(keyboard, FlightKeyAction.Cinema)) SetView(DroneFlightViewMode.Cinema);
