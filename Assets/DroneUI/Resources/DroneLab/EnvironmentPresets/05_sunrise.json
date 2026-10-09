@@ -1,0 +1,55 @@
+{
+  "documentVersion": 1,
+  "id": "builtin-environment_lab_sunrise_v1",
+  "name": "Рассвет · лёгкий ветер",
+  "environment": {
+    "schemaVersion": "1.0.0",
+    "gravityMps2": 9.81,
+    "airDensityMode": "Constant",
+    "airDensityKgM3": 1.225,
+    "temperatureK": 283.15,
+    "pressurePa": 101325,
+    "altitudeM": 0,
+    "windMode": "Constant",
+    "windVelocityWorldMps": [
+      1,
+      0,
+      0
+    ],
+    "gustEnabled": false,
+    "gustIntensityMps": 0,
+    "gustTimeScaleS": 2,
+    "turbulenceSeed": 48271,
+    "weather": {
+      "precipitation": "None",
+      "intensityMmPerHour": 0,
+      "model": "VisualOnly"
+    },
+    "dryden": {
+      "sigmaUvwMps": [
+        0.4,
+        0.4,
+        0.25
+      ],
+      "lengthScaleUvwM": [
+        20,
+        20,
+        10
+      ],
+      "advectionDirectionWorld": [
+        1,
+        0,
+        0
+      ],
+      "advectionSpeedMps": 5,
+      "modesPerComponent": 32,
+      "minDimensionlessWaveNumber": 0.02,
+      "maxDimensionlessWaveNumber": 20
+    }
+  },
+  "visual": {
+    "timeOfDay": 5.75,
+    "simulateTime": false,
+    "weatherPresetId": "2a35257eeaa953b4b8837a16085cc7c8"
+  }
+}

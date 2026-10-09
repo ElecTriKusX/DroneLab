@@ -1,0 +1,426 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "name": "TestQuad",
+    "manufacturer": "DroneLab",
+    "model": "Synthetic 1 kg test quad",
+    "description": "Synthetic Ct/Cq map: static matches basic; axial flow changes performance. Not measured."
+  },
+  "coordinateSystem": {
+    "convention": "UnityLeftHandedYUpZForward",
+    "lengthUnit": "m",
+    "modelScaleMetersPerUnit": 1
+  },
+  "physicsConfiguration": {
+    "fidelity": "Basic",
+    "modules": {
+      "motorResponse": true,
+      "bodyDrag": true,
+      "windInteraction": true,
+      "groundEffect": false,
+      "rotorAerodynamics": false,
+      "bladeFlapping": false,
+      "inducedDrag": false,
+      "batteryDischarge": false,
+      "batteryVoltageSag": false,
+      "motorElectrical": false,
+      "gyroscopicRotorEffects": false
+    }
+  },
+  "massProperties": {
+    "massKg": 1,
+    "centerOfMassLocalM": [
+      0,
+      0,
+      0
+    ],
+    "dimensionsM": [
+      0.4,
+      0.1,
+      0.4
+    ],
+    "inertia": {
+      "mode": "AutoBox"
+    }
+  },
+  "rotors": [
+    {
+      "rotorId": "FL",
+      "geometry": {
+        "positionLocalM": [
+          -0.14,
+          0,
+          0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "PerformanceMap",
+        "outOfRangePolicy": "Clamp",
+        "performanceMap": [
+          {
+            "rpm": 2500,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 2500,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 2500,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          }
+        ]
+      }
+    },
+    {
+      "rotorId": "FR",
+      "geometry": {
+        "positionLocalM": [
+          0.14,
+          0,
+          0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "PerformanceMap",
+        "outOfRangePolicy": "Clamp",
+        "performanceMap": [
+          {
+            "rpm": 2500,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 2500,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 2500,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          }
+        ]
+      }
+    },
+    {
+      "rotorId": "RR",
+      "geometry": {
+        "positionLocalM": [
+          0.14,
+          0,
+          -0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "PerformanceMap",
+        "outOfRangePolicy": "Clamp",
+        "performanceMap": [
+          {
+            "rpm": 2500,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 2500,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 2500,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          }
+        ]
+      }
+    },
+    {
+      "rotorId": "RL",
+      "geometry": {
+        "positionLocalM": [
+          -0.14,
+          0,
+          -0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "PerformanceMap",
+        "outOfRangePolicy": "Clamp",
+        "performanceMap": [
+          {
+            "rpm": 2500,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 2500,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 2500,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 5000,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": -0.5,
+            "ct": 1.2190267079386905,
+            "cq": 0.18324667764289548
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": 0,
+            "ct": 1.1082060981260822,
+            "cq": 0.17452064537418616
+          },
+          {
+            "rpm": 10000,
+            "advanceRatio": 0.5,
+            "ct": 0.7757442686882575,
+            "cq": 0.14834254856805823
+          }
+        ]
+      }
+    }
+  ],
+  "bodyAerodynamics": {
+    "model": "AxisApproximation",
+    "dragCd": [
+      1.1,
+      1.2,
+      1.1
+    ],
+    "referenceAreaM2": [
+      0.04,
+      0.16,
+      0.04
+    ]
+  },
+  "powerSystem": {
+    "battery": {
+      "mode": "None"
+    }
+  },
+  "parameterProvenance": [
+    {
+      "path": "rotors.performance",
+      "sourceType": "Estimated",
+      "source": "Synthetic interpolation fixture; not manufacturer data",
+      "confidence": 0.3
+    }
+  ]
+}

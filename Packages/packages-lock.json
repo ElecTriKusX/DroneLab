@@ -1,35 +1,37 @@
 {
   "dependencies": {
-    "com.naughtyattributes.waterbuoyancy": {
-      "version": "https://github.com/hijimasa/NaughtyWaterBuoyancy.git?path=/Assets/NaughtyWaterBuoyancy#8a548cc3df504b4180d040797d3c5f40fd09d687",
+    "com.dronelab.configurator": {
+      "version": "file:../Distribution/Packages/com.dronelab.configurator",
       "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "8a548cc3df504b4180d040797d3c5f40fd09d687"
-    },
-    "com.react-robot.aerodynamics": {
-      "version": "https://github.com/REACT-ROBOT/Unity_ROS2_Robot_Simulator.git?path=/Packages/Aerodynamics",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "fcd29854a23f57f96be17ea6ef32b2c0f6c6f205"
-    },
-    "com.react-robot.hydrodynamics": {
-      "version": "https://github.com/REACT-ROBOT/Unity_ROS2_Robot_Simulator.git?path=/Packages/Hydrodynamics",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "fcd29854a23f57f96be17ea6ef32b2c0f6c6f205"
+      "source": "local",
+      "dependencies": {
+        "com.unity.ugui": "2.0.0",
+        "com.unity.nuget.newtonsoft-json": "3.2.1",
+        "com.unity.render-pipelines.high-definition": "17.3.0"
+      }
     },
     "com.unity.burst": {
       "version": "1.8.30",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.mathematics": "1.2.1",
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "com.unity.cloud.gltfast": {
+      "version": "https://github.com/Unity-Technologies/com.unity.cloud.gltfast.git?path=/Packages/com.unity.cloud.gltfast#fdb580527a41fd7006916030768ba74d3728f987",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.mathematics": "1.3.3",
+        "com.unity.burst": "1.8.30",
+        "com.unity.collections": "2.6.8"
+      },
+      "hash": "fdb580527a41fd7006916030768ba74d3728f987"
     },
     "com.unity.collab-proxy": {
       "version": "2.13.6",
@@ -40,7 +42,7 @@
     },
     "com.unity.collections": {
       "version": "2.6.8",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.8.29",
@@ -106,7 +108,7 @@
     },
     "com.unity.mathematics": {
       "version": "1.3.3",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -121,7 +123,14 @@
     },
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.6",
-      "depth": 3,
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.nuget.newtonsoft-json": {
+      "version": "3.2.1",
+      "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -204,7 +213,7 @@
     },
     "com.unity.test-framework.performance": {
       "version": "3.5.0",
-      "depth": 3,
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.test-framework": "1.1.33",

@@ -1,0 +1,1080 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dronelab:drone-profile:1.0.0",
+  "$ref": "#/$defs/DroneProfile",
+  "$defs": {
+    "Metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "manufacturer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "CoordinateSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "convention": {
+          "type": "string",
+          "enum": [
+            "UnityLeftHandedYUpZForward"
+          ]
+        },
+        "lengthUnit": {
+          "type": "string",
+          "enum": [
+            "m"
+          ]
+        },
+        "modelScaleMetersPerUnit": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "convention",
+        "lengthUnit",
+        "modelScaleMetersPerUnit"
+      ]
+    },
+    "PhysicsModulesProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "motorResponse": {
+          "type": "boolean"
+        },
+        "bodyDrag": {
+          "type": "boolean"
+        },
+        "windInteraction": {
+          "type": "boolean"
+        },
+        "groundEffect": {
+          "type": "boolean"
+        },
+        "rotorAerodynamics": {
+          "type": "boolean"
+        },
+        "bladeFlapping": {
+          "type": "boolean"
+        },
+        "inducedDrag": {
+          "type": "boolean"
+        },
+        "batteryDischarge": {
+          "type": "boolean"
+        },
+        "batteryVoltageSag": {
+          "type": "boolean"
+        },
+        "motorElectrical": {
+          "type": "boolean"
+        },
+        "gyroscopicRotorEffects": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "motorResponse",
+        "bodyDrag",
+        "windInteraction",
+        "groundEffect",
+        "rotorAerodynamics",
+        "bladeFlapping",
+        "inducedDrag",
+        "batteryDischarge",
+        "batteryVoltageSag",
+        "motorElectrical",
+        "gyroscopicRotorEffects"
+      ]
+    },
+    "PhysicsConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fidelity": {
+          "type": "string",
+          "enum": [
+            "Basic",
+            "Advanced"
+          ]
+        },
+        "modules": {
+          "$ref": "#/$defs/PhysicsModulesProfile"
+        }
+      },
+      "required": [
+        "fidelity",
+        "modules"
+      ]
+    },
+    "InertiaProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "AutoBox",
+            "ManualPrincipal"
+          ]
+        },
+        "principalMomentsKgM2": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "principalAxesRotationXyzw": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "mode"
+      ]
+    },
+    "MassProperties": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "massKg": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "centerOfMassLocalM": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "dimensionsM": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "inertia": {
+          "$ref": "#/$defs/InertiaProfile"
+        }
+      },
+      "required": [
+        "massKg",
+        "centerOfMassLocalM",
+        "dimensionsM",
+        "inertia"
+      ]
+    },
+    "EfficiencyPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "loadFraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "efficiency": {
+          "type": "number",
+          "minimum": 1e-06,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "loadFraction",
+        "efficiency"
+      ]
+    },
+    "ThermalProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "heatCapacityJPerK": {
+          "type": "number",
+          "minimum": 1e-06,
+          "maximum": 1000000000.0
+        },
+        "heatTransferWPerK": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000.0
+        },
+        "airflowHeatTransferWPerKPerMps": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000.0
+        },
+        "maxAirSpeedMps": {
+          "type": "number",
+          "minimum": 1e-06,
+          "maximum": 200
+        },
+        "initialTemperatureK": {
+          "type": "number",
+          "minimum": 150,
+          "maximum": 500
+        },
+        "derateStartTemperatureK": {
+          "type": "number",
+          "minimum": 150,
+          "maximum": 500
+        },
+        "cutoffTemperatureK": {
+          "type": "number",
+          "minimum": 150,
+          "maximum": 500
+        }
+      },
+      "required": [
+        "heatCapacityJPerK",
+        "heatTransferWPerK",
+        "airflowHeatTransferWPerKPerMps",
+        "maxAirSpeedMps",
+        "initialTemperatureK",
+        "derateStartTemperatureK",
+        "cutoffTemperatureK"
+      ]
+    },
+    "MotorElectricalProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "motorKvRpmPerVolt": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "motorResistanceOhm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "noLoadCurrentA": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maxCurrentA": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maxPowerW": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "motorEfficiency": {
+          "type": "number",
+          "minimum": 1e-06,
+          "maximum": 1
+        },
+        "efficiencyCurve": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EfficiencyPoint"
+          },
+          "minItems": 0
+        },
+        "escEfficiency": {
+          "type": "number",
+          "minimum": 1e-06,
+          "maximum": 1
+        },
+        "escMaxCurrentA": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "thermal": {
+          "$ref": "#/$defs/ThermalProfile"
+        },
+        "escThermal": {
+          "$ref": "#/$defs/ThermalProfile"
+        },
+        "resistanceReferenceTemperatureK": {
+          "type": "number",
+          "minimum": 150,
+          "maximum": 500
+        },
+        "resistanceTemperatureCoefficientPerK": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.01,
+          "description": "Equivalent winding resistance R(T)=Rref*(1+alpha*(T-Tref)); only active with thermalEnabled. Not a cell chemistry model."
+        }
+      },
+      "required": [
+        "motorKvRpmPerVolt",
+        "motorResistanceOhm",
+        "noLoadCurrentA",
+        "maxCurrentA",
+        "motorEfficiency",
+        "escEfficiency",
+        "escMaxCurrentA"
+      ]
+    },
+    "MotorProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minRpm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "idleRpm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maxRpm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "responseTimeUpS": {
+          "type": "number",
+          "minimum": 0
+        },
+        "responseTimeDownS": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rotatingInertiaKgM2": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Spin-axis inertia of motor rotor plus propeller, kg*m^2; required positive for RotorInertia."
+        },
+        "dynamicsModel": {
+          "type": "string",
+          "enum": [
+            "FirstOrder",
+            "RotorInertia"
+          ],
+          "description": "Omitted means legacy FirstOrder. RotorInertia requires Electrical battery and finite spin inertia."
+        },
+        "electrical": {
+          "$ref": "#/$defs/MotorElectricalProfile"
+        }
+      },
+      "required": [
+        "minRpm",
+        "idleRpm",
+        "maxRpm",
+        "responseTimeUpS",
+        "responseTimeDownS"
+      ]
+    },
+    "PropellerProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "diameterM": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "pitchM": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bladeCount": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "diameterM",
+        "pitchM",
+        "bladeCount"
+      ]
+    },
+    "RpmPerformancePoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rpm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "thrustN": {
+          "type": "number",
+          "minimum": 0
+        },
+        "torqueNm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currentA": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "rpm",
+        "thrustN",
+        "torqueNm"
+      ]
+    },
+    "PerformanceMapPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rpm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "advanceRatio": {
+          "type": "number"
+        },
+        "ct": {
+          "type": "number"
+        },
+        "cq": {
+          "type": "number"
+        },
+        "reynolds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "rpm",
+        "advanceRatio",
+        "ct",
+        "cq"
+      ]
+    },
+    "RotorPerformanceProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": [
+            "OmegaSquared",
+            "RpmTable",
+            "CtCq",
+            "PerformanceMap"
+          ]
+        },
+        "kThrustNPerRadPerSecSquared": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "kTorqueNmPerRadPerSecSquared": {
+          "type": "number",
+          "minimum": 0
+        },
+        "referenceAirDensityKgM3": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "ct": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "cq": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rpmTable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RpmPerformancePoint"
+          },
+          "minItems": 2
+        },
+        "performanceMap": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PerformanceMapPoint"
+          },
+          "minItems": 2
+        },
+        "outOfRangePolicy": {
+          "type": "string",
+          "enum": [
+            "Reject",
+            "Clamp"
+          ]
+        }
+      },
+      "required": [
+        "model"
+      ]
+    },
+    "RotorGeometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "positionLocalM": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "thrustAxisLocal": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "spinDirection": {
+          "type": "string",
+          "enum": [
+            "CW",
+            "CCW"
+          ]
+        }
+      },
+      "required": [
+        "positionLocalM",
+        "thrustAxisLocal",
+        "spinDirection"
+      ]
+    },
+    "RotorAerodynamicsProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rotorDragCoefficientKgPerRad": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bladeFlappingCoefficient": {
+          "type": "number",
+          "minimum": 0,
+          "description": "kg*m/rad; M=-k*omega*(Vair cross axis)."
+        },
+        "inducedDragCoefficient": {
+          "type": "number",
+          "minimum": 0,
+          "description": "kg/rad; axial thrust correction -k*omega*Vaxial."
+        },
+        "translationalLiftCoefficientKgPerM": {
+          "type": "number",
+          "minimum": 0,
+          "description": "kg/m; thrust correction k*|Vperpendicular|^2, enabled by rotorAerodynamics."
+        },
+        "referenceAirDensityKgM3": {
+          "type": "number",
+          "minimum": 1e-06,
+          "description": "Reference density of the three new coefficients; corrections scale by rho/reference rho; minimum 1e-6 prevents ill-conditioned scaling."
+        },
+        "maxAirSpeedMps": {
+          "type": "number",
+          "minimum": 1e-06,
+          "maximum": 200,
+          "description": "Local airflow magnitude limit for new corrections; clipped direction is preserved."
+        },
+        "maxThrustCorrectionFraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.5,
+          "description": "Maximum absolute combined axial/lift correction divided by positive free-air thrust."
+        },
+        "maxFlappingMomentRatio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Maximum flap moment magnitude divided by positive free-air thrust times rotor radius."
+        }
+      },
+      "required": [
+        "rotorDragCoefficientKgPerRad"
+      ]
+    },
+    "RotorProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rotorId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "geometry": {
+          "$ref": "#/$defs/RotorGeometry"
+        },
+        "motor": {
+          "$ref": "#/$defs/MotorProfile"
+        },
+        "propeller": {
+          "$ref": "#/$defs/PropellerProfile"
+        },
+        "performance": {
+          "$ref": "#/$defs/RotorPerformanceProfile"
+        },
+        "advancedAerodynamics": {
+          "$ref": "#/$defs/RotorAerodynamicsProfile"
+        },
+        "operatingEnvelope": {
+          "$ref": "#/$defs/RotorOperatingEnvelopeProfile"
+        }
+      },
+      "required": [
+        "rotorId",
+        "geometry",
+        "motor",
+        "propeller",
+        "performance"
+      ]
+    },
+    "RotorOperatingEnvelopeProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": [
+            "ReportOnly"
+          ]
+        },
+        "maxAxialClimbSpeedMps": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "maxAxialDescentSpeedMps": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "maxLateralSpeedMps": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200
+        }
+      },
+      "required": [
+        "model",
+        "maxAxialClimbSpeedMps",
+        "maxAxialDescentSpeedMps",
+        "maxLateralSpeedMps"
+      ]
+    },
+    "ProjectedAreaSample": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "directionLocal": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "areaM2": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "directionLocal",
+        "areaM2"
+      ]
+    },
+    "ProjectedAreaProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "MeshDirectionalLUT",
+            "ManualDirectionalLUT",
+            "AxisApproximation"
+          ]
+        },
+        "samples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProjectedAreaSample"
+          },
+          "minItems": 1
+        },
+        "referenceAreaM2": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "required": [
+        "mode"
+      ]
+    },
+    "AeroSurfaceProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "surfaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "positionLocalM": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "normalLocal": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "areaM2": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "dragCoefficient": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "surfaceId",
+        "positionLocalM",
+        "normalLocal",
+        "areaM2",
+        "dragCoefficient"
+      ]
+    },
+    "BodyAerodynamicsProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": [
+            "AxisApproximation",
+            "ProjectedArea",
+            "Surfaces"
+          ]
+        },
+        "dragCd": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "referenceAreaM2": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "dragCoefficient": {
+          "type": "number",
+          "minimum": 0
+        },
+        "projectedArea": {
+          "$ref": "#/$defs/ProjectedAreaProfile"
+        },
+        "dragApplicationPointLocalM": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "surfaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AeroSurfaceProfile"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "model"
+      ]
+    },
+    "GroundEffectProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "coefficient": {
+          "type": "number",
+          "minimum": 0
+        },
+        "minHeightRadiusRatio": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maxMultiplier": {
+          "type": "number",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "coefficient",
+        "minHeightRadiusRatio",
+        "maxMultiplier"
+      ]
+    },
+    "OcvPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "soc": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "voltageV": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "soc",
+        "voltageV"
+      ]
+    },
+    "BatteryProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "None",
+            "Simple",
+            "Electrical"
+          ]
+        },
+        "cellCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "nominalVoltageV": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "capacityAh": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "initialSoc": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "internalResistanceOhm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maxDischargeCurrentA": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "ocvCurve": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OcvPoint"
+          },
+          "minItems": 2
+        },
+        "thermal": {
+          "$ref": "#/$defs/ThermalProfile"
+        }
+      },
+      "required": [
+        "mode"
+      ]
+    },
+    "PowerSystemProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "battery": {
+          "$ref": "#/$defs/BatteryProfile"
+        },
+        "thermalEnabled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "battery"
+      ]
+    },
+    "DerivedProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "projectedAreaLut": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProjectedAreaSample"
+          },
+          "minItems": 0
+        },
+        "hoverRpm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maxTotalThrustN": {
+          "type": "number",
+          "minimum": 0
+        },
+        "thrustToWeightRatio": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rotorDiskAreasM2": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minItems": 0
+        },
+        "approximateInertiaKgM2": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "required": []
+    },
+    "ParameterProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceType": {
+          "type": "string",
+          "enum": [
+            "Manufacturer",
+            "Measured",
+            "Calculated",
+            "AutoGeometry",
+            "Preset",
+            "Estimated",
+            "User"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "path",
+        "sourceType",
+        "source",
+        "confidence"
+      ]
+    },
+    "DroneProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "enum": [
+            "1.0.0"
+          ]
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "coordinateSystem": {
+          "$ref": "#/$defs/CoordinateSystem"
+        },
+        "physicsConfiguration": {
+          "$ref": "#/$defs/PhysicsConfiguration"
+        },
+        "massProperties": {
+          "$ref": "#/$defs/MassProperties"
+        },
+        "rotors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RotorProfile"
+          },
+          "minItems": 1
+        },
+        "bodyAerodynamics": {
+          "$ref": "#/$defs/BodyAerodynamicsProfile"
+        },
+        "groundEffect": {
+          "$ref": "#/$defs/GroundEffectProfile"
+        },
+        "powerSystem": {
+          "$ref": "#/$defs/PowerSystemProfile"
+        },
+        "derived": {
+          "$ref": "#/$defs/DerivedProfile"
+        },
+        "parameterProvenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ParameterProvenance"
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "metadata",
+        "coordinateSystem",
+        "physicsConfiguration",
+        "massProperties",
+        "rotors",
+        "bodyAerodynamics",
+        "powerSystem",
+        "parameterProvenance"
+      ]
+    }
+  }
+}

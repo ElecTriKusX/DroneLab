@@ -1,0 +1,6 @@
+{
+  "name": "DroneLab.Simulation",
+  "references": [
+    "DroneLab.Physics"
+  ]
+}

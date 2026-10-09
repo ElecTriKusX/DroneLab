@@ -1,0 +1,6 @@
+{
+  "name": "DroneLab.Sensors.Tests",
+  "references": ["DroneLab.Sensors", "DroneLab.Physics"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"]
+}

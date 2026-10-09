@@ -1,0 +1,5 @@
+{
+  "name": "DroneLab.UI.Editor",
+  "references": ["DroneLab.UI", "Enviro3.Runtime"],
+  "includePlatforms": ["Editor"]
+}

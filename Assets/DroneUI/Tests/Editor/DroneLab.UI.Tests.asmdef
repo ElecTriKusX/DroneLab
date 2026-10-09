@@ -1,0 +1,24 @@
+{
+  "name": "DroneLab.UI.Tests",
+  "references": [
+    "DroneLab.UI",
+    "DroneLab.Physics",
+    "Enviro3.Runtime",
+    "DroneLab.Configurator",
+    "DroneLab.Sensors",
+    "DroneLab.Simulation",
+    "DroneLab.Demo",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll",
+    "Newtonsoft.Json.dll"
+  ]
+}

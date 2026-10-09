@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <Compile Include="../../Assets/DronePhysics/Core/*.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneParameterSchema.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneProfileDocument.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneProfileCsv.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneProfileEditBuffer.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneProfileEdits.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneVisualBindings.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneBundledModels.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneProfilePackages.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneMeshProjection.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneArrayEdits.cs" />
+    <Compile Include="../../Assets/DroneUI/Runtime/Configurator/DroneValidationText.cs" />
+    <Compile Include="../../Distribution/Packages/com.dronelab.configurator/Runtime/DroneConfiguratorData.cs" />
+    <Compile Include="UnityResourceAdapter.cs" />
+    <Compile Include="ConfiguratorDataTests.cs" />
+    <None Include="../../Assets/DronePhysics/Resources/DronePhysics/**/*.json" CopyToOutputDirectory="PreserveNewest" Link="Resources/DronePhysics/%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="../../Assets/DroneUI/Resources/DroneLab/*.json" CopyToOutputDirectory="PreserveNewest" Link="Resources/DroneLab/%(Filename)%(Extension)" />
+    <None Include="../../Assets/StreamingAssets/DroneLab/DroneModels/*.zip" CopyToOutputDirectory="PreserveNewest" Link="StreamingAssets/DroneLab/DroneModels/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

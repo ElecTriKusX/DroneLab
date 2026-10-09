@@ -1,0 +1,164 @@
+using System;
+using DroneLab.Physics;
+using System.Linq;
+using DroneLab.Simulation;
+using DroneLab.Weather;
+using Enviro;
+using Newtonsoft.Json.Linq;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace DroneLab.UI
+{
+    public static class DroneScenarioLaunch
+    {
+        private static DroneEnvironmentDocument active;
+        private static string scenePath;
+        private static DroneScenarioCatalog activeCatalog;
+        private static DroneProfileDocument activeDrone;
+        private static DroneMapEntry activeMap;
+        private static DronePhysicsBody spawnedBody;
+        private static string returnScene;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Reset() { active = null; scenePath = null; activeCatalog = null; activeDrone = null; activeMap = null; spawnedBody = null; returnScene = null; }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Register()
+        {
+            DronePhysicsBody.PreparingSceneBody -= PrepareBody;
+            DronePhysicsBody.PreparingSceneBody += PrepareBody;
+            SceneManager.sceneLoaded -= SceneLoaded;
+            SceneManager.sceneLoaded += SceneLoaded;
+        }
+        public static AsyncOperation Load(DroneMapEntry map, DroneEnvironmentDocument profile, DroneScenarioCatalog catalog = null, DroneProfileDocument drone = null)
+        {
+            if (map == null || string.IsNullOrWhiteSpace(map.scenePath) || !Application.CanStreamedLevelBeLoaded(map.scenePath))
+                throw new ArgumentException("Карта не включена в список сцен сборки.");
+            if (active != null) throw new InvalidOperationException("Загрузка симуляции уже выполняется.");
+            if (drone == null) throw new ArgumentException("Выберите дрон для симуляции.");
+            DroneEnvironmentProfiles.Validate(profile,null,catalog);
+            if (drone != null) {
+                if (drone.draft) throw new ArgumentException("Сначала сохраните готовый профиль дрона.");
+                var checkedDrone = DroneProfileLibrary.Validate(drone, DroneEnvironmentProfiles.PhysicsJson(profile));
+                if (!checkedDrone.Success) throw new ArgumentException("Дрон несовместим с выбранной средой: " + string.Join("; ", checkedDrone.Issues.FindAll(x=>x.Severity == "Error").ConvertAll(x=>DroneValidationText.Path(x.Path) + ": " + DroneValidationText.Message(x.Message))));
+                try { new MultirotorAllocator(checkedDrone.Parameters); }
+                catch (ArgumentException ex) { throw new ArgumentException("Профиль не поддерживается пилотом мультироторного дрона. " + DroneValidationText.Message(ex.Message)); }
+            }
+            var physical = DroneEnvironmentProfiles.Effective(profile.environment);
+            var air = (string)physical["airDensityMode"] == "StandardAtmosphere" ?
+                Atmosphere.Troposphere((double)physical["altitudeM"], (double)physical["temperatureK"], (double)physical["pressurePa"]) :
+                new AirSample((double)physical["airDensityKgM3"], (double)physical["temperatureK"], (double)physical["pressurePa"], (double)physical["altitudeM"]);
+            try { new AtmosphereColumn(air.TemperatureK, air.PressurePa, air.AltitudeM); }
+            catch (ArgumentException) { throw new ArgumentException("Связь с погодной системой требует локальную температуру 200–330 К, давление 1000–200000 Па и высоту −500–11000 м."); }
+            activeCatalog = catalog != null ? catalog : DroneScenarioCatalog.Load();
+            string presetId = (string)profile.visual["weatherPresetId"];
+            if (!string.IsNullOrEmpty(presetId) && activeCatalog?.Weather(presetId)?.preset == null)
+                throw new ArgumentException("Погодный пресет профиля отсутствует в каталоге.");
+            string model = DroneProfileLibrary.ModelPath(drone);
+            if (!string.IsNullOrEmpty(model)) DroneModelFiles.ValidateLocalModel(model);
+            active = profile.Copy(); activeDrone = drone.Copy(); scenePath = map.scenePath;
+            activeMap = new DroneMapEntry { id = map.id, title = map.title, scenePath = map.scenePath, spawnPointId = map.spawnPointId };
+            returnScene = SceneManager.GetActiveScene().path;
+            try { var operation = SceneManager.LoadSceneAsync(scenePath); if (operation == null) throw new InvalidOperationException("Не удалось загрузить карту."); return operation; }
+            catch { active = null; activeDrone = null; scenePath = null; throw; }
+        }
+        private static void PrepareBody(DronePhysicsBody body)
+        {
+            if (active == null || body != spawnedBody || body.gameObject.scene.path != scenePath) return;
+            if (activeDrone != null) {
+                var droneAsset = new TextAsset(activeDrone.profile.ToString()) { name = activeDrone.Name };
+                body.droneProfile = droneAsset;
+                var droneLifetime = body.gameObject.AddComponent<DroneProfileAssetLifetime>(); droneLifetime.asset = droneAsset;
+                body.gameObject.AddComponent<DroneConfiguredVisual>().Configure(activeDrone);
+            }
+            DroneEnvironmentProfiles.Validate(active, body.droneProfile,activeCatalog);
+            var asset = new TextAsset(DroneEnvironmentProfiles.PhysicsJson(active)) { name = active.name };
+            body.environmentProfile = asset;
+            var lifetime = body.gameObject.AddComponent<DroneProfileAssetLifetime>(); lifetime.asset = asset;
+            // Profile air remains authoritative, including Constant density and sea-level atmosphere.
+            // Enviro's LOCAL live-air column must not replace those values silently.
+            if (body.CustomAirProvider is EnviroWeatherController) body.CustomAirProvider = null;
+            if (body.customAirProvider is EnviroWeatherController) body.customAirProvider = null;
+            if (body.CustomAirProvider != null || body.customAirProvider != null)
+                throw new ArgumentException("В сцене назначен другой источник воздуха. Уберите его перед запуском среды из JSON.");
+            var bridge = UnityEngine.Object.FindFirstObjectByType<EnviroWeatherController>();
+            if (bridge == null) {
+                var manager = UnityEngine.Object.FindFirstObjectByType<EnviroManager>();
+                if (manager != null) {
+                    var go = new GameObject("DroneLab Weather Bridge"); SceneManager.MoveGameObjectToScene(go, body.gameObject.scene);
+                    bridge = go.AddComponent<EnviroWeatherController>(); bridge.manager = manager;
+                }
+            }
+            if (bridge != null) { bridge.syncAir = false; bridge.showEngineeringWindow = false; }
+            var existingWind = body.CustomWindProvider ?? body.customWindProvider as IWindProvider;
+            if ((string)active.environment["windMode"] == "CustomField" && bridge != null &&
+                (existingWind == null || existingWind is EnviroWeatherController))
+            { body.CustomWindProvider = bridge; body.customWindProvider = bridge; }
+        }
+        private static void SceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (active == null || scene.path != scenePath) return;
+            GameObject droneObject = null;
+            string menu = returnScene;
+            try {
+                var point = DroneSpawnPoint.Resolve(scene, activeMap.spawnPointId);
+                var dimensions = DroneModelViewport.Vec(activeDrone.profile["massProperties"]["dimensionsM"]);
+                if (float.IsNaN(point.Position(dimensions).sqrMagnitude) || float.IsInfinity(point.Position(dimensions).sqrMagnitude)) throw new InvalidOperationException("Некорректное положение точки старта.");
+                // Scene drones are test fixtures; this launch owns exactly one physical body.
+                foreach (var fixture in scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<DronePhysicsBody>(true)))
+                    fixture.gameObject.SetActive(false);
+                UnityEngine.Physics.SyncTransforms();
+                var position = point.Position(dimensions);
+                if (UnityEngine.Physics.CheckBox(position, dimensions * .495f, point.Heading, UnityEngine.Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                    throw new InvalidOperationException("Точка старта пересекается с препятствием. Переместите её над свободной площадкой.");
+                droneObject = new GameObject(activeDrone.Name); droneObject.SetActive(false);
+                SceneManager.MoveGameObjectToScene(droneObject, scene);
+                droneObject.transform.SetPositionAndRotation(position, point.Heading);
+                droneObject.AddComponent<Rigidbody>(); droneObject.AddComponent<BoxCollider>().size = dimensions;
+                spawnedBody = droneObject.AddComponent<DronePhysicsBody>(); spawnedBody.drawForces = false;
+                var pilot = droneObject.AddComponent<DroneTestPilot>(); pilot.showTelemetry = false;
+                droneObject.SetActive(true);
+                if (!spawnedBody.IsReady) throw new InvalidOperationException("Не удалось инициализировать физику выбранного дрона. Проверьте Console.");
+                // A normalized collective preset must scale with each selected model's weight.
+                double hoverFraction = spawnedBody.Parameters.Mass * spawnedBody.Parameters.Gravity / spawnedBody.Parameters.MaxTotalThrust;
+                pilot.manualCollectiveFraction = Mathf.Clamp((float)(hoverFraction * 1.3), .1f, .95f);
+                pilot.InitializeController();
+                if (!pilot.enabled) throw new InvalidOperationException("Не удалось инициализировать управление дроном.");
+                var flightCamera = FollowCamera(scene, droneObject.transform, dimensions);
+                var go = new GameObject("DroneLab Profile Environment"); SceneManager.MoveGameObjectToScene(go, scene);
+                go.AddComponent<DroneScenarioEnvironmentDriver>().Configure(active, activeCatalog, spawnedBody);
+                var session = new GameObject("DroneLab Simulation Session"); SceneManager.MoveGameObjectToScene(session, scene);
+                session.AddComponent<DroneSimulationSession>().Configure(spawnedBody, pilot, activeMap.title, active.name, menu, flightCamera: flightCamera);
+            } catch (Exception ex) {
+                if (droneObject != null) { droneObject.SetActive(false); UnityEngine.Object.Destroy(droneObject); }
+                Debug.LogError("DroneLab launch: " + ex.Message);
+                var error = new GameObject("DroneLab Launch Error"); SceneManager.MoveGameObjectToScene(error, scene);
+                error.AddComponent<DroneSimulationSession>().Configure(null, null, activeMap?.title, active?.name, menu, ex.Message);
+            } finally {
+                active = null; activeDrone = null; activeMap = null; activeCatalog = null; spawnedBody = null; scenePath = null;
+            }
+        }
+        private static DroneFlightCamera FollowCamera(Scene scene, Transform target, Vector3 dimensions)
+        {
+            var cameras = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Camera>())
+                .Where(c => c.enabled && c.gameObject.activeInHierarchy && c.cameraType == CameraType.Game).ToList();
+            var camera = cameras.FirstOrDefault(c => c.CompareTag("MainCamera")) ?? cameras.FirstOrDefault();
+            if (camera == null) {
+                var go = new GameObject("DroneLab Flight Camera"); SceneManager.MoveGameObjectToScene(go, scene);
+                camera = go.AddComponent<Camera>(); camera.tag = "MainCamera";
+                go.AddComponent<UnityEngine.Rendering.HighDefinition.HDAdditionalCameraData>();
+            }
+            foreach (var other in cameras) if (other != camera) other.enabled = false;
+            foreach (var listener in scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<AudioListener>())) listener.enabled = false;
+            var audio = camera.GetComponent<AudioListener>() ?? camera.gameObject.AddComponent<AudioListener>(); audio.enabled = true;
+            // Forest includes the SRP FreeCamera input adapter; it must not move the flight camera.
+            foreach (var component in camera.GetComponents<MonoBehaviour>())
+                if (component != null && (component.GetType().Name == "FreeCamera" || component.GetType().Name == "FreeFlyCamera" || component.GetType().Name == "OrbitCamera")) component.enabled = false;
+            var follow = camera.GetComponent<DroneFlightCamera>() ?? camera.gameObject.AddComponent<DroneFlightCamera>();
+            follow.enabled = true; follow.Configure(target, dimensions);
+            var weather = UnityEngine.Object.FindFirstObjectByType<EnviroManager>();
+            if (weather != null) { weather.ChangeCamera(camera); weather.optionalFollowTransform = target; }
+            return follow;
+        }
+    }
+
+}

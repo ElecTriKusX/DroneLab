@@ -35,6 +35,20 @@
 ExportedObj/
 .consulo/
 *.csproj
+!Tests/DotNet/*.csproj
+!Tests/Environment/*.csproj
+!Tests/Configurator/*.csproj
+!Tests/Sensors/*.csproj
+Tests/Sensors/bin/
+Tests/Sensors/obj/
+Tests/Configurator/bin/
+Tests/Configurator/obj/
+Tests/Environment/bin/
+Tests/Environment/obj/
+Tests/DotNet/bin/
+Tests/DotNet/obj/
+Tools/__pycache__/
+Tests/Python/__pycache__/
 *.unityproj
 *.sln
 *.suo
@@ -73,3 +87,8 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+!Tools/ReferenceValidation/*.csproj
+Tools/ReferenceValidation/bin/
+Tools/ReferenceValidation/obj/
+/ReferenceModels/

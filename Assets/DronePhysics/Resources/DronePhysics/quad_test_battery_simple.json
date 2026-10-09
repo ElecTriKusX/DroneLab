@@ -1,0 +1,303 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "name": "Synthetic quad with Simple battery",
+    "manufacturer": "DroneLab",
+    "model": "Synthetic 1 kg test quad",
+    "description": "Synthetic rotor-effects fixture; free-air propeller data, empirical uncalibrated effect coefficients."
+  },
+  "coordinateSystem": {
+    "convention": "UnityLeftHandedYUpZForward",
+    "lengthUnit": "m",
+    "modelScaleMetersPerUnit": 1
+  },
+  "physicsConfiguration": {
+    "fidelity": "Basic",
+    "modules": {
+      "motorResponse": true,
+      "bodyDrag": true,
+      "windInteraction": true,
+      "groundEffect": true,
+      "rotorAerodynamics": true,
+      "bladeFlapping": false,
+      "inducedDrag": false,
+      "batteryDischarge": true,
+      "batteryVoltageSag": true,
+      "motorElectrical": false,
+      "gyroscopicRotorEffects": false
+    }
+  },
+  "massProperties": {
+    "massKg": 1,
+    "centerOfMassLocalM": [
+      0,
+      0,
+      0
+    ],
+    "dimensionsM": [
+      0.4,
+      0.1,
+      0.4
+    ],
+    "inertia": {
+      "mode": "AutoBox"
+    }
+  },
+  "rotors": [
+    {
+      "rotorId": "FL",
+      "geometry": {
+        "positionLocalM": [
+          -0.14,
+          0,
+          0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35
+        }
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 8.945647303782003e-06,
+        "kTorqueNmPerRadPerSecSquared": 1.7891294607564007e-07,
+        "referenceAirDensityKgM3": 1.225
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    },
+    {
+      "rotorId": "FR",
+      "geometry": {
+        "positionLocalM": [
+          0.14,
+          0,
+          0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35
+        }
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 8.945647303782003e-06,
+        "kTorqueNmPerRadPerSecSquared": 1.7891294607564007e-07,
+        "referenceAirDensityKgM3": 1.225
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    },
+    {
+      "rotorId": "RR",
+      "geometry": {
+        "positionLocalM": [
+          0.14,
+          0,
+          -0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35
+        }
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 8.945647303782003e-06,
+        "kTorqueNmPerRadPerSecSquared": 1.7891294607564007e-07,
+        "referenceAirDensityKgM3": 1.225
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    },
+    {
+      "rotorId": "RL",
+      "geometry": {
+        "positionLocalM": [
+          -0.14,
+          0,
+          -0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08,
+        "electrical": {
+          "motorKvRpmPerVolt": 900,
+          "motorResistanceOhm": 0.08,
+          "noLoadCurrentA": 0.4,
+          "maxCurrentA": 30,
+          "maxPowerW": 400,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 35
+        }
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 8.945647303782003e-06,
+        "kTorqueNmPerRadPerSecSquared": 1.7891294607564007e-07,
+        "referenceAirDensityKgM3": 1.225
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    }
+  ],
+  "bodyAerodynamics": {
+    "model": "AxisApproximation",
+    "dragCd": [
+      1.1,
+      1.2,
+      1.1
+    ],
+    "referenceAreaM2": [
+      0.04,
+      0.16,
+      0.04
+    ]
+  },
+  "powerSystem": {
+    "battery": {
+      "mode": "Simple",
+      "cellCount": 4,
+      "nominalVoltageV": 14.8,
+      "capacityAh": 1.3,
+      "initialSoc": 1,
+      "internalResistanceOhm": 0.06,
+      "maxDischargeCurrentA": 80,
+      "ocvCurve": [
+        {
+          "soc": 0,
+          "voltageV": 12
+        },
+        {
+          "soc": 0.2,
+          "voltageV": 14
+        },
+        {
+          "soc": 0.8,
+          "voltageV": 15.6
+        },
+        {
+          "soc": 1,
+          "voltageV": 16.8
+        }
+      ]
+    }
+  },
+  "parameterProvenance": [
+    {
+      "path": "rotors",
+      "sourceType": "Estimated",
+      "source": "Synthetic symmetric test quad; not manufacturer data",
+      "confidence": 0.3
+    },
+    {
+      "path": "groundEffect / rotors.advancedAerodynamics",
+      "sourceType": "Estimated",
+      "source": "Demo coefficients for bounded ground effect and linear rotor drag; not measurements",
+      "confidence": 0.3
+    },
+    {
+      "path": "powerSystem / rotors.motor.electrical",
+      "sourceType": "Estimated",
+      "source": "Synthetic 4S / 1.3Ah battery and motor power demo; not calibrated hardware data.",
+      "confidence": 0.2
+    }
+  ],
+  "groundEffect": {
+    "coefficient": 1,
+    "minHeightRadiusRatio": 0.25,
+    "maxMultiplier": 1.5
+  }
+}

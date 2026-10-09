@@ -1,0 +1,423 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "name": "Crazyflie 2.0 — Bitcraze bench reference",
+    "manufacturer": "Bitcraze",
+    "model": "Bitcraze Crazyflie 2.0",
+    "description": "Open reference profile; sources and estimates are explicit. Static/low-speed validation only, not a calibrated full aircraft digital twin."
+  },
+  "coordinateSystem": {
+    "convention": "UnityLeftHandedYUpZForward",
+    "lengthUnit": "m",
+    "modelScaleMetersPerUnit": 1
+  },
+  "physicsConfiguration": {
+    "fidelity": "Basic",
+    "modules": {
+      "motorResponse": true,
+      "bodyDrag": false,
+      "windInteraction": true,
+      "groundEffect": false,
+      "rotorAerodynamics": false,
+      "bladeFlapping": false,
+      "inducedDrag": false,
+      "batteryDischarge": false,
+      "batteryVoltageSag": false,
+      "motorElectrical": false,
+      "gyroscopicRotorEffects": false
+    }
+  },
+  "massProperties": {
+    "massKg": 0.027,
+    "centerOfMassLocalM": [
+      0,
+      0,
+      0
+    ],
+    "dimensionsM": [
+      0.12,
+      0.025,
+      0.12
+    ],
+    "inertia": {
+      "mode": "ManualPrincipal",
+      "principalMomentsKgM2": [
+        1.4e-05,
+        2.17e-05,
+        1.4e-05
+      ],
+      "principalAxesRotationXyzw": [
+        0,
+        0,
+        0,
+        1
+      ]
+    }
+  },
+  "rotors": [
+    {
+      "rotorId": "FL",
+      "geometry": {
+        "positionLocalM": [
+          -0.028,
+          0,
+          0.028
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 23882,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.0462696,
+        "pitchM": 0.03,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "RpmTable",
+        "referenceAirDensityKgM3": 1.225,
+        "outOfRangePolicy": "Clamp",
+        "rpmTable": [
+          {
+            "rpm": 0,
+            "thrustN": 0.0,
+            "torqueNm": 0.0
+          },
+          {
+            "rpm": 4485,
+            "thrustN": 0.0039226600000000006,
+            "torqueNm": 2.3535960000000004e-05
+          },
+          {
+            "rpm": 9374,
+            "thrustN": 0.019368133750000002,
+            "torqueNm": 0.00011620880250000001
+          },
+          {
+            "rpm": 12277,
+            "thrustN": 0.03407810875,
+            "torqueNm": 0.00020446865250000002
+          },
+          {
+            "rpm": 14691,
+            "thrustN": 0.0514849125,
+            "torqueNm": 0.000308909475
+          },
+          {
+            "rpm": 17174,
+            "thrustN": 0.0701175475,
+            "torqueNm": 0.000420705285
+          },
+          {
+            "rpm": 19397,
+            "thrustN": 0.09144701124999999,
+            "torqueNm": 0.0005486820674999999
+          },
+          {
+            "rpm": 21692,
+            "thrustN": 0.112776475,
+            "torqueNm": 0.00067665885
+          },
+          {
+            "rpm": 23882,
+            "thrustN": 0.14195125875,
+            "torqueNm": 0.0008517075525
+          }
+        ]
+      }
+    },
+    {
+      "rotorId": "FR",
+      "geometry": {
+        "positionLocalM": [
+          0.028,
+          0,
+          0.028
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 23882,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.0462696,
+        "pitchM": 0.03,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "RpmTable",
+        "referenceAirDensityKgM3": 1.225,
+        "outOfRangePolicy": "Clamp",
+        "rpmTable": [
+          {
+            "rpm": 0,
+            "thrustN": 0.0,
+            "torqueNm": 0.0
+          },
+          {
+            "rpm": 4485,
+            "thrustN": 0.0039226600000000006,
+            "torqueNm": 2.3535960000000004e-05
+          },
+          {
+            "rpm": 9374,
+            "thrustN": 0.019368133750000002,
+            "torqueNm": 0.00011620880250000001
+          },
+          {
+            "rpm": 12277,
+            "thrustN": 0.03407810875,
+            "torqueNm": 0.00020446865250000002
+          },
+          {
+            "rpm": 14691,
+            "thrustN": 0.0514849125,
+            "torqueNm": 0.000308909475
+          },
+          {
+            "rpm": 17174,
+            "thrustN": 0.0701175475,
+            "torqueNm": 0.000420705285
+          },
+          {
+            "rpm": 19397,
+            "thrustN": 0.09144701124999999,
+            "torqueNm": 0.0005486820674999999
+          },
+          {
+            "rpm": 21692,
+            "thrustN": 0.112776475,
+            "torqueNm": 0.00067665885
+          },
+          {
+            "rpm": 23882,
+            "thrustN": 0.14195125875,
+            "torqueNm": 0.0008517075525
+          }
+        ]
+      }
+    },
+    {
+      "rotorId": "RR",
+      "geometry": {
+        "positionLocalM": [
+          0.028,
+          0,
+          -0.028
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 23882,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.0462696,
+        "pitchM": 0.03,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "RpmTable",
+        "referenceAirDensityKgM3": 1.225,
+        "outOfRangePolicy": "Clamp",
+        "rpmTable": [
+          {
+            "rpm": 0,
+            "thrustN": 0.0,
+            "torqueNm": 0.0
+          },
+          {
+            "rpm": 4485,
+            "thrustN": 0.0039226600000000006,
+            "torqueNm": 2.3535960000000004e-05
+          },
+          {
+            "rpm": 9374,
+            "thrustN": 0.019368133750000002,
+            "torqueNm": 0.00011620880250000001
+          },
+          {
+            "rpm": 12277,
+            "thrustN": 0.03407810875,
+            "torqueNm": 0.00020446865250000002
+          },
+          {
+            "rpm": 14691,
+            "thrustN": 0.0514849125,
+            "torqueNm": 0.000308909475
+          },
+          {
+            "rpm": 17174,
+            "thrustN": 0.0701175475,
+            "torqueNm": 0.000420705285
+          },
+          {
+            "rpm": 19397,
+            "thrustN": 0.09144701124999999,
+            "torqueNm": 0.0005486820674999999
+          },
+          {
+            "rpm": 21692,
+            "thrustN": 0.112776475,
+            "torqueNm": 0.00067665885
+          },
+          {
+            "rpm": 23882,
+            "thrustN": 0.14195125875,
+            "torqueNm": 0.0008517075525
+          }
+        ]
+      }
+    },
+    {
+      "rotorId": "RL",
+      "geometry": {
+        "positionLocalM": [
+          -0.028,
+          0,
+          -0.028
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 23882,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.0462696,
+        "pitchM": 0.03,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "RpmTable",
+        "referenceAirDensityKgM3": 1.225,
+        "outOfRangePolicy": "Clamp",
+        "rpmTable": [
+          {
+            "rpm": 0,
+            "thrustN": 0.0,
+            "torqueNm": 0.0
+          },
+          {
+            "rpm": 4485,
+            "thrustN": 0.0039226600000000006,
+            "torqueNm": 2.3535960000000004e-05
+          },
+          {
+            "rpm": 9374,
+            "thrustN": 0.019368133750000002,
+            "torqueNm": 0.00011620880250000001
+          },
+          {
+            "rpm": 12277,
+            "thrustN": 0.03407810875,
+            "torqueNm": 0.00020446865250000002
+          },
+          {
+            "rpm": 14691,
+            "thrustN": 0.0514849125,
+            "torqueNm": 0.000308909475
+          },
+          {
+            "rpm": 17174,
+            "thrustN": 0.0701175475,
+            "torqueNm": 0.000420705285
+          },
+          {
+            "rpm": 19397,
+            "thrustN": 0.09144701124999999,
+            "torqueNm": 0.0005486820674999999
+          },
+          {
+            "rpm": 21692,
+            "thrustN": 0.112776475,
+            "torqueNm": 0.00067665885
+          },
+          {
+            "rpm": 23882,
+            "thrustN": 0.14195125875,
+            "torqueNm": 0.0008517075525
+          }
+        ]
+      }
+    }
+  ],
+  "bodyAerodynamics": {
+    "model": "AxisApproximation",
+    "dragCd": [
+      0,
+      0,
+      0
+    ],
+    "referenceAreaM2": [
+      0.003,
+      0.0144,
+      0.003
+    ]
+  },
+  "powerSystem": {
+    "battery": {
+      "mode": "None"
+    }
+  },
+  "parameterProvenance": [
+    {
+      "path": "bodyAerodynamics / physicsConfiguration.modules",
+      "sourceType": "Estimated",
+      "source": "Unknown body Cd/advanced rotor/thermal/electrical parameters: effects disabled, not fabricated. Body geometry only a reference envelope; not hardware mass distribution.",
+      "confidence": 0.1
+    },
+    {
+      "path": "rotors.performance.rpmTable.thrustN",
+      "sourceType": "Measured",
+      "source": "https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/functional-areas/pwm-to-thrust/ ; 2015 four-rotor total thrust divided by four, g-force converted with g0=9.80665. Alternating rows withheld. Actual test density unknown; 1.225 is assumed reference only.",
+      "confidence": 0.8
+    },
+    {
+      "path": "massProperties.massKg / massProperties.inertia / rotors.geometry",
+      "sourceType": "Preset",
+      "source": "https://github.com/utiasDSL/gym-pybullet-drones/blob/7ebad1ecabd28a7000add2d05f888aa2e837c2cc/gym_pybullet_drones/assets/cf2x.urdf ; source x-forward y-left z-up converted to Unity [-y,z,x]. Inertia from public simulation model, not this bench aircraft.",
+      "confidence": 0.5
+    },
+    {
+      "path": "rotors.performance.rpmTable.torqueNm / rotors.motor / rotors.propeller.pitchM",
+      "sourceType": "Estimated",
+      "source": "Q/T=0.006 m proxy, motor lag 0.06/0.08 s and 30 mm pitch not measured in Bitcraze table. Current/voltage stay in benchmark metadata, battery disabled.",
+      "confidence": 0.1
+    }
+  ]
+}

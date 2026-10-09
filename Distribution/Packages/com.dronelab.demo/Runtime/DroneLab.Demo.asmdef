@@ -1,0 +1,8 @@
+{
+  "name": "DroneLab.Demo",
+  "references": [
+    "DroneLab.Physics",
+    "DroneLab.Simulation",
+    "Unity.InputSystem"
+  ]
+}

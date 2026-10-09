@@ -18,7 +18,7 @@ PlayerSettings:
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
   m_ShowUnitySplashScreen: 1
-  m_ShowUnitySplashLogo: 1
+  m_ShowUnitySplashLogo: 0
   m_SplashScreenOverlayOpacity: 1
   m_SplashScreenAnimation: 1
   m_SplashScreenLogoStyle: 1
@@ -148,7 +148,8 @@ PlayerSettings:
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
   bundleVersion: 0.1.0
-  preloadedAssets: []
+  preloadedAssets:
+  - {fileID: -944628639613478452, guid: 35845fe01580c41289b024647b1d1c53, type: 3}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -838,7 +839,23 @@ PlayerSettings:
   webGLCloseOnQuit: 0
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
-  scriptingDefineSymbols: {}
+  scriptingDefineSymbols:
+    Android: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    EmbeddedLinux: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    GameCoreScarlett: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    GameCoreXboxOne: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    Kepler: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    LinuxHeadlessSimulation: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    Nintendo Switch: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    Nintendo Switch 2: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    PS4: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    PS5: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    QNX: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    Standalone: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    VisionOS: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    WebGL: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    XboxOne: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
+    tvOS: ENVIRO_3;ENVIRO_HDRP;GLTFAST_KEEP_MESH_DATA;GLTFAST_SAFE
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

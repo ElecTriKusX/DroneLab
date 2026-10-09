@@ -1,0 +1,40 @@
+{
+  "retrievedAt": "2026-10-06",
+  "sources": [
+    {
+      "name": "Bitcraze2015",
+      "url": "https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/functional-areas/pwm-to-thrust/"
+    },
+    {
+      "name": "UIUC static",
+      "url": "https://m-selig.ae.illinois.edu/props/volume-1/data/apcsf_10x4.7_static_kt0835.txt"
+    },
+    {
+      "name": "UIUC axial",
+      "url": "https://m-selig.ae.illinois.edu/props/volume-1/data/apcsf_10x4.7_kt0836_4014.txt"
+    },
+    {
+      "name": "Brushless identified paper",
+      "url": "https://arxiv.org/pdf/2603.05944"
+    },
+    {
+      "name": "Brushless code",
+      "url": "https://github.com/Data-Science-in-Mechanical-Engineering/CrazyflieBrushJAX/blob/5e449f116b03218e803e728f2a9d8f68f60b05fe/environment/quadcopter.py",
+      "commit": "5e449f116b03218e803e728f2a9d8f68f60b05fe"
+    },
+    {
+      "name": "Hummingbird identified paper",
+      "url": "https://archive.air.in.tum.de/Main/Publications/Klose2011a.pdf"
+    },
+    {
+      "name": "CF2 geometry",
+      "url": "https://github.com/utiasDSL/gym-pybullet-drones/blob/7ebad1ecabd28a7000add2d05f888aa2e837c2cc/gym_pybullet_drones/assets/cf2x.urdf",
+      "commit": "7ebad1ecabd28a7000add2d05f888aa2e837c2cc"
+    },
+    {
+      "name": "RotorS visual reference",
+      "url": "https://github.com/ethz-asl/rotors_simulator",
+      "commit": "cd813b7a8c375d677352aa20ad20047feb661126"
+    }
+  ]
+}

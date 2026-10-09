@@ -1,0 +1,12 @@
+{
+  "name": "DroneLab.Demo.Editor",
+  "references": [
+    "DroneLab.Physics",
+    "DroneLab.Simulation",
+    "DroneLab.Demo",
+    "DroneLab.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

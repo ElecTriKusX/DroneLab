@@ -1,0 +1,20 @@
+{
+  "name": "com.dronelab.configurator",
+  "version": "0.1.0",
+  "displayName": "DroneLab Drone Configurator UI",
+  "description": "Runtime uGUI configurator for loading multirotor GLB/glTF models, editing DroneLab profile parameters, validating them and saving drone profile packages.",
+  "unity": "6000.3",
+  "license": "GPL-3.0-only",
+  "dependencies": {
+    "com.unity.ugui": "2.0.0",
+    "com.unity.nuget.newtonsoft-json": "3.2.1",
+    "com.unity.render-pipelines.high-definition": "17.3.0"
+  },
+  "samples": [
+    {
+      "displayName": "Configurator UI Scene",
+      "description": "Editable hand-authored uGUI configurator scene and its visual assets.",
+      "path": "Samples~/ConfiguratorUI"
+    }
+  ]
+}

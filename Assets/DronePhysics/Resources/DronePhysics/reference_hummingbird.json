@@ -1,0 +1,245 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "name": "AscTec Hummingbird — Wang identification",
+    "manufacturer": "AscTec",
+    "model": "AscTec Hummingbird",
+    "description": "Open reference profile; sources and estimates are explicit. Static/low-speed validation only, not a calibrated full aircraft digital twin."
+  },
+  "coordinateSystem": {
+    "convention": "UnityLeftHandedYUpZForward",
+    "lengthUnit": "m",
+    "modelScaleMetersPerUnit": 1
+  },
+  "physicsConfiguration": {
+    "fidelity": "Basic",
+    "modules": {
+      "motorResponse": true,
+      "bodyDrag": false,
+      "windInteraction": true,
+      "groundEffect": false,
+      "rotorAerodynamics": false,
+      "bladeFlapping": false,
+      "inducedDrag": false,
+      "batteryDischarge": false,
+      "batteryVoltageSag": false,
+      "motorElectrical": false,
+      "gyroscopicRotorEffects": false
+    }
+  },
+  "massProperties": {
+    "massKg": 0.68,
+    "centerOfMassLocalM": [
+      0,
+      0,
+      0
+    ],
+    "dimensionsM": [
+      0.54,
+      0.12,
+      0.54
+    ],
+    "inertia": {
+      "mode": "ManualPrincipal",
+      "principalMomentsKgM2": [
+        0.007,
+        0.012,
+        0.007
+      ],
+      "principalAxesRotationXyzw": [
+        0,
+        0,
+        0,
+        1
+      ]
+    }
+  },
+  "rotors": [
+    {
+      "rotorId": "F",
+      "geometry": {
+        "positionLocalM": [
+          0,
+          0.01,
+          0.17
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 7836.039099693788,
+        "responseTimeUpS": 0.0125,
+        "responseTimeDownS": 0.025
+      },
+      "propeller": {
+        "diameterM": 0.2,
+        "pitchM": 0.1,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 5.197776720851929e-06,
+        "kTorqueNmPerRadPerSecSquared": 8.316442753363087e-08,
+        "referenceAirDensityKgM3": 1.225
+      }
+    },
+    {
+      "rotorId": "R",
+      "geometry": {
+        "positionLocalM": [
+          0.17,
+          0.01,
+          0
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 7836.039099693788,
+        "responseTimeUpS": 0.0125,
+        "responseTimeDownS": 0.025
+      },
+      "propeller": {
+        "diameterM": 0.2,
+        "pitchM": 0.1,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 5.197776720851929e-06,
+        "kTorqueNmPerRadPerSecSquared": 8.316442753363087e-08,
+        "referenceAirDensityKgM3": 1.225
+      }
+    },
+    {
+      "rotorId": "B",
+      "geometry": {
+        "positionLocalM": [
+          0,
+          0.01,
+          -0.17
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 7836.039099693788,
+        "responseTimeUpS": 0.0125,
+        "responseTimeDownS": 0.025
+      },
+      "propeller": {
+        "diameterM": 0.2,
+        "pitchM": 0.1,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 5.197776720851929e-06,
+        "kTorqueNmPerRadPerSecSquared": 8.316442753363087e-08,
+        "referenceAirDensityKgM3": 1.225
+      }
+    },
+    {
+      "rotorId": "L",
+      "geometry": {
+        "positionLocalM": [
+          -0.17,
+          0.01,
+          0
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 7836.039099693788,
+        "responseTimeUpS": 0.0125,
+        "responseTimeDownS": 0.025
+      },
+      "propeller": {
+        "diameterM": 0.2,
+        "pitchM": 0.1,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 5.197776720851929e-06,
+        "kTorqueNmPerRadPerSecSquared": 8.316442753363087e-08,
+        "referenceAirDensityKgM3": 1.225
+      }
+    }
+  ],
+  "bodyAerodynamics": {
+    "model": "AxisApproximation",
+    "dragCd": [
+      0,
+      0,
+      0
+    ],
+    "referenceAreaM2": [
+      0.0648,
+      0.2916,
+      0.0648
+    ]
+  },
+  "powerSystem": {
+    "battery": {
+      "mode": "None"
+    }
+  },
+  "parameterProvenance": [
+    {
+      "path": "bodyAerodynamics / physicsConfiguration.modules",
+      "sourceType": "Estimated",
+      "source": "Unknown body Cd/advanced rotor/thermal/electrical parameters: effects disabled, not fabricated. Body geometry only a reference envelope; not hardware mass distribution.",
+      "confidence": 0.1
+    },
+    {
+      "path": "massProperties.massKg / massProperties.inertia / rotors.geometry / rotors.performance",
+      "sourceType": "Measured",
+      "source": "https://archive.air.in.tum.de/Main/Publications/Klose2011a.pdf ; Table 1: total mass .68 kg, arm .17 m, Iroll/pitch .007, Iyaw .012, thrust 5.7e-8 N/RPM^2, Q/T .016 m. Paper vehicle referenced by RotorS Hummingbird. Unity inertia permutation; no extra rotor mass on published total.",
+      "confidence": 0.75
+    },
+    {
+      "path": "rotors.motor.maxRpm",
+      "sourceType": "Calculated",
+      "source": "https://archive.air.in.tum.de/Main/Publications/Klose2011a.pdf ; maximum 3.5 N/rotor -> sqrt(3.5/5.7e-8) RPM. Published saturation, not independently measured maximum RPM.",
+      "confidence": 0.6
+    },
+    {
+      "path": "rotors.motor.responseTimeUpS / rotors.motor.responseTimeDownS",
+      "sourceType": "Estimated",
+      "source": "https://archive.air.in.tum.de/Main/Publications/Klose2011a.pdf ; paper identifies propulsion/thrust lag 1/80 and 1/40 s; reused as RPM first-order approximation near hover, not an exact thrust startup match.",
+      "confidence": 0.4
+    },
+    {
+      "path": "massProperties.dimensionsM / rotors.propeller / rotors.geometry.positionLocalM[1]",
+      "sourceType": "Estimated",
+      "source": "RotorS visual geometry reference: radius 0.1 m, offset .01 m; pitch .1 m placeholder. RotorS motor_constant=8.54858e-6 differs from paper; not used.",
+      "confidence": 0.2
+    }
+  ]
+}

@@ -1,0 +1,220 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "name": "TestQuad projected_box",
+    "manufacturer": "DroneLab",
+    "model": "Synthetic 1 kg test quad",
+    "description": "Synthetic stage-3 aerodynamics fixture; not calibrated commercial data."
+  },
+  "coordinateSystem": {
+    "convention": "UnityLeftHandedYUpZForward",
+    "lengthUnit": "m",
+    "modelScaleMetersPerUnit": 1
+  },
+  "physicsConfiguration": {
+    "fidelity": "Basic",
+    "modules": {
+      "motorResponse": true,
+      "bodyDrag": true,
+      "windInteraction": true,
+      "groundEffect": false,
+      "rotorAerodynamics": false,
+      "bladeFlapping": false,
+      "inducedDrag": false,
+      "batteryDischarge": false,
+      "batteryVoltageSag": false,
+      "motorElectrical": false,
+      "gyroscopicRotorEffects": false
+    }
+  },
+  "massProperties": {
+    "massKg": 1,
+    "centerOfMassLocalM": [
+      0,
+      0,
+      0
+    ],
+    "dimensionsM": [
+      0.4,
+      0.1,
+      0.4
+    ],
+    "inertia": {
+      "mode": "AutoBox"
+    }
+  },
+  "rotors": [
+    {
+      "rotorId": "FL",
+      "geometry": {
+        "positionLocalM": [
+          -0.14,
+          0,
+          0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 8.945647303782003e-06,
+        "kTorqueNmPerRadPerSecSquared": 1.7891294607564007e-07,
+        "referenceAirDensityKgM3": 1.225
+      }
+    },
+    {
+      "rotorId": "FR",
+      "geometry": {
+        "positionLocalM": [
+          0.14,
+          0,
+          0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 8.945647303782003e-06,
+        "kTorqueNmPerRadPerSecSquared": 1.7891294607564007e-07,
+        "referenceAirDensityKgM3": 1.225
+      }
+    },
+    {
+      "rotorId": "RR",
+      "geometry": {
+        "positionLocalM": [
+          0.14,
+          0,
+          -0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 8.945647303782003e-06,
+        "kTorqueNmPerRadPerSecSquared": 1.7891294607564007e-07,
+        "referenceAirDensityKgM3": 1.225
+      }
+    },
+    {
+      "rotorId": "RL",
+      "geometry": {
+        "positionLocalM": [
+          -0.14,
+          0,
+          -0.14
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 10000,
+        "responseTimeUpS": 0.06,
+        "responseTimeDownS": 0.08
+      },
+      "propeller": {
+        "diameterM": 0.127,
+        "pitchM": 0.0762,
+        "bladeCount": 3
+      },
+      "performance": {
+        "model": "OmegaSquared",
+        "kThrustNPerRadPerSecSquared": 8.945647303782003e-06,
+        "kTorqueNmPerRadPerSecSquared": 1.7891294607564007e-07,
+        "referenceAirDensityKgM3": 1.225
+      }
+    }
+  ],
+  "bodyAerodynamics": {
+    "model": "ProjectedArea",
+    "dragCoefficient": 1,
+    "projectedArea": {
+      "mode": "AxisApproximation",
+      "referenceAreaM2": [
+        0.04000000000000001,
+        0.16000000000000003,
+        0.04000000000000001
+      ]
+    },
+    "dragApplicationPointLocalM": [
+      0,
+      0,
+      0
+    ]
+  },
+  "powerSystem": {
+    "battery": {
+      "mode": "None"
+    }
+  },
+  "parameterProvenance": [
+    {
+      "path": "rotors",
+      "sourceType": "Estimated",
+      "source": "Synthetic symmetric test quad; not manufacturer data",
+      "confidence": 0.3
+    },
+    {
+      "path": "bodyAerodynamics",
+      "sourceType": "Estimated",
+      "source": "Synthetic stage-3 fixture; silhouette Cd and patch parameters are estimated.",
+      "confidence": 0.3
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "name": "DroneLab.Sensors",
+  "references": ["DroneLab.Physics"],
+  "noEngineReferences": true
+}

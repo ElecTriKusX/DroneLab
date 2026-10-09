@@ -1,0 +1,8 @@
+{
+  "name": "DroneLab.Environment.Tests",
+  "references": ["DroneLab.Environment", "DroneLab.Physics"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "includePlatforms": ["Editor"],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"]
+}

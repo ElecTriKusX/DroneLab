@@ -1,0 +1,312 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "name": "DJI Mini 3 · приближённый",
+    "manufacturer": "DJI",
+    "model": "DJI Mini 3",
+    "description": "Published mass, dimensions, propeller size and nominal battery data; estimated COM, AutoBox inertia, rotor axes/spin, Ct/Cq, motor and discharge parameters. Not a bench-calibrated flight model. GLB labels include WM162; file title is Mini 3, exact variant/pose not verified."
+  },
+  "coordinateSystem": {
+    "convention": "UnityLeftHandedYUpZForward",
+    "lengthUnit": "m",
+    "modelScaleMetersPerUnit": 1
+  },
+  "physicsConfiguration": {
+    "fidelity": "Basic",
+    "modules": {
+      "motorResponse": true,
+      "bodyDrag": true,
+      "windInteraction": true,
+      "groundEffect": false,
+      "rotorAerodynamics": false,
+      "bladeFlapping": false,
+      "inducedDrag": false,
+      "batteryDischarge": true,
+      "batteryVoltageSag": true,
+      "motorElectrical": false,
+      "gyroscopicRotorEffects": false
+    }
+  },
+  "massProperties": {
+    "massKg": 0.248,
+    "centerOfMassLocalM": [
+      0,
+      0,
+      0
+    ],
+    "dimensionsM": [
+      0.362,
+      0.072,
+      0.251
+    ],
+    "inertia": {
+      "mode": "AutoBox"
+    }
+  },
+  "rotors": [
+    {
+      "rotorId": "FL",
+      "geometry": {
+        "positionLocalM": [
+          -0.1307573,
+          -6.15e-05,
+          0.0767736
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 8139.251,
+        "responseTimeUpS": 0.08,
+        "responseTimeDownS": 0.12,
+        "electrical": {
+          "motorKvRpmPerVolt": 1378.599,
+          "motorResistanceOhm": 0.15,
+          "noLoadCurrentA": 0.2,
+          "maxCurrentA": 15,
+          "maxPowerW": 150,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 18
+        }
+      },
+      "propeller": {
+        "diameterM": 0.1524,
+        "pitchM": 0.0762,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "CtCq",
+        "ct": 0.1,
+        "cq": 0.008
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    },
+    {
+      "rotorId": "FR",
+      "geometry": {
+        "positionLocalM": [
+          0.1307572,
+          -6.15e-05,
+          0.0767736
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 8139.251,
+        "responseTimeUpS": 0.08,
+        "responseTimeDownS": 0.12,
+        "electrical": {
+          "motorKvRpmPerVolt": 1378.599,
+          "motorResistanceOhm": 0.15,
+          "noLoadCurrentA": 0.2,
+          "maxCurrentA": 15,
+          "maxPowerW": 150,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 18
+        }
+      },
+      "propeller": {
+        "diameterM": 0.1524,
+        "pitchM": 0.0762,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "CtCq",
+        "ct": 0.1,
+        "cq": 0.008
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    },
+    {
+      "rotorId": "RR",
+      "geometry": {
+        "positionLocalM": [
+          0.0933829,
+          0.0328944,
+          -0.0966515
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 8139.251,
+        "responseTimeUpS": 0.08,
+        "responseTimeDownS": 0.12,
+        "electrical": {
+          "motorKvRpmPerVolt": 1378.599,
+          "motorResistanceOhm": 0.15,
+          "noLoadCurrentA": 0.2,
+          "maxCurrentA": 15,
+          "maxPowerW": 150,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 18
+        }
+      },
+      "propeller": {
+        "diameterM": 0.1524,
+        "pitchM": 0.0762,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "CtCq",
+        "ct": 0.1,
+        "cq": 0.008
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    },
+    {
+      "rotorId": "RL",
+      "geometry": {
+        "positionLocalM": [
+          -0.0934799,
+          0.0328945,
+          -0.0966515
+        ],
+        "thrustAxisLocal": [
+          0,
+          1,
+          0
+        ],
+        "spinDirection": "CCW"
+      },
+      "motor": {
+        "minRpm": 0,
+        "idleRpm": 0,
+        "maxRpm": 8139.251,
+        "responseTimeUpS": 0.08,
+        "responseTimeDownS": 0.12,
+        "electrical": {
+          "motorKvRpmPerVolt": 1378.599,
+          "motorResistanceOhm": 0.15,
+          "noLoadCurrentA": 0.2,
+          "maxCurrentA": 15,
+          "maxPowerW": 150,
+          "motorEfficiency": 0.85,
+          "escEfficiency": 0.95,
+          "escMaxCurrentA": 18
+        }
+      },
+      "propeller": {
+        "diameterM": 0.1524,
+        "pitchM": 0.0762,
+        "bladeCount": 2
+      },
+      "performance": {
+        "model": "CtCq",
+        "ct": 0.1,
+        "cq": 0.008
+      },
+      "advancedAerodynamics": {
+        "rotorDragCoefficientKgPerRad": 0.0001
+      }
+    }
+  ],
+  "bodyAerodynamics": {
+    "model": "AxisApproximation",
+    "dragCd": [
+      1,
+      1.1,
+      1
+    ],
+    "referenceAreaM2": [
+      0.006325,
+      0.031802,
+      0.009122
+    ]
+  },
+  "powerSystem": {
+    "battery": {
+      "mode": "Simple",
+      "cellCount": 2,
+      "nominalVoltageV": 7.38,
+      "capacityAh": 2.453,
+      "initialSoc": 1,
+      "internalResistanceOhm": 0.08,
+      "maxDischargeCurrentA": 45,
+      "ocvCurve": [
+        {
+          "soc": 0,
+          "voltageV": 6
+        },
+        {
+          "soc": 0.2,
+          "voltageV": 7.0
+        },
+        {
+          "soc": 0.8,
+          "voltageV": 7.6014
+        },
+        {
+          "soc": 1,
+          "voltageV": 8.5
+        }
+      ]
+    }
+  },
+  "parameterProvenance": [
+    {
+      "path": "massProperties.massKg / massProperties.dimensionsM / powerSystem.battery.nominalVoltageV",
+      "sourceType": "Manufacturer",
+      "source": "https://www.dji.com/mini-3/specs ; baseline configuration, published envelope in Unity [width,height,length].",
+      "confidence": 0.9
+    },
+    {
+      "path": "rotors.propeller",
+      "sourceType": "Manufacturer",
+      "source": "https://support.dji.com/help/content?customId=01700006559&documentType=&lang=en&paperDocType=ARTICLE&re=US&spaceId=17 ; propeller diameter and pitch. Blade count follows supplied mesh or approximate visual.",
+      "confidence": 0.8
+    },
+    {
+      "path": "powerSystem.battery.capacityAh",
+      "sourceType": "Manufacturer",
+      "source": "https://www.dji.com/mini-3/specs ; standard battery.",
+      "confidence": 0.9
+    },
+    {
+      "path": "rotors.geometry.positionLocalM / visual.rotorNodes / coordinateSystem.modelScaleMetersPerUnit",
+      "sourceType": "AutoGeometry",
+      "source": "Supplied dji_mini_3.glb; hierarchy/motor hub reference, centered AABB; Mavic scale 0.01 inferred from body dimensions, Mini/Avata already metres, M600 scale inferred from 1133 mm motor span. Check imported pose and physical pivots in Unity.",
+      "confidence": 0.5
+    },
+    {
+      "path": "massProperties.inertia / massProperties.centerOfMassLocalM",
+      "sourceType": "Estimated",
+      "source": "AutoBox uses entire published envelope, not the actual mass distribution. COM at envelope origin. Requires weighing/inertia identification for accurate flight.",
+      "confidence": 0.2
+    },
+    {
+      "path": "rotors.motor / rotors.performance / rotors.geometry.thrustAxisLocal / rotors.geometry.spinDirection / bodyAerodynamics / powerSystem.battery.internalResistanceOhm / powerSystem.battery.maxDischargeCurrentA / powerSystem.battery.ocvCurve",
+      "sourceType": "Estimated",
+      "source": "Ct=0.10; Cq=0.008 (two blades), 0.012 (three). RPM ceiling from estimated thrust-to-weight 2 at reference density 1.225 kg/m3, not environment data. Motor/ESC efficiencies .85/.95; lag .08/.12 s, common +Y axes and alternating spin are assumptions. OCV interpolant/resistance/current limits not measured. No flight time or manufacturer controller calibration.",
+      "confidence": 0.15
+    }
+  ]
+}

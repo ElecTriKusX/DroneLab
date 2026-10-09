@@ -1,0 +1,386 @@
+{
+  "formatVersion": "1.0.0",
+  "retrievedAt": "2026-10-06",
+  "scope": "Static measured holdouts / published identified curve reproduction, not whole-flight calibration.",
+  "datasets": [
+    {
+      "id": "cf20_bitcraze_2015",
+      "kind": "MeasuredStatic",
+      "profile": "reference_crazyflie20",
+      "sourceUrl": "https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/functional-areas/pwm-to-thrust/",
+      "rows": [
+        {
+          "rpm": 0,
+          "totalThrustGram": 0.0,
+          "totalCurrentA": 0.24,
+          "voltageV": 4.01,
+          "role": "training"
+        },
+        {
+          "rpm": 4485,
+          "totalThrustGram": 1.6,
+          "totalCurrentA": 0.37,
+          "voltageV": 3.98,
+          "role": "training"
+        },
+        {
+          "rpm": 7570,
+          "totalThrustGram": 4.8,
+          "totalCurrentA": 0.56,
+          "voltageV": 3.95,
+          "role": "holdout"
+        },
+        {
+          "rpm": 9374,
+          "totalThrustGram": 7.9,
+          "totalCurrentA": 0.75,
+          "voltageV": 3.92,
+          "role": "training"
+        },
+        {
+          "rpm": 10885,
+          "totalThrustGram": 10.9,
+          "totalCurrentA": 0.94,
+          "voltageV": 3.88,
+          "role": "holdout"
+        },
+        {
+          "rpm": 12277,
+          "totalThrustGram": 13.9,
+          "totalCurrentA": 1.15,
+          "voltageV": 3.84,
+          "role": "training"
+        },
+        {
+          "rpm": 13522,
+          "totalThrustGram": 17.3,
+          "totalCurrentA": 1.37,
+          "voltageV": 3.8,
+          "role": "holdout"
+        },
+        {
+          "rpm": 14691,
+          "totalThrustGram": 21.0,
+          "totalCurrentA": 1.59,
+          "voltageV": 3.76,
+          "role": "training"
+        },
+        {
+          "rpm": 15924,
+          "totalThrustGram": 24.4,
+          "totalCurrentA": 1.83,
+          "voltageV": 3.71,
+          "role": "holdout"
+        },
+        {
+          "rpm": 17174,
+          "totalThrustGram": 28.6,
+          "totalCurrentA": 2.11,
+          "voltageV": 3.67,
+          "role": "training"
+        },
+        {
+          "rpm": 18179,
+          "totalThrustGram": 32.8,
+          "totalCurrentA": 2.39,
+          "voltageV": 3.65,
+          "role": "holdout"
+        },
+        {
+          "rpm": 19397,
+          "totalThrustGram": 37.3,
+          "totalCurrentA": 2.71,
+          "voltageV": 3.62,
+          "role": "training"
+        },
+        {
+          "rpm": 20539,
+          "totalThrustGram": 41.7,
+          "totalCurrentA": 3.06,
+          "voltageV": 3.56,
+          "role": "holdout"
+        },
+        {
+          "rpm": 21692,
+          "totalThrustGram": 46.0,
+          "totalCurrentA": 3.46,
+          "voltageV": 3.48,
+          "role": "training"
+        },
+        {
+          "rpm": 22598,
+          "totalThrustGram": 51.9,
+          "totalCurrentA": 3.88,
+          "voltageV": 3.4,
+          "role": "holdout"
+        },
+        {
+          "rpm": 23882,
+          "totalThrustGram": 57.9,
+          "totalCurrentA": 4.44,
+          "voltageV": 3.3,
+          "role": "training"
+        }
+      ]
+    },
+    {
+      "id": "uiuc_apc_10x47_static",
+      "kind": "MeasuredStaticCoefficients",
+      "profile": "bench_apc_10x47_static",
+      "sourceUrl": "https://m-selig.ae.illinois.edu/props/volume-1/data/apcsf_10x4.7_static_kt0835.txt",
+      "assumedDensityKgM3": 1.225,
+      "rows": [
+        {
+          "rpm": 2377.0,
+          "ct": 0.1059,
+          "cp": 0.0431,
+          "role": "training"
+        },
+        {
+          "rpm": 2676.0,
+          "ct": 0.1079,
+          "cp": 0.0437,
+          "role": "holdout"
+        },
+        {
+          "rpm": 2947.0,
+          "ct": 0.1079,
+          "cp": 0.0437,
+          "role": "training"
+        },
+        {
+          "rpm": 3234.0,
+          "ct": 0.1104,
+          "cp": 0.0444,
+          "role": "holdout"
+        },
+        {
+          "rpm": 3494.0,
+          "ct": 0.1117,
+          "cp": 0.045,
+          "role": "training"
+        },
+        {
+          "rpm": 3762.0,
+          "ct": 0.1143,
+          "cp": 0.046,
+          "role": "holdout"
+        },
+        {
+          "rpm": 4029.0,
+          "ct": 0.1158,
+          "cp": 0.0466,
+          "role": "training"
+        },
+        {
+          "rpm": 4319.0,
+          "ct": 0.1177,
+          "cp": 0.0474,
+          "role": "holdout"
+        },
+        {
+          "rpm": 4590.0,
+          "ct": 0.12,
+          "cp": 0.0484,
+          "role": "training"
+        },
+        {
+          "rpm": 4880.0,
+          "ct": 0.1223,
+          "cp": 0.0494,
+          "role": "holdout"
+        },
+        {
+          "rpm": 5147.0,
+          "ct": 0.1237,
+          "cp": 0.05,
+          "role": "training"
+        },
+        {
+          "rpm": 5417.0,
+          "ct": 0.1252,
+          "cp": 0.0508,
+          "role": "holdout"
+        },
+        {
+          "rpm": 5715.0,
+          "ct": 0.1263,
+          "cp": 0.0513,
+          "role": "training"
+        },
+        {
+          "rpm": 5960.0,
+          "ct": 0.1278,
+          "cp": 0.052,
+          "role": "holdout"
+        },
+        {
+          "rpm": 6226.0,
+          "ct": 0.1286,
+          "cp": 0.0524,
+          "role": "training"
+        },
+        {
+          "rpm": 6528.0,
+          "ct": 0.1299,
+          "cp": 0.0531,
+          "role": "training"
+        }
+      ]
+    },
+    {
+      "id": "uiuc_apc_10x47_axial",
+      "kind": "MeasuredAxialCoefficients",
+      "profile": "bench_apc_10x47_axial",
+      "sourceUrl": "https://m-selig.ae.illinois.edu/props/volume-1/data/apcsf_10x4.7_kt0836_4014.txt",
+      "rpm": 4014,
+      "assumedDensityKgM3": 1.225,
+      "rows": [
+        {
+          "advanceRatio": 0.142,
+          "ct": 0.0994,
+          "cp": 0.0451,
+          "role": "training"
+        },
+        {
+          "advanceRatio": 0.177,
+          "ct": 0.0944,
+          "cp": 0.0446,
+          "role": "holdout"
+        },
+        {
+          "advanceRatio": 0.216,
+          "ct": 0.0885,
+          "cp": 0.0436,
+          "role": "training"
+        },
+        {
+          "advanceRatio": 0.255,
+          "ct": 0.0829,
+          "cp": 0.0427,
+          "role": "holdout"
+        },
+        {
+          "advanceRatio": 0.289,
+          "ct": 0.077,
+          "cp": 0.0414,
+          "role": "training"
+        },
+        {
+          "advanceRatio": 0.325,
+          "ct": 0.0719,
+          "cp": 0.0407,
+          "role": "holdout"
+        },
+        {
+          "advanceRatio": 0.361,
+          "ct": 0.0652,
+          "cp": 0.0392,
+          "role": "training"
+        },
+        {
+          "advanceRatio": 0.399,
+          "ct": 0.0582,
+          "cp": 0.0375,
+          "role": "holdout"
+        },
+        {
+          "advanceRatio": 0.438,
+          "ct": 0.0502,
+          "cp": 0.0352,
+          "role": "training"
+        },
+        {
+          "advanceRatio": 0.468,
+          "ct": 0.0441,
+          "cp": 0.0335,
+          "role": "holdout"
+        },
+        {
+          "advanceRatio": 0.51,
+          "ct": 0.0343,
+          "cp": 0.0308,
+          "role": "training"
+        },
+        {
+          "advanceRatio": 0.534,
+          "ct": 0.0288,
+          "cp": 0.0292,
+          "role": "holdout"
+        },
+        {
+          "advanceRatio": 0.577,
+          "ct": 0.0178,
+          "cp": 0.0258,
+          "role": "training"
+        },
+        {
+          "advanceRatio": 0.612,
+          "ct": 0.0083,
+          "cp": 0.0228,
+          "role": "holdout"
+        },
+        {
+          "advanceRatio": 0.647,
+          "ct": -0.0011,
+          "cp": 0.0199,
+          "role": "training"
+        },
+        {
+          "advanceRatio": 0.685,
+          "ct": -0.0122,
+          "cp": 0.0162,
+          "role": "holdout"
+        },
+        {
+          "advanceRatio": 0.719,
+          "ct": -0.0218,
+          "cp": 0.013,
+          "role": "training"
+        }
+      ]
+    },
+    {
+      "id": "cfbrush_published_fit",
+      "kind": "PublishedFit",
+      "profile": "reference_crazyflie_brushless",
+      "sourceUrl": "https://arxiv.org/pdf/2603.05944",
+      "codeUrl": "https://github.com/Data-Science-in-Mechanical-Engineering/CrazyflieBrushJAX/blob/5e449f116b03218e803e728f2a9d8f68f60b05fe/environment/quadcopter.py",
+      "scope": "Representation error against identified polynomial, not independent raw measurements.",
+      "thrustCoefficients": [
+        -0.23009526,
+        0.56176458,
+        -0.0433191,
+        0
+      ],
+      "torqueCoefficients": [
+        -0.0003396,
+        0.00087032,
+        0.0002896,
+        0
+      ],
+      "normalizationOmegaRadS": 2900,
+      "massKg": 0.044,
+      "inertiaSourceXyz": [
+        3.3e-05,
+        3.6e-05,
+        5.9e-05
+      ],
+      "tauS": 0.05
+    },
+    {
+      "id": "hummingbird_published",
+      "kind": "PublishedIdentification",
+      "profile": "reference_hummingbird",
+      "sourceUrl": "https://archive.air.in.tum.de/Main/Publications/Klose2011a.pdf",
+      "massKg": 0.68,
+      "armM": 0.17,
+      "thrustNPerRpmSquared": 5.7e-08,
+      "torquePerThrustM": 0.016,
+      "rollMomentNm": 0.544,
+      "yawMomentNm": 0.102,
+      "rollAccelerationRadS2": 77.7,
+      "yawAccelerationRadS2": 8.5
+    }
+  ]
+}
