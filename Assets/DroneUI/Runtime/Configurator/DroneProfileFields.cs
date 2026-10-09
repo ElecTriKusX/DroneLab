@@ -37,10 +37,10 @@ namespace DroneLab.UI
             var rule=DroneParameterSchema.Resolve(unresolved);var type=(string)rule["type"];
             string label=DroneParameterSchema.Name(key);if(DroneParameterSchema.Unit(key).Length>0)label+=" · "+DroneParameterSchema.Unit(key);
             if(type=="object") {
-                var section=new Foldout {text=label,value=expanded.TryGetValue(path,out var open)?open:key=="geometry"};section.AddToClassList("drone-field-group");host.Add(section);
+                var section=new Foldout {text="",value=expanded.TryGetValue(path,out var open)?open:key=="geometry"};section.AddToClassList("drone-field-group");host.Add(section);
                 section.RegisterValueChangedCallback(evt=>{if(evt.target==section)expanded[path]=evt.newValue;});
                 if(key=="operatingEnvelope")Label(section,"Контроль области применения: предупреждает о превышении заданных скоростей. Силы и ограничение движения не добавляет.","scenario-hint");
-                var header=section.Q<Toggle>();DroneHelp.Attach(header,()=>DroneParameterSchema.Tooltip(key,unresolved));
+                var header=section.Q<Toggle>();header.tooltip=label;Label(header,label,"drone-group-title");DroneHelp.Attach(header,()=>DroneParameterSchema.Tooltip(key,unresolved));
                 if(remove!=null){section.AddToClassList("removable-group");RemoveControl(header,label,remove);}
                 Object(section,(JObject)value,DroneParameterSchema.Definition(unresolved),path);ReadOnly(section);return;
             }
@@ -63,7 +63,6 @@ namespace DroneLab.UI
                         if(!DroneProfileEdits.TryNormalize(array,out var normalized,out var error)){errors[path]=error;changed();return;}
                         for(int i=0;i<array.Count;i++)array[i]=normalized[i].DeepClone();ClearErrors(path);changed();rebuild();
                     });normalize.tooltip=key=="principalAxesRotationXyzw"?"Сделать длину кватерниона равной 1, сохранив задаваемый им поворот.":"Сделать длину вектора равной 1, сохранив его направление.";
-                    Label(host,key=="principalAxesRotationXyzw"?"Нормализация приводит длину кватерниона к 1.":"Нормализация приводит длину вектора к 1, сохраняя направление.","drone-normalize-note");
                 }
                 return;
             }

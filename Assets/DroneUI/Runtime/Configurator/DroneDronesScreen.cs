@@ -25,6 +25,7 @@ namespace DroneLab.UI
         private int rotorIndex,galleryRevision;
         private VisualElement navigation,inspector,prompt;
         private VisualElement toolsToolbar;
+        private Label massEstimate;
         private readonly Dictionary<string,bool> expandedGroups=new Dictionary<string,bool>();
         private readonly Dictionary<string,Vector2> inspectorOffsets=new Dictionary<string,Vector2>();
         private readonly Dictionary<string,Button> viewButtons=new Dictionary<string,Button>(),toolButtons=new Dictionary<string,Button>();
@@ -179,6 +180,9 @@ namespace DroneLab.UI
                 string key=tool.Item2;toolButtons[key]=DroneProfileFields.Button(toolsToolbar,tool.Item1,()=>{viewport.Tool=key;UpdateViewportControls();});
             }
             DroneHelp.Attach(toolsToolbar,()=>"Выберите точку ротора. Инструмент «Положение точки» перемещает её в плоскости вида или вдоль выбранной оси. «Направление тяги» меняет направление стрелки. Привязка округляет положение до 1 см. Точные компоненты доступны справа.");
+            var snapRow=Box(toolsToolbar,"drone-viewport-snap");
+            var snap=new DroneSwitch("Привязка к сетке · 1 см",false);snapRow.Add(snap);snap.ValueChanged+=value=>viewport.Snap=value;
+            DroneHelp.Attach(snapRow,()=>"При перетаскивании точки ротора координаты округляются до ближайшего сантиметра. Направление тяги не округляется. Точный ввод координат остаётся доступен независимо от привязки.");
             viewport=new DroneModelViewport();center.Add(viewport);viewport.SetDocument(document);
             if(DroneProfileLibrary.ModelPath(document)==null && (created || document.id.StartsWith("builtin-") && !File.Exists(Path.Combine(DroneProfileLibrary.Folder(document.id),"document.json"))))viewport.Frame();
             original=document.Snapshot();
@@ -214,7 +218,7 @@ namespace DroneLab.UI
             if(document==null || inspector==null || disposed)return;
             var previous=inspector.Q<ScrollView>();if(previous!=null && inspectorSection!=null)inspectorOffsets[inspectorSection]=previous.scrollOffset;
             var rotors=(JArray)document.profile["rotors"];rotorIndex=Mathf.Clamp(rotorIndex,0,Math.Max(0,rotors.Count-1));
-            inspector.Clear();inspectorSection=section;var header=Box(inspector,"drone-inspector-heading");
+            massEstimate=null;inspector.Clear();inspectorSection=section;var header=Box(inspector,"drone-inspector-heading");
             string title=section=="Model"?"МОДЕЛЬ И ПРОФИЛЬ":section=="Mass"?"МАССА И ИНЕРЦИЯ":section=="Rotor"?(viewport.SelectedRotor>=0?"РОТОР "+(string)rotors[rotorIndex]["rotorId"]:"РОТОРЫ"):section=="Aero"?"АЭРОДИНАМИКА":section=="Power"?"БАТАРЕЯ И ПИТАНИЕ":section=="Thermal"?"ТЕМПЕРАТУРА":section=="Modules"?"МОДУЛИ":section=="Sources"?"ИСТОЧНИКИ":"ПРОВЕРКА";
             DroneProfileFields.Label(header,title,"drone-panel-title");
             var width=DroneProfileFields.Button(header,wideInspector?"Обычная ширина":"Больше места",()=>{wideInspector=!wideInspector;page.EnableInClassList("drone-wide-inspector",wideInspector);RebuildInspector();});width.AddToClassList("drone-width-button");
@@ -227,9 +231,6 @@ namespace DroneLab.UI
                 case "Model":ModelInspector(scroll);break;
                 case "Mass":MassInspector(scroll);break;
                 case "Rotor":if(rotor!=null && viewport.SelectedRotor>=0){
-                    var snapRow=DroneProfileFields.Row(scroll);snapRow.AddToClassList("drone-parameter-row");
-                    var snap=new DroneSwitch("Привязка к сетке · 1 см",viewport.Snap);snapRow.Add(snap);snap.ValueChanged+=value=>viewport.Snap=value;
-                    DroneHelp.Attach(snapRow,()=>"При перетаскивании точки ротора координаты округляются до ближайшего сантиметра. Направление тяги не округляется. Точный ввод координат остаётся доступен независимо от привязки.");
                     DroneProfileFields.Button(scroll,"Открыть характеристики винта",()=>OpenPerformance(rotor,rp));fields.Object(scroll,rotor,"RotorProfile",rp,"performance");
                     DroneProfileFields.Button(scroll,"Применить двигатель и винт ко всем",()=> {foreach(var r in rotors.OfType<JObject>())if(r!=rotor)foreach(string key in new[]{"motor","propeller","performance","advancedAerodynamics","operatingEnvelope"}){if(rotor[key]!=null)r[key]=rotor[key].DeepClone();else r.Remove(key);fields.ClearErrors("rotors["+rotors.IndexOf(r)+"]."+key);}Changed();RebuildInspector();});
                     var remove=DroneProfileFields.Button(scroll,"Удалить ротор «"+(string)rotor["rotorId"]+"»",()=>Ask("Удалить ротор?","Точка ротора, двигатель, винт и характеристики будут удалены из текущего профиля.",("Отмена",()=>{}),("Удалить",RemoveRotor)));remove.SetEnabled(rotors.Count>1);
@@ -267,14 +268,23 @@ namespace DroneLab.UI
             mode.RegisterValueChangedCallback(evt=>{if(evt.target!=mode)return;inertia["mode"]=keys[mode.index];Changed();RebuildInspector();});
             DroneHelp.Attach(row,()=>DroneParameterSchema.Tooltip("inertia",DroneParameterSchema.ObjectRule("MassProperties")["properties"]["inertia"]));
             if((string)inertia["mode"]=="AutoBox") {
-                var estimate=PhysicsMath.BoxInertia((double)mass["massKg"],DVector3.From(((JArray)mass["dimensionsM"]).Select(v=>(double)v).ToArray()));
-                DroneProfileFields.Label(host,$"Оценка однородной коробки: Ix = {estimate.X:0.######}; Iy = {estimate.Y:0.######}; Iz = {estimate.Z:0.######} кг·м².\nНе учитывает отдельное размещение батареи, моторов и нагрузки; для точных данных используйте главные моменты из измерений или CAD.","drone-inertia-estimate");
+                massEstimate=DroneProfileFields.Label(host,"","drone-inertia-estimate");UpdateMassEstimate();
             } else {
                 foreach(string key in new[]{"principalMomentsKgM2","principalAxesRotationXyzw"}) {
                     if(inertia[key]==null)inertia[key]=DroneParameterSchema.Default(rule["properties"][key],key);
                     fields.Field(host,key,rule["properties"][key],inertia[key],"massProperties.inertia."+key,value=>inertia[key]=value);
                 }
             }
+        }
+        private void UpdateMassEstimate()
+        {
+            if(massEstimate==null || document==null)return;
+            const string explanation="\nНе учитывает отдельное размещение батареи, моторов и нагрузки; для точных данных используйте главные моменты из измерений или CAD.";
+            bool invalid=errors.Keys.Any(path=>path=="massProperties.massKg" || path=="massProperties.dimensionsM" || path.StartsWith("massProperties.dimensionsM["));
+            if(invalid){massEstimate.text="Оценка однородной коробки: завершите корректный ввод массы и габаритов."+explanation;return;}
+            var mass=document.profile["massProperties"];
+            var estimate=PhysicsMath.BoxInertia((double)mass["massKg"],DVector3.From(((JArray)mass["dimensionsM"]).Select(v=>(double)v).ToArray()));
+            massEstimate.text=$"Оценка однородной коробки: Ix = {estimate.X:G6}; Iy = {estimate.Y:G6}; Iz = {estimate.Z:G6} кг·м²."+explanation;
         }
         private void ModelInspector(VisualElement host)
         {
@@ -345,7 +355,7 @@ namespace DroneLab.UI
         {
             if(document==null || disposed)return;document.unfinishedInputs.Clear();foreach(var key in errors.Keys)if(input.TryGetValue(key,out var value))document.unfinishedInputs[key]=value;
             if(document.profile["coordinateSystem"]?["modelScaleMetersPerUnit"] is JValue scale)document.visual["scale"]=scale.DeepClone();
-            viewport?.ApplyTransform();viewport?.GeometryChanged();UpdateViewportControls();UpdateState();
+            viewport?.ApplyTransform();viewport?.GeometryChanged();UpdateMassEstimate();UpdateViewportControls();UpdateState();
         }
         private void UpdateState()
         {

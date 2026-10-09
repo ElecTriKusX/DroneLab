@@ -245,7 +245,6 @@
 .drone-switch.is-on .drone-switch-track { background-color: rgb(219, 224, 222); border-color: rgb(219, 224, 222); }
 .drone-switch.is-on .drone-switch-knob { left: 21px; background-color: rgb(38, 42, 44); }
 .drone-switch:disabled { opacity: .45; }
-.drone-normalize-note { color: rgb(145, 158, 165); font-size: 12px; white-space: normal; margin: 0 0 16px; }
 .drone-inertia-estimate { font-size: 14px; white-space: normal; color: rgb(178, 191, 198); padding: 14px; margin: 8px 0 18px; border-width: 1px; border-color: rgb(69, 80, 86); border-radius: 6px; background-color: rgb(27, 30, 32); }
 /* Foldout arrows keep their own control; no nested checkbox/input frame. */
 .drone-editor-page .drone-field-group > .unity-foldout__toggle > .unity-base-field__input, .drone-data-overlay .drone-field-group > .unity-foldout__toggle > .unity-base-field__input { flex-grow: 0; min-width: 0; min-height: 0; border-width: 0; background-color: transparent; padding: 0; }
@@ -267,3 +266,12 @@
 .drone-performance-settings .drone-remove-control { margin-bottom: 8px; }
 /* A field gets one input border; its containing row stays transparent. */
 .drone-editor-page .drone-parameter-row, .drone-data-overlay .drone-parameter-row { border-width: 0; background-color: transparent; }
+
+/* Explicit group titles remain visible without inheriting Toggle's input layout. */
+.drone-field-group > .unity-foldout__toggle { flex-direction: row; align-items: center; }
+.drone-field-group > .unity-foldout__toggle > .unity-base-field__input { width: 20px; min-width: 20px; flex-shrink: 0; }
+.drone-group-title { flex-grow: 1; flex-basis: 0; min-width: 0; white-space: normal; margin: 0 0 0 6px; font-size: 16px; color: rgb(227, 230, 229); -unity-font-style: bold; }
+.drone-viewport-snap { flex-direction: row; align-items: center; justify-content: flex-end; flex-grow: 1; min-width: 265px; margin-left: 12px; }
+.drone-viewport-snap .drone-switch { flex-grow: 0; flex-basis: auto; min-height: 34px; padding: 4px 8px; }
+.drone-viewport-snap .drone-switch-label { font-size: 13px; margin-right: 10px; }
+.drone-viewport-snap > .parameter-help { flex-shrink: 0; }

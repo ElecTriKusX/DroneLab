@@ -69,6 +69,11 @@ namespace DroneLab.UI
             camera.backgroundColor=new Color(.07f,.07f,.07f); camera.nearClipPlane=.001f; camera.fieldOfView=38;
             var hd=cam.AddComponent<HDAdditionalCameraData>(); hd.clearColorMode=HDAdditionalCameraData.ClearColorMode.Color;
             hd.backgroundColorHDR=camera.backgroundColor; hd.volumeLayerMask=1<<PreviewLayer;
+            // Temporary preview cameras use one graphics queue. This is a local mitigation,
+            // not proof of the cause of an intermittent HDRP GPUFence error.
+            hd.customRenderingSettings=true;
+            hd.renderingPathCustomFrameSettingsOverrideMask.mask[(int)FrameSettingsField.AsyncCompute]=true;
+            hd.renderingPathCustomFrameSettings.SetEnabled(FrameSettingsField.AsyncCompute,false);
             var volume=Child("Isolated preview exposure").AddComponent<Volume>(); volume.isGlobal=true; volume.priority=10000;
             volumeProfile=ScriptableObject.CreateInstance<VolumeProfile>(); volume.sharedProfile=volumeProfile;
             var exposure=volumeProfile.Add<Exposure>(); exposure.mode.Override(ExposureMode.Fixed); exposure.fixedExposure.Override(8);
@@ -91,11 +96,15 @@ namespace DroneLab.UI
         private GameObject Child(string name) { var go=new GameObject(name) { layer=PreviewLayer, hideFlags=HideFlags.DontSave }; go.transform.SetParent(stage.transform,false); return go; }
         private void Resize()
         {
+            if(disposed)return;
             int w=Mathf.Clamp(Mathf.RoundToInt(resolvedStyle.width),128,2048),h=Mathf.Clamp(Mathf.RoundToInt(resolvedStyle.height),128,2048);
             if(texture!=null && texture.width==w && texture.height==h)return;
-            if(texture!=null) { texture.Release(); Object.Destroy(texture); }
+            var old=texture;
             texture=new RenderTexture(w,h,24,RenderTextureFormat.ARGB32) { name="DroneLab Configurator Viewport" }; texture.Create();
             camera.targetTexture=texture; camera.aspect=(float)w/h; image.image=texture;
+            // Detach the old target before deferred destruction; do not force Release
+            // while HDRP/UI may still have submitted work using it this frame.
+            if(old!=null)Object.Destroy(old);
         }
         public void SetDocument(DroneProfileDocument value)
         {
@@ -303,7 +312,7 @@ namespace DroneLab.UI
         public void Dispose()
         {
             if(disposed)return;disposed=true;tick.Pause();camera.enabled=false;loader.Clear();
-            camera.targetTexture=null;if(texture!=null){texture.Release();Object.Destroy(texture);} Object.Destroy(volumeProfile);Object.Destroy(stage);
+            camera.targetTexture=null;image.image=null;if(texture!=null){Object.Destroy(texture);texture=null;} Object.Destroy(volumeProfile);Object.Destroy(stage);
             if(previewScene.IsValid() && previewScene.isLoaded)SceneManager.UnloadSceneAsync(previewScene);
             foreach(var pair in otherCameras)if(pair.Key!=null)pair.Key.cullingMask=pair.Value;
             foreach(var pair in otherLights)if(pair.Key!=null)pair.Key.cullingMask=pair.Value;
@@ -330,7 +339,9 @@ namespace DroneLab.UI
                 if(v.document==null)return;
                 for(int i=0;i<v.Rotors.Count && i<labels.Count;i++) {
                     var rotor=v.Rotors[i];var center=v.Project(Vec(rotor["geometry"]["positionLocalM"]));
-                    PositionLabel(labels[i],center+new Vector2(15,-25),(string)rotor["rotorId"]+" · "+(string)rotor["geometry"]["spinDirection"]);
+                    string caption=(string)rotor["rotorId"]+" · "+(string)rotor["geometry"]["spinDirection"];
+                    if(v.EditingEnabled && i==v.SelectedRotor)caption+=$"\nD = {(double?)rotor["propeller"]?["diameterM"]??0:G4} м · {rotor["propeller"]?["bladeCount"]} лоп.";
+                    PositionLabel(labels[i],center+new Vector2(15,-25),caption);
                 }
                 if(labels.Count>v.Rotors.Count)PositionLabel(labels.Last(),v.Project(Vec(v.document.profile["massProperties"]["centerOfMassLocalM"])),"+ COM");
             }
@@ -359,11 +370,28 @@ namespace DroneLab.UI
                 for(int i=0;i<v.Rotors.Count;i++) {
                     var rotor=v.Rotors[i];var pos=Vec(rotor["geometry"]["positionLocalM"]);var axis=Vec(rotor["geometry"]["thrustAxisLocal"]);
                     var center=v.Project(pos);bool selected=i==v.SelectedRotor;float len=v.distance*.16f;
+                    if(v.EditingEnabled)DrawPropeller(p,rotor,pos,axis,selected);
                     p.lineWidth=selected?2.5f:1.5f;p.strokeColor=selected?Color.white:new Color(.72f,.72f,.72f);
                     p.BeginPath();p.Arc(center,selected?12:8,0,360);p.Stroke();
                     Arrow(p,center,v.Project(pos+axis*len));
                     if(v.EditingEnabled && selected && v.Tool=="Move")for(int k=0;k<3;k++) {p.strokeColor=k==0?new Color(.9f,.6f,.6f):k==1?new Color(.65f,.85f,.7f):new Color(.65f,.75f,.95f);Arrow(p,center,v.Project(pos+Axis(k)*v.distance*.13f));}
                 }
+            }
+            private void DrawPropeller(Painter2D p,JToken rotor,Vector3 position,Vector3 axis,bool selected)
+            {
+                float diameter=(float?)rotor["propeller"]?["diameterM"]??0;
+                if(diameter<=0 || float.IsNaN(diameter) || float.IsInfinity(diameter) || axis.sqrMagnitude<1e-10f)return;
+                axis.Normalize();
+                var tangent=Vector3.Cross(axis,Mathf.Abs(Vector3.Dot(axis,Vector3.up))>.9f?Vector3.right:Vector3.up).normalized;
+                var bitangent=Vector3.Cross(axis,tangent);float radius=diameter*.5f;
+                Vector3 Rim(float angle)=>position+radius*(tangent*Mathf.Cos(angle)+bitangent*Mathf.Sin(angle));
+                p.lineWidth=selected?2:1.2f;p.strokeColor=selected?new Color(.9f,.94f,.96f,.9f):new Color(.7f,.76f,.79f,.65f);
+                const int segments=72;
+                for(int step=0;step<segments;step++)Line(p,v.Project(Rim(step*2*Mathf.PI/segments)),v.Project(Rim((step+1)*2*Mathf.PI/segments)));
+                long blades=(long?)rotor["propeller"]?["bladeCount"]??0;
+                // Extreme diagnostic profiles keep their actual count in the label;
+                // skip unreadable spokes rather than silently draw a different count.
+                if(blades<=64)for(int blade=0;blade<blades;blade++)Line(p,v.Project(position),v.Project(Rim(blade*2*Mathf.PI/blades)));
             }
             private static void Line(Painter2D p,Vector2 a,Vector2 b){if(a.x < -9000 || b.x < -9000)return;p.BeginPath();p.MoveTo(a);p.LineTo(b);p.Stroke();}
             private static void Arrow(Painter2D p,Vector2 a,Vector2 b){Line(p,a,b);var d=(b-a).normalized;if(d.sqrMagnitude<.01)return;var side=new Vector2(-d.y,d.x);Line(p,b,b-d*10+side*5);Line(p,b,b-d*10-side*5);}
