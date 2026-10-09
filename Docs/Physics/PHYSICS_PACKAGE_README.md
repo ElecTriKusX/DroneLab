@@ -1,31 +1,22 @@
 # DroneLab Physics 0.3.4
 
-`com.dronelab.physics`: параметризованная мультироторная физика Unity 6000.3.
-Pure C# ядро вычисляет силы, моменты, RPM, питание и тепло; Rigidbody/PhysX интегрирует
-корпус и столкновения. JSON 1.0.0; телеметрия CSV 1.4.0. Input System/HDRP не требуются.
+`com.dronelab.physics` — параметрическое физическое ядро мультироторного аппарата и его Unity-адаптер. Чистый C# рассчитывает силы, моменты, роторы, питание и тепло; Rigidbody/PhysX интегрирует корпус и контакт.
 
-Реализованы масса/COM/инерция, OmegaSquared/CtCq/RPM/RPM-J, отклик и инерция привода,
-gyro, drag корпуса/роторов, ground/flow/flapping corrections, атмосфера/ветер/Dryden,
-батарея/governor, тепловые узлы/derating, faults и диагностика снижения.
-Эффекты активируются профилем; оси +X вправо/+Y вверх/+Z вперёд, единицы SI.
+JSON-контракт 1.0.0, физический CSV 1.4.0. Система координат Unity: +X вправо, +Y вверх, +Z вперёд; величины SI. Input System и HDRP для ядра не требуются.
+
+Поддерживаются разные характеристики винтов, привод, сопротивление, атмосфера и ветер, приближённые роторные эффекты, энергетические/тепловые ограничения. Дополнительные модули включаются профилем. Оценочные коэффициенты не являются калиброванной моделью реального аппарата.
 
 ## Документация
 
-| Документ | Содержимое |
-|---|---|
-| [PHYSICS_REFERENCE](Documentation~/PHYSICS_REFERENCE.md) | Все формулы, ограничения, возможные расширения |
-| [PHYSICAL_QUANTITIES](Documentation~/PHYSICAL_QUANTITIES.md) | Величины и единицы |
-| [PARAMETERS](Documentation~/PARAMETERS.md) | Полный реестр JSON |
-| [DEVELOPMENT](Documentation~/DEVELOPMENT.md) | Установка/API/authoring, Windows/Linux, погодный адаптер |
-| [VALIDATION](Documentation~/VALIDATION.md) | Профили и контрольные сравнения |
-| [THIRD_PARTY](Documentation~/THIRD_PARTY.md) | Источники/атрибуция |
+Локальный раздел пакета находится в `Documentation~/README.md`. В репозитории доступны:
 
-Статические контрольные точки APC согласуются по тяге в среднем на **99,64%**
-(1−MAPE). Это стендовое сравнение винта, а не точность полного полёта.
-Reference-профили имеют известные ограничения: неизвестные drag/power/thermal
-параметры отключены; реалистичная максимальная скорость и длительность не подтверждены.
+- [Физический раздел](https://github.com/ElecTriKusX/DroneLab/blob/main/Docs/Physics/README.md).
+- [Уравнения и границы](https://github.com/ElecTriKusX/DroneLab/blob/main/Docs/Physics/PHYSICS_REFERENCE.md).
+- [Величины](https://github.com/ElecTriKusX/DroneLab/blob/main/Docs/Physics/PHYSICAL_QUANTITIES.md) и [JSON-поля](https://github.com/ElecTriKusX/DroneLab/blob/main/Docs/Physics/PARAMETERS.md).
+- [Установка и API](https://github.com/ElecTriKusX/DroneLab/blob/main/Docs/Physics/DEVELOPMENT.md).
+- [Численная валидация](https://github.com/ElecTriKusX/DroneLab/blob/main/Docs/Physics/VALIDATION.md).
+- [Источники](https://github.com/ElecTriKusX/DroneLab/blob/main/Docs/Physics/THIRD_PARTY.md).
 
-Источник — Assets/DronePhysics ветки physics-packages; этот пакет — экспорт.
-Команды моторов подаются внешним controller. Для ручного тестирования доступен
-com.dronelab.demo; произвольные схемы требуют собственного allocator.
-Documentation~ исключена из импорта Unity. Лицензия — [GPL-3.0](LICENSE.md).
+Пакет экспортируется из `Assets/DronePhysics`; изменения вносятся в исходники и пересобираются. Внешний controller подаёт команды моторов; для тестовых стендов доступен `com.dronelab.demo`. Не устанавливайте экспорт поверх тех же классов в `Assets`.
+
+Лицензия исходников — GPL-3.0-only; в пакете находится `LICENSE.md`, оригинал — [LICENSE репозитория](https://github.com/ElecTriKusX/DroneLab/blob/main/LICENSE). У внешних материалов сохраняются собственные условия.

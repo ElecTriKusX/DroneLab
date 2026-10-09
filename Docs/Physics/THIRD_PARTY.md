@@ -1,6 +1,8 @@
 # Источники, геометрия и атрибуция
 
-DroneLab source сохраняет GPL-3.0-only репозитория. Это не смена лицензии внешних материалов. SDK содержит схемы/профили/числовые reference данные с атрибуцией, а не внешние крупные meshes или копии статей. Ссылки/commits закреплены в Data/reference-source-manifest.json; геометрия и SHA-256 — Data/reference-model-manifest.json.
+[Раздел физики](README.md) · [Контрольные профили](VALIDATION.md)
+
+DroneLab source сохраняет GPL-3.0-only репозитория. Это не смена лицензии внешних материалов. SDK содержит схемы/профили/числовые reference данные с атрибуцией, а не внешние крупные meshes или копии статей. Ссылки и commits закреплены в [reference-source-manifest.json](Data/reference-source-manifest.json); геометрия и SHA-256 — в [reference-model-manifest.json](Data/reference-model-manifest.json).
 
 | Источник | Использование | Условия / атрибуция |
 |---|---|---|
@@ -12,3 +14,6 @@ DroneLab source сохраняет GPL-3.0-only репозитория. Это �
 | Wang et al., 2011, Klose2011a.pdf | Масса, инерция, thrust coefficient и аналитические reference значения | Jian Wang, Thomas Bierling, Leonhard Höcht, Florian Holzapfel, Sebastian Klose, Alois Knoll. Цитирование числовых параметров; полный PDF не распространяется |
 
 Внешние assets имеют свои единицы/оси и требуют проверки при Unity импорте. Наличие mesh не означает идентифицированную аэродинамику или полную digital twin. Готовые визуалы меню DroneLab — primitives, явно обозначенные schematic.
+
+
+Импортируемые пользователем модели и дополнительные визуальные ресурсы могут иметь свои лицензии. Встроенное описание физического аппарата не меняет лицензию его 3D-модели. Сохраняйте сведения о происхождении перед передачей комплекта.
