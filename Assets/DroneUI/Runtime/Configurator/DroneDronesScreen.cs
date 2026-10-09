@@ -238,16 +238,24 @@ namespace DroneLab.UI
                 case "Aero":Group("bodyAerodynamics","BodyAerodynamicsProfile");
                     if(document.profile["groundEffect"]!=null)fields.Field(scroll,"groundEffect",DroneParameterSchema.ObjectRule("DroneProfile")["properties"]["groundEffect"],document.profile["groundEffect"],"groundEffect",t=>document.profile["groundEffect"]=t);
                     else DroneProfileFields.Button(scroll,"+ Параметры экрана",()=>{document.profile["groundEffect"]=DroneParameterSchema.Default(DroneParameterSchema.ObjectRule("DroneProfile")["properties"]["groundEffect"]);Changed();RebuildInspector();});break;
-                case "Power":Group("powerSystem","PowerSystemProfile");break;
+                case "Power":
+                    fields.Object(scroll,(JObject)document.profile["powerSystem"],"PowerSystemProfile","powerSystem","thermalEnabled");
+                    DroneProfileFields.Label(scroll,"Электрические параметры моторов и ESC задаются у каждого ротора. Тепловые параметры компонентов — в «Температуре», включение расчёта — в «Модулях».","scenario-hint");break;
                 case "Thermal":
-                    DroneProfileFields.Label(scroll,"Тепловой расчёт включается в питании. Здесь редактируются данные компонентов; температуры хранятся в Кельвинах.","scenario-hint");
-                    fields.Field(scroll,"thermalEnabled",DroneParameterSchema.ObjectRule("PowerSystemProfile")["properties"]["thermalEnabled"],document.profile["powerSystem"]["thermalEnabled"]??new JValue(false),"powerSystem.thermalEnabled",v=>document.profile["powerSystem"]["thermalEnabled"]=v);
+                    DroneProfileFields.Label(scroll,"Тепловой расчёт включается в «Модулях». Здесь задаются тепловые данные батареи, моторов и ESC; температуры — в Кельвинах. Температуру воздуха задаёт выбранное окружение.","scenario-hint");
+                    var battery=(JObject)document.profile["powerSystem"]["battery"];
+                    if((string)battery["mode"]!="None"){
+                        DroneProfileFields.Label(scroll,"БАТАРЕЯ","drone-panel-title");ThermalField(scroll,battery,"BatteryProfile","thermal","powerSystem.battery");
+                    }
                     foreach(var r in rotors.OfType<JObject>()) {
                         DroneProfileFields.Label(scroll,(string)r["rotorId"],"drone-panel-title");
-                        if(r["motor"]?["electrical"] is JObject electric)fields.Object(scroll,electric,"MotorElectricalProfile","rotors["+rotors.IndexOf(r)+"].motor.electrical");
+                        if(r["motor"]?["electrical"] is JObject electric)foreach(string key in new[]{"thermal","escThermal","resistanceReferenceTemperatureK","resistanceTemperatureCoefficientPerK"})ThermalField(scroll,electric,"MotorElectricalProfile",key,"rotors["+rotors.IndexOf(r)+"].motor.electrical");
                         else DroneProfileFields.Label(scroll,"Добавьте электрические параметры на странице ротора.","scenario-hint");
                     }break;
-                case "Modules":Group("physicsConfiguration","PhysicsConfiguration");break;
+                case "Modules":
+                    fields.Object(scroll,(JObject)document.profile["physicsConfiguration"]["modules"],"PhysicsModulesProfile","physicsConfiguration.modules");
+                    var power=(JObject)document.profile["powerSystem"];
+                    fields.Field(scroll,"thermalEnabled",DroneParameterSchema.ObjectRule("PowerSystemProfile")["properties"]["thermalEnabled"],power["thermalEnabled"]??new JValue(false),"powerSystem.thermalEnabled",v=>power["thermalEnabled"]=v);break;
                 case "Sources":
                     if(document.profile["parameterProvenance"] is JArray provenance)fields.Field(scroll,"parameterProvenance",DroneParameterSchema.ObjectRule("DroneProfile")["properties"]["parameterProvenance"],provenance,"parameterProvenance",v=>document.profile["parameterProvenance"]=v);
                     else DroneProfileFields.Button(scroll,"+ Источники параметров",()=>{document.profile["parameterProvenance"]=new JArray();Changed();RebuildInspector();});
@@ -256,6 +264,14 @@ namespace DroneLab.UI
             }
             if(inspectorOffsets.TryGetValue(section,out var savedOffset))scroll.schedule.Execute(()=>scroll.scrollOffset=savedOffset);
             DroneProfileFields.ReadOnly(scroll);UpdateViewportControls();UpdateState();
+        }
+        private void ThermalField(VisualElement host,JObject owner,string definition,string key,string parentPath)
+        {
+            string path=parentPath+"."+key;var rule=DroneParameterSchema.ObjectRule(definition)["properties"][key];
+            if(owner[key]==null){
+                var row=DroneProfileFields.Row(host);DroneProfileFields.Button(row,"+ "+DroneParameterSchema.Name(key),()=>{owner[key]=DroneParameterSchema.Default(rule,key);fields.ClearErrors(path);Changed();RebuildInspector();});
+                DroneHelp.Attach(row,()=>DroneParameterSchema.Tooltip(key,rule));
+            }else fields.Field(host,key,rule,owner[key],path,value=>owner[key]=value,()=>{owner.Remove(key);fields.ClearErrors(path);Changed();RebuildInspector();});
         }
         private void MassInspector(VisualElement host)
         {

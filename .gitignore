@@ -37,6 +37,9 @@ ExportedObj/
 *.csproj
 !Tests/DotNet/*.csproj
 !Tests/Environment/*.csproj
+!Tests/Configurator/*.csproj
+Tests/Configurator/bin/
+Tests/Configurator/obj/
 Tests/Environment/bin/
 Tests/Environment/obj/
 Tests/DotNet/bin/

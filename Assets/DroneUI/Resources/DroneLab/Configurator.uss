@@ -275,3 +275,8 @@
 .drone-viewport-snap .drone-switch { flex-grow: 0; flex-basis: auto; min-height: 34px; padding: 4px 8px; }
 .drone-viewport-snap .drone-switch-label { font-size: 13px; margin-right: 10px; }
 .drone-viewport-snap > .parameter-help { flex-shrink: 0; }
+
+/* Draw the expand indicator with the established vector icon, independent of skin. */
+.drone-editor-page .drone-field-group > .unity-foldout__toggle > .unity-base-field__input, .drone-data-overlay .drone-field-group > .unity-foldout__toggle > .unity-base-field__input { display: none; }
+.drone-group-arrow { width: 20px; height: 20px; min-width: 20px; flex-shrink: 0; color: rgb(185, 195, 199); }
+.drone-group-arrow.is-open { rotate: 90deg; }

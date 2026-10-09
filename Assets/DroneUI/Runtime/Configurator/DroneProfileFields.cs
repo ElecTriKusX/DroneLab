@@ -38,9 +38,11 @@ namespace DroneLab.UI
             string label=DroneParameterSchema.Name(key);if(DroneParameterSchema.Unit(key).Length>0)label+=" · "+DroneParameterSchema.Unit(key);
             if(type=="object") {
                 var section=new Foldout {text="",value=expanded.TryGetValue(path,out var open)?open:key=="geometry"};section.AddToClassList("drone-field-group");host.Add(section);
-                section.RegisterValueChangedCallback(evt=>{if(evt.target==section)expanded[path]=evt.newValue;});
                 if(key=="operatingEnvelope")Label(section,"Контроль области применения: предупреждает о превышении заданных скоростей. Силы и ограничение движения не добавляет.","scenario-hint");
-                var header=section.Q<Toggle>();header.tooltip=label;Label(header,label,"drone-group-title");DroneHelp.Attach(header,()=>DroneParameterSchema.Tooltip(key,unresolved));
+                var header=section.Q<Toggle>();header.tooltip=label;
+                var arrow=new DroneMenuIcon(MenuIconKind.Chevron);arrow.AddToClassList("drone-group-arrow");arrow.EnableInClassList("is-open",section.value);header.Add(arrow);
+                section.RegisterValueChangedCallback(evt=>{if(evt.target==section){expanded[path]=evt.newValue;arrow.EnableInClassList("is-open",evt.newValue);}});
+                Label(header,label,"drone-group-title");DroneHelp.Attach(header,()=>DroneParameterSchema.Tooltip(key,unresolved));
                 if(remove!=null){section.AddToClassList("removable-group");RemoveControl(header,label,remove);}
                 Object(section,(JObject)value,DroneParameterSchema.Definition(unresolved),path);ReadOnly(section);return;
             }
@@ -113,6 +115,9 @@ namespace DroneLab.UI
         private static bool Relevant(string type,string key,JObject value)
         {
             string mode=(string)value["model"]??(string)value["mode"];
+            // Thermal parameters have one editing location in the Thermal inspector.
+            if(type=="MotorElectricalProfile" && (key=="thermal" || key=="escThermal" || key=="resistanceReferenceTemperatureK" || key=="resistanceTemperatureCoefficientPerK"))return false;
+            if(type=="BatteryProfile" && key=="thermal")return false;
             if(type=="RotorPerformanceProfile") {
                 if(key=="kThrustNPerRadPerSecSquared" || key=="kTorqueNmPerRadPerSecSquared")return mode=="OmegaSquared";
                 if(key=="ct" || key=="cq")return mode=="CtCq";
