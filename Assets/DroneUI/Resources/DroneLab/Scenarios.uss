@@ -121,10 +121,10 @@
 .environment-field > .unity-base-field__input { min-width: 0; flex-grow: 1; flex-basis: 0; }
 .map-filter .drone-dropdown-trigger { height: 48px; }
 
-.simulation-steps { flex-direction: row; align-items: center; height: 72px; border-bottom-width: 1px; border-bottom-color: rgb(76, 79, 80); margin-bottom: 26px; flex-shrink: 0; }
-.simulation-step { color: rgb(126, 132, 136); font-size: 22px; padding: 0 0 0 2px; }
+.simulation-steps { flex-direction: row; align-items: center; height: 28px; margin-left: 48px; flex-shrink: 0; }
+.simulation-step { color: rgb(126, 132, 136); font-size: 18px; padding: 0 0 0 2px; }
 .simulation-step.active { color: rgb(239, 240, 237); -unity-font-style: bold; }
-.simulation-step-arrow { width: 24px; height: 24px; margin: 0 32px; color: rgb(140, 145, 146); }
+.simulation-step-arrow { width: 18px; height: 18px; margin: 0 20px; color: rgb(140, 145, 146); }
 .simulation-columns { flex-direction: row; flex-grow: 1; min-height: 0; }
 .simulation-maps { flex-grow: 1; min-width: 0; margin-right: 28px; }
 .simulation-maps > .scenario-search { flex-grow: 0; margin: 0 0 22px; }
@@ -139,7 +139,7 @@
 .simulation-actions { flex-direction: row; justify-content: space-between; }
 .simulation-actions > .scenario-button { margin-left: 0; min-width: 160px; }
 .simulation-drone-selection .drone-gallery-toolbar > .scenario-search { margin-left: 0; }
-.simulation-drone-selection > .simulation-steps { margin: 0 28px; }
+.simulation-page .simulation-header { height: 90px; padding-top: 0; padding-bottom: 22px; margin-bottom: 28px; border-bottom-width: 1px; border-bottom-color: rgb(87, 88, 88); }
 .flight-hud { position: absolute; left: 30px; top: 26px; right: 30px; flex-direction: row; align-items: center; padding: 12px 16px; border-width: 1px; border-color: rgba(172, 183, 182, .5); border-radius: 8px; background-color: rgba(17, 20, 21, .8); }
 .flight-caption { color: rgb(226, 232, 228); font-size: 18px; flex-grow: 1; white-space: normal; margin-right: 20px; }
 .flight-controls { position: absolute; left: 30px; right: 30px; bottom: 26px; padding: 12px 18px; color: rgb(206, 216, 212); background-color: rgba(17, 20, 21, .8); border-width: 1px; border-color: rgba(172, 183, 182, .4); border-radius: 7px; font-size: 17px; white-space: normal; }

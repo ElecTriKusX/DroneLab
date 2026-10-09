@@ -1,0 +1,57 @@
+{
+  "documentVersion": 1,
+  "id": "builtin-environment_lab_evening_storm_v1",
+  "name": "Вечерняя гроза · дождь и порывы",
+  "environment": {
+    "schemaVersion": "1.0.0",
+    "gravityMps2": 9.81,
+    "airDensityMode": "Constant",
+    "airDensityKgM3": 1.225,
+    "temperatureK": 289.15,
+    "pressurePa": 101325,
+    "altitudeM": 0,
+    "windMode": "Gust",
+    "windVelocityWorldMps": [
+      -4,
+      0,
+      3
+    ],
+    "gustEnabled": true,
+    "gustIntensityMps": 2,
+    "gustTimeScaleS": 8,
+    "turbulenceSeed": 48271,
+    "weather": {
+      "precipitation": "Rain",
+      "intensityMmPerHour": 12,
+      "model": "VisualOnly"
+    },
+    "dryden": {
+      "sigmaUvwMps": [
+        0.4,
+        0.4,
+        0.25
+      ],
+      "lengthScaleUvwM": [
+        20,
+        20,
+        10
+      ],
+      "advectionDirectionWorld": [
+        1,
+        0,
+        0
+      ],
+      "advectionSpeedMps": 5,
+      "modesPerComponent": 32,
+      "minDimensionlessWaveNumber": 0.02,
+      "maxDimensionlessWaveNumber": 20
+    }
+  },
+  "visual": {
+    "timeOfDay": 19.5,
+    "simulateTime": false,
+    "weatherPresetId": "9e250021e1c35905aeacb9ce1f6c7ea6",
+    "wetness": 1,
+    "windTurbulence": 0.6
+  }
+}

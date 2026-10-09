@@ -16,7 +16,9 @@ namespace DroneLab.UI
             first.EnableInClassList("active", step == 1);
             var arrow = new DroneMenuIcon(MenuIconKind.Chevron); arrow.AddToClassList("simulation-step-arrow"); strip.Add(arrow);
             var second = DroneProfileFields.Label(strip, "02  Выберите сцену и погоду", "simulation-step");
-            second.EnableInClassList("active", step == 2); page.Insert(1, strip);
+            second.EnableInClassList("active", step == 2);
+            var header = page.Q(className: "drone-header") ?? page.Q(className: "scenario-header");
+            header.AddToClassList("simulation-header"); header.Add(strip);
         }
     }
 

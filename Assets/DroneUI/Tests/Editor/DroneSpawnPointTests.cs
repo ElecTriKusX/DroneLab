@@ -25,6 +25,14 @@ namespace DroneLab.UI.Tests
             }
             Assert.That(Vector3.Dot(point.Heading*Vector3.up,Vector3.up),Is.EqualTo(1).Within(1e-5));
         }
+        [Test] public void AsymmetricEnvelopeClearsThePadWithoutMovingTheHorizontalOrigin()
+        {
+            var point=Create("main");point.transform.position=new Vector3(4,2,-3);
+            var bounds=new Bounds(new Vector3(-.2f,-.3f,.1f),new Vector3(1,.8f,1));
+            var position=point.Position(bounds);
+            Assert.That(position.y+bounds.min.y,Is.EqualTo(2+point.clearanceM).Within(1e-5));
+            Assert.That(position.x,Is.EqualTo(4));Assert.That(position.z,Is.EqualTo(-3));
+        }
         [Test] public void MissingOrAmbiguousStartIsRejectedAndIdSelectsTheCorrectPad()
         {
             Assert.Throws<InvalidOperationException>(()=>DroneSpawnPoint.Resolve(scene,null));

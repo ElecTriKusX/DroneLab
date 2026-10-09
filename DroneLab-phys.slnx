@@ -11,8 +11,8 @@
   <Project Path="DroneLab.UI.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="DroneLab.UI.Editor.csproj" />
-  <Project Path="DroneLab.Environment.csproj" />
   <Project Path="DroneLab.UI.Tests.csproj" />
+  <Project Path="DroneLab.Environment.csproj" />
   <Project Path="DroneLab.Environment.Enviro.csproj" />
   <Project Path="DroneLab.Configurator.csproj" />
   <Project Path="DroneLab.Environment.Editor.csproj" />

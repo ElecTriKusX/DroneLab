@@ -123,11 +123,11 @@ namespace DroneLab.UI
                 pilot.manualCollectiveFraction = Mathf.Clamp((float)(hoverFraction * 1.3), .1f, .95f);
                 pilot.InitializeController();
                 if (!pilot.enabled) throw new InvalidOperationException("Не удалось инициализировать управление дроном.");
-                FollowCamera(scene, droneObject.transform, dimensions);
+                var flightCamera = FollowCamera(scene, droneObject.transform, dimensions);
                 var go = new GameObject("DroneLab Profile Environment"); SceneManager.MoveGameObjectToScene(go, scene);
                 go.AddComponent<DroneScenarioEnvironmentDriver>().Configure(active, activeCatalog, spawnedBody);
                 var session = new GameObject("DroneLab Simulation Session"); SceneManager.MoveGameObjectToScene(session, scene);
-                session.AddComponent<DroneSimulationSession>().Configure(spawnedBody, pilot, activeMap.title, active.name, menu);
+                session.AddComponent<DroneSimulationSession>().Configure(spawnedBody, pilot, activeMap.title, active.name, menu, flightCamera: flightCamera);
             } catch (Exception ex) {
                 if (droneObject != null) { droneObject.SetActive(false); UnityEngine.Object.Destroy(droneObject); }
                 Debug.LogError("DroneLab launch: " + ex.Message);
@@ -137,7 +137,7 @@ namespace DroneLab.UI
                 active = null; activeDrone = null; activeMap = null; activeCatalog = null; spawnedBody = null; scenePath = null;
             }
         }
-        private static void FollowCamera(Scene scene, Transform target, Vector3 dimensions)
+        private static DroneFlightCamera FollowCamera(Scene scene, Transform target, Vector3 dimensions)
         {
             var cameras = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Camera>())
                 .Where(c => c.enabled && c.gameObject.activeInHierarchy && c.cameraType == CameraType.Game).ToList();
@@ -153,15 +153,11 @@ namespace DroneLab.UI
             // Forest includes the SRP FreeCamera input adapter; it must not move the flight camera.
             foreach (var component in camera.GetComponents<MonoBehaviour>())
                 if (component != null && (component.GetType().Name == "FreeCamera" || component.GetType().Name == "FreeFlyCamera" || component.GetType().Name == "OrbitCamera")) component.enabled = false;
-            var follow = camera.GetComponent<DroneTestCamera>() ?? camera.gameObject.AddComponent<DroneTestCamera>();
-            follow.enabled = true; follow.target = target;
-            float size = Mathf.Max(dimensions.x, dimensions.y, dimensions.z);
-            follow.headingOffset = new Vector3(0, Mathf.Max(1, size * 1.5f), -Mathf.Max(2.5f, size * 3));
-            camera.nearClipPlane = .02f;
-            camera.transform.position = target.position + Quaternion.Euler(0, target.eulerAngles.y, 0) * follow.headingOffset;
-            camera.transform.LookAt(target.position);
+            var follow = camera.GetComponent<DroneFlightCamera>() ?? camera.gameObject.AddComponent<DroneFlightCamera>();
+            follow.enabled = true; follow.Configure(target, dimensions);
             var weather = UnityEngine.Object.FindFirstObjectByType<EnviroManager>();
             if (weather != null) { weather.ChangeCamera(camera); weather.optionalFollowTransform = target; }
+            return follow;
         }
     }
 

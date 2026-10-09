@@ -1,0 +1,41 @@
+.pilot-hud { position: absolute; left: 0; top: 0; right: 0; bottom: 0; color: rgb(234, 238, 237); font-size: 18px; }
+.pilot-branding { position: absolute; left: 30px; top: 25px; width: 540px; }
+.pilot-brand { font-size: 30px; letter-spacing: 6px; -unity-font-style: bold; }
+.pilot-caption { margin-top: 8px; font-size: 15px; color: rgb(207, 216, 213); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 510px; }
+.pilot-source { margin-top: 6px; font-size: 12px; color: rgb(165, 177, 178); }
+.flight-instrument { overflow: hidden; }
+.flight-instrument-text { position: absolute; height: 24px; font-size: 16px; color: rgb(227, 234, 233); -unity-text-align: middle-center; white-space: nowrap; }
+.flight-instrument-value { height: 30px; font-size: 23px; color: white; background-color: rgba(13, 17, 19, .87); border-width: 1px; border-color: rgba(209, 219, 217, .8); }
+.pilot-compass { position: absolute; top: 24px; left: 50%; margin-left: -270px; width: 540px; height: 72px; background-color: rgba(15, 19, 21, .45); border-radius: 3px; }
+.pilot-status { position: absolute; right: 30px; top: 25px; flex-direction: row; align-items: flex-start; }
+.pilot-status-cell { padding: 9px 13px; margin-left: 9px; border-width: 1px; border-color: rgba(181, 193, 189, .45); border-radius: 4px; background-color: rgba(15, 19, 21, .82); font-size: 17px; }
+.pilot-power { margin-left: 9px; }
+.pilot-power .pilot-status-cell { margin-left: 0; }
+.pilot-charge-track { height: 3px; background-color: rgba(116, 130, 130, .35); }
+.pilot-charge-fill { height: 3px; background-color: rgb(218, 228, 224); width: 0%; }
+.pilot-tapes { position: absolute; top: 23%; left: 30px; width: 170px; }
+.pilot-tape-caption { font-size: 13px; margin-bottom: 5px; color: rgb(219, 229, 224); padding: 4px 6px; background-color: rgba(15, 19, 21, .68); }
+.pilot-tape { width: 108px; height: 194px; margin-bottom: 18px; background-color: rgba(15, 19, 21, .38); border-radius: 3px; }
+.pilot-surface { font-size: 13px; white-space: normal; padding: 6px; background-color: rgba(15, 19, 21, .72); }
+.pilot-horizon { position: absolute; left: 30px; bottom: 112px; width: 210px; height: 210px; overflow: hidden; }
+.pilot-attitude { position: absolute; left: 30px; bottom: 80px; width: 310px; font-size: 14px; padding: 5px 8px; background-color: rgba(15, 19, 21, .74); }
+.pilot-fpv { position: absolute; left: 50%; top: 50%; width: 540px; height: 400px; margin-left: -270px; margin-top: -200px; }
+.pilot-fpv-ladder { width: 540px; height: 400px; }
+.pilot-map-panel { position: absolute; right: 30px; bottom: 104px; width: 290px; height: 324px; border-width: 1px; border-color: rgba(211, 221, 217, .6); border-radius: 5px; background-color: rgba(15, 19, 21, .84); }
+.pilot-map-title { font-size: 14px; padding: 8px 12px; border-bottom-width: 1px; border-bottom-color: rgba(153, 172, 170, .25); }
+.pilot-map { width: 288px; height: 252px; }
+.pilot-map-home { font-size: 15px; padding: 4px 12px; }
+.pilot-climb { position: absolute; left: 50%; margin-left: -165px; width: 330px; bottom: 104px; padding: 8px 12px; -unity-text-align: middle-center; font-size: 19px; background-color: rgba(15, 19, 21, .75); border-radius: 3px; }
+.pilot-wind { position: absolute; left: 30px; bottom: 38px; font-size: 16px; padding: 8px 12px; background-color: rgba(15, 19, 21, .8); border-width: 1px; border-color: rgba(181, 193, 189, .35); border-radius: 4px; }
+.pilot-warning { position: absolute; top: 120px; left: 50%; width: 540px; margin-left: -270px; padding: 10px; font-size: 19px; -unity-text-align: middle-center; background-color: rgba(18, 22, 23, .88); border-width: 1px; border-color: rgba(217, 223, 215, .65); border-radius: 3px; }
+.pilot-warning.critical { color: rgb(245, 183, 135); border-color: rgb(217, 153, 113); }
+.pilot-navigation { position: absolute; bottom: 30px; right: 30px; flex-direction: row; }
+.pilot-button { min-height: 43px; min-width: 114px; margin: 0 0 0 8px; padding: 8px 14px; font-size: 16px; color: rgb(229, 235, 232); background-color: rgba(15, 19, 21, .9); border-width: 1px; border-color: rgba(197, 208, 202, .6); border-radius: 4px; }
+.pilot-button:hover, .pilot-button:focus { border-color: white; background-color: rgb(40, 46, 47); }
+.pilot-button.selected { background-color: rgb(224, 230, 227); border-color: rgb(224, 230, 227); color: rgb(20, 24, 25); }
+.pilot-camera-caption { position: absolute; bottom: 78px; right: 30px; font-size: 12px; color: rgb(196, 210, 205); background-color: rgba(15, 19, 21, .7); padding: 3px 7px; }
+.pilot-help { position: absolute; right: 30px; bottom: 95px; width: 780px; padding: 23px; border-width: 1px; border-color: rgb(191, 201, 195); border-radius: 5px; background-color: rgb(23, 28, 30); }
+.pilot-help-title { font-size: 19px; margin-bottom: 12px; }
+.pilot-help-text { font-size: 16px; white-space: normal; margin-bottom: 10px; color: rgb(215, 223, 219); }
+.cinema-hint { position: absolute; left: 50%; bottom: 30px; width: 680px; margin-left: -340px; align-items: center; padding: 10px; background-color: rgba(15, 19, 21, .7); border-radius: 4px; }
+.cinema-hint-text { font-size: 15px; color: rgb(215, 226, 219); }

@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace DroneLab.UI
 {
-    /// <summary>Loads only visual assets; the existing body owns all physical forces and its unit-scale root.</summary>
+    /// <summary>Builds the schematic compound body or loads an imported visual on the unit-scale physics root.</summary>
     internal sealed class DroneConfiguredVisual : MonoBehaviour
     {
         private DroneProfileDocument document;
@@ -23,6 +23,11 @@ namespace DroneLab.UI
             var box=GetComponent<BoxCollider>();if(box==null)box=gameObject.AddComponent<BoxCollider>();box.enabled=true;box.center=Vector3.zero;
             box.size=DroneModelViewport.Vec(document.profile["massProperties"]["dimensionsM"]);
             visual=new GameObject("Configured drone visual");visual.transform.SetParent(transform,false);
+            if(string.IsNullOrEmpty(DroneProfileLibrary.ModelPath(document))) {
+                box.enabled=false;
+                DroneSchematicModel.Build(visual.transform,document,true,gameObject.layer);
+                return;
+            }
             var shell=GameObject.CreatePrimitive(PrimitiveType.Cube);shell.name="Profile envelope";shell.transform.SetParent(visual.transform,false);
             shell.transform.localScale=box.size;Destroy(shell.GetComponent<Collider>());shell.GetComponent<Renderer>().sharedMaterial=Resources.Load<Material>("DroneLab/ConfiguratorSchematic");
         }

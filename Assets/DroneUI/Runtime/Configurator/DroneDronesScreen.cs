@@ -57,7 +57,7 @@ namespace DroneLab.UI
             page=new VisualElement();page.AddToClassList("scenario-page");page.AddToClassList("drone-page");host.Add(page);
             var sheet=Resources.Load<StyleSheet>("DroneLab/Configurator");if(sheet!=null)page.styleSheets.Add(sheet);
             var header=Box(page,"drone-header");DroneProfileFields.Label(header,"ДРОНЛАБ","scenario-brand");Box(header,"scenario-header-divider");
-            heading=DroneProfileFields.Label(header,"КАТАЛОГ ДРОНОВ","scenario-title");
+            heading=DroneProfileFields.Label(header,picked!=null?"НОВАЯ СИМУЛЯЦИЯ":"КАТАЛОГ ДРОНОВ","scenario-title");
             identity=DroneProfileFields.Label(header,"","drone-profile-identity");
             state=DroneProfileFields.Label(header,"","drone-state");body=Box(page,"drone-body");footer=Box(page,"drone-footer");
             if(picked!=null){page.AddToClassList("simulation-drone-selection");DroneLaunchSteps.Add(page,1);}
@@ -78,7 +78,7 @@ namespace DroneLab.UI
         private void BuildGallery()
         {
             galleryRevision++;viewport?.Dispose();viewport=null;galleryRenderer?.Dispose();galleryRenderer?.RemoveFromHierarchy();galleryRenderer=null;
-            CloseValidation();CloseDataWindow();document=null;selected=null;body.Clear();heading.text="КАТАЛОГ ДРОНОВ";state.text="";errors.Clear();input.Clear();
+            CloseValidation();CloseDataWindow();document=null;selected=null;body.Clear();heading.text=picked!=null?"НОВАЯ СИМУЛЯЦИЯ":"КАТАЛОГ ДРОНОВ";state.text="";errors.Clear();input.Clear();
             page.RemoveFromClassList("drone-editor-page");page.RemoveFromClassList("drone-wide-inspector");
             foreach(var texture in thumbnails)Object.Destroy(texture);thumbnails.Clear();
             page.AddToClassList("drone-gallery-page");body.AddToClassList("drone-gallery-body");

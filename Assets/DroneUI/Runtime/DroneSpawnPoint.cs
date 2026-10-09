@@ -16,6 +16,8 @@ namespace DroneLab.UI
         public float clearanceM = .03f;
         public Quaternion Heading => Quaternion.Euler(0, transform.eulerAngles.y, 0);
         public Vector3 Position(Vector3 dimensions) => transform.position + Vector3.up * (dimensions.y * .5f + clearanceM);
+        public Vector3 Position(Bounds localBounds) => transform.position +
+            Vector3.up * (clearanceM - localBounds.min.y);
         public static DroneSpawnPoint Resolve(Scene scene, string requestedId)
         {
             var points = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<DroneSpawnPoint>(true))

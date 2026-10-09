@@ -8,6 +8,7 @@ using UnityEngine.UIElements;
 namespace DroneLab.UI
 {
     /// <summary>Flight overlay and pause/return controls; does not apply forces.</summary>
+    [DefaultExecutionOrder(200)]
     public sealed class DroneSimulationSession : MonoBehaviour
     {
         private DronePhysicsBody body;
@@ -16,24 +17,29 @@ namespace DroneLab.UI
         private UIDocument document;
         private PanelSettings panel;
         private VisualElement overlay;
-        private Label flightStatus, menuStatus;
+        private Label menuStatus;
+        private DroneFlightCamera cameraController;
+        private DroneFlightHud hud;
+        private DroneFlightTelemetry telemetry;
+        private float nextHudUpdate;
+        private bool previousAutomaticControl;
         private bool paused, returning;
         private float previousTimeScale;
-        public void Configure(DronePhysicsBody selectedBody, DroneTestPilot selectedPilot, string map, string weather, string returnScene, string launchError = null)
+        public void Configure(DronePhysicsBody selectedBody, DroneTestPilot selectedPilot, string map, string weather, string returnScene, string launchError = null, DroneFlightCamera flightCamera = null)
         {
-            body = selectedBody; pilot = selectedPilot; menuScene = returnScene; error = launchError;
+            body = selectedBody; pilot = selectedPilot; menuScene = returnScene; error = launchError; cameraController = flightCamera;
             panel = ScriptableObject.CreateInstance<PanelSettings>(); panel.scaleMode = PanelScaleMode.ScaleWithScreenSize;
             panel.referenceResolution = new Vector2Int(1920, 1080); panel.sortingOrder = 90;
             panel.themeStyleSheet = Resources.Load<ThemeStyleSheet>("DroneLab/MainMenuTheme");
             document = gameObject.AddComponent<UIDocument>(); document.panelSettings = panel;
             var root = document.rootVisualElement; root.style.flexGrow = 1; root.pickingMode = PickingMode.Ignore;
             var sheet = Resources.Load<StyleSheet>("DroneLab/Scenarios"); if (sheet != null) root.styleSheets.Add(sheet);
-            var hud = new VisualElement(); hud.AddToClassList("flight-hud"); hud.pickingMode = PickingMode.Ignore; root.Add(hud);
-            DroneProfileFields.Label(hud, (body != null ? body.name : "Симуляция") + "  /  " + map + "  /  " + weather, "flight-caption");
-            flightStatus = DroneProfileFields.Label(hud, "", "flight-caption");
-            var pause = new Button(() => SetPaused(true)) { text = "Пауза · Esc" }; pause.AddToClassList("scenario-button"); hud.Add(pause);
-            var controls = DroneProfileFields.Label(root, "F — моторы  ·  W/S — тангаж  ·  A/D — крен  ·  Q/E — рыскание  ·  Space / Ctrl — тяга  ·  H — высота  ·  Z — стабилизация  ·  Backspace — на площадку", "flight-controls");
-            controls.pickingMode = PickingMode.Ignore;
+            var flightSheet = Resources.Load<StyleSheet>("DroneLab/Flight"); if (flightSheet != null) root.styleSheets.Add(flightSheet);
+            if (body != null && body.IsReady) {
+                telemetry = new DroneFlightTelemetry(body);
+                hud = new DroneFlightHud(root, cameraController, body.name, map, weather, SetView, ToggleCamera, () => SetPaused(true));
+                telemetry.Sample(pilot); hud.Refresh(telemetry, pilot);
+            }
             overlay = new VisualElement(); overlay.AddToClassList("scenario-prompt"); root.Add(overlay);
             var card = new VisualElement(); card.AddToClassList("scenario-prompt-card"); overlay.Add(card);
             DroneProfileFields.Label(card, error == null ? "СИМУЛЯЦИЯ ПРИОСТАНОВЛЕНА" : "НЕ УДАЛОСЬ ЗАПУСТИТЬ СИМУЛЯЦИЮ", "scenario-panel-title");
@@ -50,16 +56,31 @@ namespace DroneLab.UI
         private void SetPaused(bool value)
         {
             if (returning || paused == value || error != null && !value) return;
-            if (value) { previousTimeScale = Time.timeScale; Time.timeScale = 0; if (pilot != null) { pilot.AutomaticControl = false; pilot.SetFlightInput(default); } }
-            else { Time.timeScale = previousTimeScale; if (pilot != null) pilot.AutomaticControl = true; }
+            if (value) { previousTimeScale = Time.timeScale; Time.timeScale = 0; if (pilot != null) { previousAutomaticControl = pilot.AutomaticControl; pilot.AutomaticControl = false; pilot.SetFlightInput(default); } }
+            else { Time.timeScale = previousTimeScale; if (pilot != null) pilot.AutomaticControl = previousAutomaticControl; }
             paused = value; overlay.style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
+            if (cameraController != null) { cameraController.Paused = value; cameraController.PointerOverUI = false; }
         }
+        private void SetView(DroneFlightViewMode view) { if (!paused && !returning) hud?.SetView(view); }
+        private void ToggleCamera() { if (!paused && !returning) { cameraController?.ToggleMode(); nextHudUpdate = 0; } }
         private void Update()
         {
             if (document == null || returning) return;
-            if (Keyboard.current?.escapeKey.wasPressedThisFrame ?? false) SetPaused(!paused);
-            if (body != null && body.IsReady) flightStatus.text = (body.Armed ? "Моторы включены" : "Моторы выключены · F") +
-                "  /  " + (pilot.autoLevel ? "Стабилизация" : "Ручной режим") + (pilot.altitudeHold ? "  /  Удержание высоты" : "");
+            var keyboard = Application.isFocused ? Keyboard.current : null;
+            if (keyboard?.escapeKey.wasPressedThisFrame ?? false) SetPaused(!paused);
+            if (!paused && hud != null) {
+                if (keyboard?.f1Key.wasPressedThisFrame ?? false) SetView(DroneFlightViewMode.Cinema);
+                if (keyboard?.f2Key.wasPressedThisFrame ?? false) SetView(DroneFlightViewMode.Pilot);
+                if (keyboard?.cKey.wasPressedThisFrame ?? false) ToggleCamera();
+                if (keyboard?.backspaceKey.wasPressedThisFrame ?? false) cameraController?.SnapToTarget();
+            }
+            hud?.TickHint(paused);
+            if (telemetry != null && Time.unscaledTime >= nextHudUpdate) {
+                nextHudUpdate = Time.unscaledTime + .1f;
+                telemetry.Sample(pilot);
+                if (telemetry.ResetDetected) cameraController?.SnapToTarget();
+                hud.Refresh(telemetry, pilot);
+            }
         }
         private void ReturnToMenu()
         {

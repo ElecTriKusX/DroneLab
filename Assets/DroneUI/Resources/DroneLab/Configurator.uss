@@ -293,3 +293,6 @@
 .drone-group-header > .unity-foldout__toggle { flex-grow: 1; flex-shrink: 1; min-width: 0; }
 .drone-editor-page .drone-group-header > .unity-foldout__toggle, .drone-data-overlay .drone-group-header > .unity-foldout__toggle { padding-right: 10px; }
 .drone-group-header > .parameter-help, .drone-group-header > .drone-remove-control { position: relative; flex-shrink: 0; margin-left: 6px; }
+
+.simulation-drone-selection .drone-header.simulation-header { height: 90px; min-height: 90px; padding-top: 0; padding-bottom: 22px; }
+.simulation-drone-selection .drone-header .scenario-title { flex-grow: 0; flex-shrink: 0; }
