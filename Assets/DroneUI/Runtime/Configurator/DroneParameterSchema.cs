@@ -57,8 +57,9 @@ namespace DroneLab.UI
             if ((string)rule["type"] == "string") return (int?)rule["minLength"]>0 ? "Непустой текст" : "Свободный текст";
             if ((string)rule["type"] == "array") return rule["maxItems"] != null ? rule["minItems"] + " компоненты; " + Range(rule["items"]) : "Строк: от " + (rule["minItems"] ?? 0);
             string lo = rule["minimum"]?.ToString() ?? rule["exclusiveMinimum"]?.ToString();
-            string hi = rule["maximum"]?.ToString() ?? "1e12 (численный предел runtime)";
-            return (lo == null ? "−1e12" : ((rule["exclusiveMinimum"] != null ? "> " : "≥ ") + lo)) + "; ≤ " + hi;
+            string hi=rule["maximum"]?.ToString();
+            if(lo==null && hi==null)return "Конечное число";
+            return (lo==null?"":(rule["exclusiveMinimum"]!=null?"> ":"≥ ")+lo)+(lo!=null && hi!=null?"; ":"")+(hi==null?"":"≤ "+hi);
         }
         public static string Tooltip(string key,JToken rule)
         {
@@ -72,7 +73,9 @@ namespace DroneLab.UI
             return Name(key) + (Unit(key).Length == 0 ? "" : " [" + Unit(key) + "]") + "\n\n" +
                 ((string)Help[key]?["description"] ?? "Параметр действующего цифрового профиля.") +
                 "\n\nПо умолчанию: " + defaultValue + ". Числа стартового профиля — оценочные, замените их измерениями своего дрона." +
-                "\nДиапазон: " + Range(effective) + ". Связанные условия проверяются при проверке профиля.";
+                "\nДиапазон: " + Range(effective) + ". Связанные условия проверяются при проверке профиля."+
+                (key=="principalAxesRotationXyzw"?"\n\nНормализовать: разделить X/Y/Z/W на длину кватерниона, чтобы сумма их квадратов стала равна 1. Это приводит представление поворота к единичному кватерниону; нулевой кватернион недопустим.":
+                key=="thrustAxisLocal" || key=="normalLocal" || key=="directionLocal"?"\n\nНормализовать: разделить компоненты на длину вектора, получив длину 1 без изменения направления. Нулевой вектор направления недопустим.":"");
         }
         public static bool TryNumber(string text,JToken rule,out JToken value,out string error)
         {

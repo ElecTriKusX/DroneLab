@@ -16,6 +16,7 @@ namespace DroneLab.UI
         private readonly Label message;
         private readonly Button apply,cancel,close;
         private DroneDropdown modelChoice;
+        private readonly ScrollView performanceSettings;
         private readonly JObject performanceRotor;
         private readonly string rotorPath;
 
@@ -39,6 +40,10 @@ namespace DroneLab.UI
                 DroneHelp.Attach(models,()=>DroneParameterSchema.Tooltip("model",modelRule));
             }
             fields=new DroneProfileFields(UpdateState,Rebuild,OpenNested,Buffer.Errors,Buffer.Inputs);
+            if(performanceRotor!=null){
+                performanceSettings=new ScrollView(ScrollViewMode.Vertical);performanceSettings.AddToClassList("drone-performance-settings");performanceSettings.horizontalScrollerVisibility=ScrollerVisibility.Hidden;
+                performanceSettings.verticalScroller.AddToClassList("graphite-scroller");performanceSettings.verticalScroller.lowButton.style.display=DisplayStyle.None;performanceSettings.verticalScroller.highButton.style.display=DisplayStyle.None;card.Add(performanceSettings);
+            }
             editor=new DroneTableEditor(fields,UpdateState,SetMessage);card.Add(editor);
             var footer=Box(card,"drone-window-footer");message=DroneProfileFields.Label(footer,"Изменения применятся к текущему профилю.","drone-window-message");
             cancel=DroneProfileFields.Button(footer,"Отмена",cancelled);apply=DroneProfileFields.Button(footer,"Применить",applied);apply.AddToClassList("primary");
@@ -59,6 +64,8 @@ namespace DroneLab.UI
                 var performance=(JObject)Buffer.Value;string model=(string)performance["model"];
                 string table=model=="RpmTable"?"rpmTable":model=="PerformanceMap"?"performanceMap":null;
                 if(table!=null && performance[table]==null)performance[table]=new JArray();
+                performanceSettings.Clear();performanceSettings.style.display=table!=null?DisplayStyle.Flex:DisplayStyle.None;
+                if(table!=null)fields.Object(performanceSettings,performance,"RotorPerformanceProfile",rotorPath+".performance","model","rpmTable","performanceMap");
                 editor.SetPerformance(performanceRotor,rotorPath);
             } else editor.Set((JArray)Buffer.Value,DroneParameterSchema.Resolve(Buffer.Rule)["items"],Buffer.Path,"Таблица параметров");
             UpdateState();
@@ -71,7 +78,7 @@ namespace DroneLab.UI
         private void UpdateState()
         {
             if(editor==null || apply==null)return;
-            editor.SetEnabled(!Busy);modelChoice?.SetEnabled(!Busy);
+            editor.SetEnabled(!Busy);modelChoice?.SetEnabled(!Busy);performanceSettings?.SetEnabled(!Busy);
             string error=Buffer.ValidationError();apply.SetEnabled(!Busy && error==null);cancel.SetEnabled(!Busy);close.SetEnabled(!Busy);
             if(error!=null){message.text=error;message.EnableInClassList("error",true);}
             else if(message.ClassListContains("error")){message.text="Изменения применятся к текущему профилю.";message.EnableInClassList("error",false);}

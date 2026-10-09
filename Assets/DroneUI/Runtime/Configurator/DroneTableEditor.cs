@@ -19,6 +19,8 @@ namespace DroneLab.UI
         private readonly List<(string key,Button button)> graphTabs=new List<(string,Button)>();
         private readonly Label tableHeading;
         private readonly Label title;
+        private readonly Dictionary<string,float> columnWidths=new Dictionary<string,float>();
+        private readonly Dictionary<string,List<VisualElement>> columnCells=new Dictionary<string,List<VisualElement>>();
         private JArray rows;
         private JObject rule,rotor;
         private string path,column;
@@ -36,7 +38,7 @@ namespace DroneLab.UI
             graphPanel=new VisualElement();graphPanel.AddToClassList("drone-graph-panel");content.Add(graphPanel);
             graphToolbar=DroneProfileFields.Row(graphPanel);graphToolbar.AddToClassList("curve-tabs");plot=new DroneCurvePlot();graphPanel.Add(plot);
             var right=new VisualElement();right.AddToClassList("drone-table-panel");content.Add(right);
-            tableHeading=DroneProfileFields.Label(right,"ИЗМЕРЕННЫЕ ТОЧКИ","drone-panel-title");
+            tableHeading=DroneProfileFields.Label(right,"ИЗМЕРЕННЫЕ ТОЧКИ","drone-panel-title");tableHeading.style.flexGrow=0;tableHeading.style.flexShrink=0;
             gridHost=new VisualElement();gridHost.AddToClassList("drone-table-host");right.Add(gridHost);
             toolbar=DroneProfileFields.Row(right);toolbar.AddToClassList("drone-table-toolbar");
             plot.Set(Array.Empty<Vector2>(),"","","Выберите характеристики винта или таблицу параметров.");
@@ -104,15 +106,20 @@ namespace DroneLab.UI
         }
         private void BuildRows()
         {
-            gridHost.Clear();var scroll=new ScrollView(ScrollViewMode.VerticalAndHorizontal);scroll.AddToClassList("drone-table-scroll");gridHost.Add(scroll);
+            gridHost.Clear();columnCells.Clear();var scroll=new ScrollView(ScrollViewMode.VerticalAndHorizontal);scroll.AddToClassList("drone-table-scroll");gridHost.Add(scroll);
             ThemeScroller(scroll.verticalScroller,false);ThemeScroller(scroll.horizontalScroller,true);
             var header=DroneProfileFields.Row(scroll);header.AddToClassList("drone-table-line");
             var properties=((JObject)rule["properties"]).Properties().ToList();
-            foreach(var p in properties){var cell=new VisualElement();cell.AddToClassList("drone-table-cell");header.Add(cell);DroneProfileFields.Label(cell,DroneParameterSchema.Name(p.Name)+"\n"+DroneParameterSchema.Unit(p.Name));DroneHelp.Attach(cell,()=>DroneParameterSchema.Tooltip(p.Name,p.Value));}
+            foreach(var property in properties){
+                string key=property.Name;var cell=CreateCell(header,key);cell.AddToClassList("drone-table-header-cell");
+                var heading=DroneProfileFields.Row(cell);heading.AddToClassList("drone-table-column-heading");
+                DroneProfileFields.Label(heading,DroneParameterSchema.Name(key)+"\n"+DroneParameterSchema.Unit(key));DroneHelp.Attach(heading,()=>DroneParameterSchema.Tooltip(key,property.Value));
+                AddResizeHandle(cell,key);
+            }
             for(int i=0;i<rows.Count;i++) {
                 int index=i;var item=(JObject)rows[i];var row=DroneProfileFields.Row(scroll);row.AddToClassList("drone-table-line");
                 foreach(var p in properties) {
-                    var cell=new VisualElement();cell.AddToClassList("drone-table-cell");row.Add(cell);string key=p.Name;
+                    string key=p.Name;var cell=CreateCell(row,key);
                     var propertyRule=DroneParameterSchema.Resolve(p.Value);string type=(string)propertyRule["type"];
                     if(type=="number" || type=="integer") {
                         var input=fields.Numeric(cell,"",propertyRule,item[key],path+"["+index+"]."+key,t=>item[key]=t);
@@ -129,6 +136,30 @@ namespace DroneLab.UI
                 var remove=DroneProfileFields.Button(row,"×",()=> {fields.RemoveRow(rows,index,path);changed();BuildRows();RefreshPlot();});remove.AddToClassList("table-remove");
             }
             DroneProfileFields.ReadOnly(scroll);
+        }
+        private VisualElement CreateCell(VisualElement host,string key)
+        {
+            var cell=new VisualElement();cell.AddToClassList("drone-table-cell");host.Add(cell);
+            if(!columnCells.TryGetValue(key,out var cells)){cells=new List<VisualElement>();columnCells[key]=cells;}cells.Add(cell);
+            float width=columnWidths.TryGetValue(key,out var saved)?saved:160;cell.style.width=width;cell.style.minWidth=width;return cell;
+        }
+        private void SetColumnWidth(string key,float width)
+        {
+            width=Mathf.Clamp(width,110,640);columnWidths[key]=width;
+            if(columnCells.TryGetValue(key,out var cells))foreach(var cell in cells){cell.style.width=width;cell.style.minWidth=width;}
+        }
+        private void AddResizeHandle(VisualElement cell,string key)
+        {
+            var handle=new VisualElement{focusable=true,tabIndex=0,tooltip="Перетащите границу для изменения ширины. Двойной щелчок сбрасывает ширину; стрелки ←/→ меняют её с клавиатуры."};handle.AddToClassList("drone-column-resizer");cell.Add(handle);
+            bool resizing=false;float start=0,width=0;
+            handle.RegisterCallback<PointerDownEvent>(evt=>{
+                if(evt.button!=0)return;resizing=true;start=cell.WorldToLocal(evt.position).x;width=cell.resolvedStyle.width;handle.CapturePointer(evt.pointerId);evt.StopPropagation();
+            });
+            handle.RegisterCallback<PointerMoveEvent>(evt=>{if(!resizing)return;SetColumnWidth(key,width+cell.WorldToLocal(evt.position).x-start);evt.StopPropagation();});
+            handle.RegisterCallback<PointerUpEvent>(evt=>{if(!resizing)return;resizing=false;if(handle.HasPointerCapture(evt.pointerId))handle.ReleasePointer(evt.pointerId);evt.StopPropagation();});
+            handle.RegisterCallback<PointerCaptureOutEvent>(_=>resizing=false);
+            handle.RegisterCallback<ClickEvent>(evt=>{if(evt.clickCount==2)SetColumnWidth(key,160);evt.StopPropagation();});
+            handle.RegisterCallback<KeyDownEvent>(evt=>{if(evt.keyCode!=KeyCode.LeftArrow && evt.keyCode!=KeyCode.RightArrow)return;SetColumnWidth(key,cell.resolvedStyle.width+(evt.keyCode==KeyCode.RightArrow?12:-12));evt.StopPropagation();});
         }
         private async void Transfer(bool export)
         {

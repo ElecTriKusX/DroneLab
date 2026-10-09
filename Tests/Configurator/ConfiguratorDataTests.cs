@@ -202,4 +202,66 @@ public sealed class ConfiguratorDataTests
         ((JArray)buffer.Value).RemoveAll();Assert.Throws<ArgumentException>(()=>buffer.BuildValue());
     }
 
+    [Test] public void EmptyOptionalMetadataCanBeSavedWithoutSchemaErrors()
+    {
+        var doc=DroneProfileLibrary.Create();var metadata=(JObject)doc.profile["metadata"];
+        foreach(var key in new[]{"manufacturer","model","description"})DroneProfileEdits.SetOptionalText(metadata,key,"   ");
+        Assert.That(DroneProfileLibrary.Validate(doc).Success,Is.True);DroneProfileLibrary.Save(doc,false);
+        var stored=JObject.Parse(File.ReadAllText(Path.Combine(DroneProfileLibrary.Folder(doc.id),"profile.json")));
+        foreach(var key in new[]{"manufacturer","model","description"})Assert.That(stored["metadata"][key],Is.Null);
+        Assert.That(stored["metadata"]["name"],Is.Not.Null);
+    }
+    [Test] public void FilledOptionalMetadataIsPreserved()
+    {
+        var doc=DroneProfileLibrary.Create();DroneProfileEdits.SetOptionalText((JObject)doc.profile["metadata"],"manufacturer","Тестовый производитель");
+        DroneProfileLibrary.Save(doc,false);Assert.That((string)doc.profile["metadata"]["manufacturer"],Is.EqualTo("Тестовый производитель"));
+    }
+    [Test] public void ValidationApprovalExpiresWhenDocumentChanges()
+    {
+        var doc=DroneProfileLibrary.Create();Assert.That(DroneProfileLibrary.Validate(doc).Success,Is.True);string checkedSnapshot=doc.Snapshot();
+        Assert.That(DroneProfileEdits.MatchesValidation(doc,checkedSnapshot),Is.True);
+        doc.profile["massProperties"]["massKg"]=2;Assert.That(DroneProfileEdits.MatchesValidation(doc,checkedSnapshot),Is.False);
+    }
+    [Test] public void UncheckedOrUnfinishedDocumentCannotUseValidationApproval()
+    {
+        var doc=DroneProfileLibrary.Create();Assert.That(DroneProfileEdits.MatchesValidation(doc,null),Is.False);
+        doc.unfinishedInputs["massProperties.massKg"]="1e";Assert.That(DroneProfileEdits.MatchesValidation(doc,doc.Snapshot()),Is.False);
+    }
+
+    [Test] public void ModelScaleUsesCurrentBoundsAndIsIdempotent()
+    {
+        var physical=new JArray(.2,.3,.6);var bounds=new JArray(2,4,6);var before=bounds.DeepClone();
+        double scale=DroneProfileEdits.UniformScaleToDimensions(physical,bounds,2);Assert.That(scale,Is.EqualTo(.2).Within(1e-12));
+        var resized=new JArray(bounds.Select(v=>(double)v*scale/2));Assert.That(DroneProfileEdits.UniformScaleToDimensions(physical,resized,scale),Is.EqualTo(scale).Within(1e-12));
+        Assert.That(JToken.DeepEquals(bounds,before),Is.True);Assert.That((double)physical[1],Is.EqualTo(.3));
+    }
+    [Test] public void ModelScaleRejectsUnusableBoundsAndInvalidDimensions()
+    {
+        Assert.Throws<ArgumentException>(()=>DroneProfileEdits.UniformScaleToDimensions(new JArray(1,2,3),new JArray(0,0,0),1));
+        Assert.Throws<ArgumentException>(()=>DroneProfileEdits.UniformScaleToDimensions(new JArray(1,-2,3),new JArray(1,2,3),1));
+        Assert.Throws<ArgumentException>(()=>DroneProfileEdits.UniformScaleToDimensions(new JArray(1,2,3),new JArray(1,2,3),double.NaN));
+    }
+    [Test] public void NormalizationPreservesDirectionAndDoesNotMutateSource()
+    {
+        var source=new JArray(3,4,0);Assert.That(DroneProfileEdits.TryNormalize(source,out var unit,out var error),Is.True);Assert.That(error,Is.Null);
+        Assert.That((double)unit[0],Is.EqualTo(.6).Within(1e-12));Assert.That((double)unit[1],Is.EqualTo(.8).Within(1e-12));Assert.That((double)source[0],Is.EqualTo(3));
+    }
+    [Test] public void QuaternionNormalizationRejectsZeroAndProducesUnitLength()
+    {
+        Assert.That(DroneProfileEdits.TryNormalize(new JArray(0,0,0,0),out _,out var error),Is.False);Assert.That(error,Is.Not.Empty);
+        Assert.That(DroneProfileEdits.TryNormalize(new JArray(1,2,3,4),out var unit,out _),Is.True);Assert.That(unit.Sum(v=>Math.Pow((double)v,2)),Is.EqualTo(1).Within(1e-12));
+    }
+    [Test] public void DroneProfileHasNoCurrentWeatherFieldsButKeepsMeasurementDensity()
+    {
+        var doc=DroneProfileLibrary.Create();
+        foreach(var key in new[]{"environment","airDensityKgM3","temperatureK","pressurePa","altitudeM","wind","weather"})Assert.That(doc.profile[key],Is.Null);
+        var measured=doc.profile["rotors"][0]["performance"];Assert.That((double)measured["referenceAirDensityKgM3"],Is.GreaterThan(0));
+        Assert.That(DroneProfileLibrary.Validate(doc).Success,Is.True);
+    }
+    [Test] public void NumericHelpUsesPhysicalBoundsWithoutRuntimeImplementationText()
+    {
+        Assert.That(DroneParameterSchema.Range(new JObject{["type"]="number"}),Is.EqualTo("Конечное число"));
+        Assert.That(DroneParameterSchema.Tooltip("principalAxesRotationXyzw",DroneParameterSchema.ObjectRule("InertiaProfile")["properties"]["principalAxesRotationXyzw"]),Does.Not.Contain("runtime"));
+    }
+
 }

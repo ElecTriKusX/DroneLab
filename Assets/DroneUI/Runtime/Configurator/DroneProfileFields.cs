@@ -22,30 +22,30 @@ namespace DroneLab.UI
             foreach(var property in ((JObject)rule["properties"]).Properties()) {
                 string key=property.Name, child=path.Length==0?key:path+"."+key;
                 if(excluded.Contains(key))continue;
+                if(definition=="RotorOperatingEnvelopeProfile" && key=="model"){if(value[key]==null)value[key]="ReportOnly";continue;}
                 if(!Relevant(definition,key,value))continue;
                 if(value[key]==null) {
                     var row=Row(host);var add=new Button(()=> {value[key]=DroneParameterSchema.Default(property.Value,key);ClearErrors(child);changed();rebuild();}) {text="+ "+DroneParameterSchema.Name(key)};
                     add.AddToClassList("optional-parameter");row.Add(add);DroneHelp.Attach(row,()=>DroneParameterSchema.Tooltip(key,property.Value));continue;
                 }
-                Field(host,key,property.Value,value[key],child,t=>value[key]=t);
-                if(!required.Contains(key)) {
-                    var remove=new Button(()=>{value.Remove(key);ClearErrors(child);changed();rebuild();}) {text="Убрать «"+DroneParameterSchema.Name(key)+"»"};
-                    remove.AddToClassList("remove-parameter");host.Add(remove);
-                }
+                Action remove=required.Contains(key)?null:()=>{value.Remove(key);ClearErrors(child);changed();rebuild();};
+                Field(host,key,property.Value,value[key],child,t=>value[key]=t,remove);
             }
         }
-        public void Field(VisualElement host,string key,JToken unresolved,JToken value,string path,Action<JToken> write)
+        public void Field(VisualElement host,string key,JToken unresolved,JToken value,string path,Action<JToken> write,Action remove=null)
         {
             var rule=DroneParameterSchema.Resolve(unresolved);var type=(string)rule["type"];
             string label=DroneParameterSchema.Name(key);if(DroneParameterSchema.Unit(key).Length>0)label+=" · "+DroneParameterSchema.Unit(key);
             if(type=="object") {
                 var section=new Foldout {text=label,value=expanded.TryGetValue(path,out var open)?open:key=="geometry"};section.AddToClassList("drone-field-group");host.Add(section);
                 section.RegisterValueChangedCallback(evt=>{if(evt.target==section)expanded[path]=evt.newValue;});
-                DroneHelp.Attach(section.Q<Toggle>(),()=>DroneParameterSchema.Tooltip(key,unresolved));
+                if(key=="operatingEnvelope")Label(section,"Контроль области применения: предупреждает о превышении заданных скоростей. Силы и ограничение движения не добавляет.","scenario-hint");
+                var header=section.Q<Toggle>();DroneHelp.Attach(header,()=>DroneParameterSchema.Tooltip(key,unresolved));
+                if(remove!=null){section.AddToClassList("removable-group");RemoveControl(header,label,remove);}
                 Object(section,(JObject)value,DroneParameterSchema.Definition(unresolved),path);ReadOnly(section);return;
             }
             if(type=="array") {
-                var array=(JArray)value;var heading=Row(host);heading.AddToClassList("drone-vector-heading");Label(heading,label,"drone-vector-title");DroneHelp.Attach(heading,()=>DroneParameterSchema.Tooltip(key,unresolved));
+                var array=(JArray)value;var heading=Row(host);heading.AddToClassList("drone-vector-heading");Label(heading,label,"drone-vector-title");DroneHelp.Attach(heading,()=>DroneParameterSchema.Tooltip(key,unresolved));if(remove!=null)RemoveControl(heading,label,remove);
                 var itemRule=DroneParameterSchema.Resolve(rule["items"]);string itemType=(string)itemRule["type"];
                 if(itemType=="object") {
                     var button=new Button(()=>table(array,unresolved,path,label)) {text=$"Открыть таблицу · {array.Count} строк"};button.AddToClassList("drone-table-open");host.Add(button);
@@ -58,8 +58,13 @@ namespace DroneLab.UI
                     var actions=Row(host);Button(actions,"+ Компонента",()=>{array.Add(DroneParameterSchema.Default(rule["items"]));changed();rebuild();});
                     if(array.Count>0)Button(actions,"− Последняя",()=>{array.RemoveAt(array.Count-1);ClearErrors(path);changed();rebuild();});
                 }
-                if(key=="thrustAxisLocal" || key=="normalLocal" || key=="directionLocal" || key=="principalAxesRotationXyzw")
-                    Button(host,"Нормализовать",()=> {double n=Math.Sqrt(array.Sum(x=>Math.Pow((double)x,2)));if(n<=1e-12){errors[path]="Нулевой вектор нельзя нормализовать.";changed();return;}for(int i=0;i<array.Count;i++)array[i]=(double)array[i]/n;ClearErrors(path);changed();rebuild();});
+                if(key=="thrustAxisLocal" || key=="normalLocal" || key=="directionLocal" || key=="principalAxesRotationXyzw") {
+                    var normalize=Button(host,"Нормализовать",()=> {
+                        if(!DroneProfileEdits.TryNormalize(array,out var normalized,out var error)){errors[path]=error;changed();return;}
+                        for(int i=0;i<array.Count;i++)array[i]=normalized[i].DeepClone();ClearErrors(path);changed();rebuild();
+                    });normalize.tooltip=key=="principalAxesRotationXyzw"?"Сделать длину кватерниона равной 1, сохранив задаваемый им поворот.":"Сделать длину вектора равной 1, сохранив его направление.";
+                    Label(host,key=="principalAxesRotationXyzw"?"Нормализация приводит длину кватерниона к 1.":"Нормализация приводит длину вектора к 1, сохраняя направление.","drone-normalize-note");
+                }
                 return;
             }
             var container=Row(host);container.AddToClassList("drone-parameter-row");
@@ -69,13 +74,26 @@ namespace DroneLab.UI
                 field.RegisterValueChangedCallback(e=> {if(e.target!=field)return;write(keys[field.index]);ClearErrors(path);changed();host.schedule.Execute(rebuild);});
                 field.Reselected+=()=> {write(keys[field.index]);ClearErrors(path);changed();host.schedule.Execute(rebuild);};
             } else if(type=="boolean") {
-                var toggle=new Toggle(label) {value=(bool)value};toggle.AddToClassList("environment-field");container.Add(toggle);
-                toggle.RegisterValueChangedCallback(e=>{write(e.newValue);ClearErrors(path);changed();});
+                var toggle=new DroneSwitch(label,(bool)value);container.Add(toggle);
+                toggle.ValueChanged+=v=>{write(v);ClearErrors(path);changed();};
             } else if(type=="string") {
                 var field=new TextField(label) {value=(string)value};field.AddToClassList("environment-field");DroneTextInput.Configure(field);container.Add(field);
                 field.RegisterValueChangedCallback(e=> {write(e.newValue);if((int?)rule["minLength"]>0 && string.IsNullOrWhiteSpace(e.newValue))errors[path]="Введите непустой текст.";else errors.Remove(path);field.EnableInClassList("invalid-field",errors.ContainsKey(path));changed();});
             } else Numeric(container,label,rule,value,path,write);
-            DroneHelp.Attach(container,()=>DroneParameterSchema.Tooltip(key,unresolved));ReadOnly(container);
+            DroneHelp.Attach(container,()=>DroneParameterSchema.Tooltip(key,unresolved));if(remove!=null)RemoveControl(container,label,remove);ReadOnly(container);
+        }
+        private static void RemoveControl(VisualElement host,string label,Action remove)
+        {
+            var button=new Button(remove){text="×",tooltip="Удалить необязательный параметр «"+label+"» из профиля"};
+            button.AddToClassList("drone-remove-control");button.RegisterCallback<ClickEvent>(evt=>evt.StopPropagation());host.Add(button);
+        }
+        public void OptionalText(VisualElement host,JObject value,string key,string path)
+        {
+            var row=Row(host);row.AddToClassList("drone-parameter-row");
+            var field=new TextField(DroneParameterSchema.Name(key));field.SetValueWithoutNotify((string)value[key]??"");
+            field.AddToClassList("environment-field");DroneTextInput.Configure(field);row.Add(field);
+            field.RegisterValueChangedCallback(evt=>{if(evt.target!=field)return;DroneProfileEdits.SetOptionalText(value,key,evt.newValue);ClearErrors(path);changed();});
+            DroneHelp.Attach(row,()=>DroneParameterSchema.Tooltip(key,DroneParameterSchema.ObjectRule("Metadata")["properties"][key])+"\nМожно оставить пустым.");ReadOnly(row);
         }
         public TextField Numeric(VisualElement host,string label,JToken rule,JToken value,string path,Action<JToken> write)
         {

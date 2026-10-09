@@ -27,7 +27,7 @@ namespace DroneLab.UI
         private readonly IVisualElementScheduledItem tick;
         private RenderTexture texture;
         private DroneProfileDocument document;
-        private bool disposed, dragging, orbiting, panning;
+        private bool disposed, dragging, draggingCom, orbiting, panning;
         private Vector2 previous;
         private Plane dragPlane;
         private Vector3 dragOffset;
@@ -37,7 +37,9 @@ namespace DroneLab.UI
         private int draggedRotor=-1, axisLock=-1;
         private float yaw=35,pitch=25,distance=1;
         private Vector3 target;
-        public int SelectedRotor { get; private set; }
+        public int SelectedRotor { get; private set; } = -1;
+        public bool CenterOfMassSelected { get; private set; }
+        public bool MassEditingEnabled { get; private set; }
         public string Tool { get; set; } = "Move";
         public bool Snap { get; set; }
         public bool EditingEnabled { get; set; }
@@ -45,6 +47,7 @@ namespace DroneLab.UI
         public string LastEditedField { get; private set; }
         private string schematicGeometry;
         public event Action<int> Selected;
+        public event Action SelectionCleared;
         public event Action Changed;
         public event Action<string> Status;
         public bool HasImportedModel => loader.LoadedRoot != null;
@@ -80,9 +83,9 @@ namespace DroneLab.UI
             overlay=new GeometryOverlay(this) { pickingMode=PickingMode.Ignore }; overlay.StretchToParentSize(); Add(overlay);
             RegisterCallback<GeometryChangedEvent>(_=>Resize());
             RegisterCallback<PointerDownEvent>(Down); RegisterCallback<PointerMoveEvent>(Move); RegisterCallback<PointerUpEvent>(Up);
-            RegisterCallback<PointerCaptureOutEvent>(_=> { dragging=orbiting=panning=false; });
+            RegisterCallback<PointerCaptureOutEvent>(_=> { dragging=draggingCom=orbiting=panning=false; });
             RegisterCallback<WheelEvent>(e=> { LastEditedField=null;distance=Mathf.Clamp(distance*Mathf.Exp(e.delta.y*.045f),.005f,100000); UpdateCamera(); SaveView();Changed?.Invoke();e.StopPropagation(); });
-            tick=schedule.Execute(()=> { if(!disposed) overlay.MarkDirtyRepaint(); }).Every(33);
+            tick=schedule.Execute(()=> { if(!disposed){overlay.UpdateLabels();overlay.MarkDirtyRepaint();} }).Every(33);
             Resize(); UpdateCamera();
         }
         private GameObject Child(string name) { var go=new GameObject(name) { layer=PreviewLayer, hideFlags=HideFlags.DontSave }; go.transform.SetParent(stage.transform,false); return go; }
@@ -96,7 +99,7 @@ namespace DroneLab.UI
         }
         public void SetDocument(DroneProfileDocument value)
         {
-            document=value; SelectedRotor=0;
+            document=value; SelectedRotor=-1;CenterOfMassSelected=false;
             if(value.profile["coordinateSystem"]?["modelScaleMetersPerUnit"] is JValue scale)value.visual["scale"]=scale.DeepClone();
             yaw=(float?)value.visual["previewYaw"]??35; pitch=(float?)value.visual["previewPitch"]??25;
             camera.orthographic=(bool?)value.visual["previewOrthographic"]??false;
@@ -144,7 +147,24 @@ namespace DroneLab.UI
             if(!HasImportedModel && (rebuild || geometry!=schematicGeometry)){RebuildSchematic();schematicGeometry=geometry;}
             overlay.RefreshLabels(); overlay.MarkDirtyRepaint();
         }
-        public void Select(int rotor) { SelectedRotor=rotor; overlay.RefreshLabels(); overlay.MarkDirtyRepaint(); }
+        public void Select(int rotor) { SelectedRotor=rotor;CenterOfMassSelected=false; overlay.RefreshLabels(); overlay.MarkDirtyRepaint(); }
+        public void SetEditContext(bool rotors,bool mass)
+        {
+            if(EditingEnabled==rotors && MassEditingEnabled==mass)return;
+            EditingEnabled=rotors;MassEditingEnabled=mass;
+            if(mass)SelectedRotor=-1;if(!mass)CenterOfMassSelected=false;overlay.RefreshLabels();overlay.MarkDirtyRepaint();
+        }
+        public void ClearSelection()
+        {
+            SelectedRotor=-1;CenterOfMassSelected=false;draggedRotor=-1;SelectionCleared?.Invoke();overlay.MarkDirtyRepaint();
+        }
+        public void ScaleModelToPhysicalDimensions()
+        {
+            if(!HasImportedModel)throw new InvalidOperationException("Сначала импортируйте модель.");
+            var bounds=ModelBounds();double current=(double?)document.visual["scale"]??1;
+            double scale=DroneProfileEdits.UniformScaleToDimensions((JArray)document.profile["massProperties"]["dimensionsM"],Array(bounds.size),current);
+            document.profile["coordinateSystem"]["modelScaleMetersPerUnit"]=scale;document.visual["scale"]=scale;ApplyTransform();Frame();
+        }
         public void View(string view)
         {
             ViewName=view;camera.orthographic=view!="3D";
@@ -155,6 +175,7 @@ namespace DroneLab.UI
         public void Frame()
         {
             if(document==null)return; var b=ModelBounds();
+            if(MassEditingEnabled){b.Encapsulate(new Bounds(Vector3.zero,Vec(document.profile["massProperties"]["dimensionsM"])));b.Encapsulate(Vec(document.profile["massProperties"]["centerOfMassLocalM"]));}
             foreach(var rotor in Rotors)b.Encapsulate(Vec(rotor["geometry"]?["positionLocalM"]));
             float extent=Mathf.Max(.03f,Mathf.Max(b.size.x,Mathf.Max(b.size.y,b.size.z)));
             target=b.center; distance=extent*2.6f; UpdateCamera(); SaveView();
@@ -183,59 +204,71 @@ namespace DroneLab.UI
         private Ray Ray(Vector2 p)=>camera.ViewportPointToRay(new Vector3(p.x/Mathf.Max(1,contentRect.width),1-p.y/Mathf.Max(1,contentRect.height),0));
         private void Down(PointerDownEvent e)
         {
-            LastEditedField=null;
-            Focus(); previous=e.localPosition;
+            LastEditedField=null;Focus();previous=e.localPosition;
             if(e.button==1)orbiting=true;
             else if(e.button==2)panning=true;
             else if(e.button==0) {
-                bool canEdit=EditingEnabled;
-                int closest=-1; float best=22;
-                for(int i=0;i<Rotors.Count;i++) { var q=Project(Vec(Rotors[i]["geometry"]["positionLocalM"]));float d=Vector2.Distance(q,e.localPosition);if(d<best){best=d;closest=i;} }
                 axisLock=-1;
-                if(canEdit && Tool=="Axis")for(int i=0;i<Rotors.Count;i++) {
-                    var pos=Vec(Rotors[i]["geometry"]["positionLocalM"]);var axis=Vec(Rotors[i]["geometry"]["thrustAxisLocal"]);
-                    if(Vector2.Distance(Project(pos+axis*distance*.16f),e.localPosition)<18)closest=i;
-                }
-                if(canEdit && Tool=="Move" && SelectedRotor>=0 && SelectedRotor<Rotors.Count) {
-                    var p=Vec(Rotors[SelectedRotor]["geometry"]["positionLocalM"]);float len=distance*.13f;
-                    for(int k=0;k<3;k++)if(Vector2.Distance(Project(p+Axis(k)*len),e.localPosition)<15){closest=SelectedRotor;axisLock=k;}
-                }
-                if(closest>=0) { SelectedRotor=draggedRotor=closest; Selected?.Invoke(closest);
-                    var p=Vec(Rotors[closest]["geometry"]["positionLocalM"]); var world=stage.transform.TransformPoint(p);
-                    dragStartAxis=Vec(Rotors[closest]["geometry"]["thrustAxisLocal"]);
-                    dragPlane=new Plane(camera.transform.forward,world);
-                    if(dragPlane.Raycast(Ray(e.localPosition),out var hit))dragOffset=world-Ray(e.localPosition).GetPoint(hit);
-                    dragging=canEdit;
+                if(MassEditingEnabled) {
+                    var com=Vec(document.profile["massProperties"]["centerOfMassLocalM"]);
+                    bool hit=Vector2.Distance(Project(com),e.localPosition)<22;
+                    if(CenterOfMassSelected)for(int k=0;k<3;k++)if(Vector2.Distance(Project(com+Axis(k)*distance*.13f),e.localPosition)<15){hit=true;axisLock=k;}
+                    if(hit){CenterOfMassSelected=true;SelectedRotor=-1;draggingCom=true;BeginDrag(com,e.localPosition);}
+                    else ClearSelection();
+                } else {
+                    bool canEdit=EditingEnabled;int closest=-1;float best=22;
+                    for(int i=0;i<Rotors.Count;i++){float d=Vector2.Distance(Project(Vec(Rotors[i]["geometry"]["positionLocalM"])),e.localPosition);if(d<best){best=d;closest=i;}}
+                    if(canEdit && Tool=="Axis")for(int i=0;i<Rotors.Count;i++){
+                        var pos=Vec(Rotors[i]["geometry"]["positionLocalM"]);var axis=Vec(Rotors[i]["geometry"]["thrustAxisLocal"]);
+                        if(Vector2.Distance(Project(pos+axis*distance*.16f),e.localPosition)<18)closest=i;
+                    }
+                    if(canEdit && Tool=="Move" && SelectedRotor>=0 && SelectedRotor<Rotors.Count){
+                        var pos=Vec(Rotors[SelectedRotor]["geometry"]["positionLocalM"]);
+                        for(int k=0;k<3;k++)if(Vector2.Distance(Project(pos+Axis(k)*distance*.13f),e.localPosition)<15){closest=SelectedRotor;axisLock=k;}
+                    }
+                    if(closest>=0){SelectedRotor=draggedRotor=closest;CenterOfMassSelected=false;Selected?.Invoke(closest);
+                        dragStartAxis=Vec(Rotors[closest]["geometry"]["thrustAxisLocal"]);BeginDrag(Vec(Rotors[closest]["geometry"]["positionLocalM"]),e.localPosition);dragging=canEdit;
+                    } else ClearSelection();
                 }
             }
-            if(dragging||orbiting||panning)this.CapturePointer(e.pointerId);e.StopPropagation();
+            if(dragging||draggingCom||orbiting||panning)this.CapturePointer(e.pointerId);e.StopPropagation();
+        }
+        private void BeginDrag(Vector3 point,Vector2 pointer)
+        {
+            var world=stage.transform.TransformPoint(point);dragPlane=new Plane(camera.transform.forward,world);dragOffset=Vector3.zero;
+            var ray=Ray(pointer);if(dragPlane.Raycast(ray,out var hit))dragOffset=world-ray.GetPoint(hit);
+        }
+        private Vector3 DragPosition(Vector3 point,Vector3 old)
+        {
+            if(axisLock>=0){var constrained=old;constrained[axisLock]=point[axisLock];point=constrained;}
+            if(Snap){if(axisLock>=0)point[axisLock]=Mathf.Round(point[axisLock]*100)/100;else point=new Vector3(Mathf.Round(point.x*100)/100,Mathf.Round(point.y*100)/100,Mathf.Round(point.z*100)/100);}
+            return point;
         }
         private void Move(PointerMoveEvent e)
         {
-            Vector2 delta=(Vector2)e.localPosition-previous; previous=e.localPosition;
-            if(orbiting) { ViewName="3D";camera.orthographic=false;yaw-=delta.x*.35f;pitch=Mathf.Clamp(pitch+delta.y*.35f,-89.9f,89.9f);UpdateCamera(); }
-            else if(panning) { target+=camera.transform.rotation*new Vector3(-delta.x,delta.y,0)*distance/Mathf.Max(1,contentRect.height)*.65f;UpdateCamera(); }
-            else if(dragging && draggedRotor>=0 && draggedRotor<Rotors.Count) {
-                var ray=Ray(e.localPosition); if(!dragPlane.Raycast(ray,out float hit))return;
-                var geometry=(JObject)Rotors[draggedRotor]["geometry"];var old=Vec(geometry["positionLocalM"]);
-                var point=stage.transform.InverseTransformPoint(ray.GetPoint(hit)+dragOffset);
-                if(Tool=="Axis") {
-                    // Drag the direction handle in the view plane, maintaining a unit vector.
-                    var direction=(point-old)/Mathf.Max(.0001f,distance*.16f)+dragStartAxis;
-                    if(direction.sqrMagnitude>1e-10f)geometry["thrustAxisLocal"]=Array(direction.normalized);
-                } else {
-                    if(axisLock>=0) { var constrained=old;constrained[axisLock]=point[axisLock];point=constrained; }
-                    if(Snap)point=new Vector3(Mathf.Round(point.x*100)/100,Mathf.Round(point.y*100)/100,Mathf.Round(point.z*100)/100);
-                    geometry["positionLocalM"]=Array(point);
+            Vector2 delta=(Vector2)e.localPosition-previous;previous=e.localPosition;
+            if(orbiting){ViewName="3D";camera.orthographic=false;yaw+=delta.x*.35f;pitch=Mathf.Clamp(pitch+delta.y*.35f,-89.9f,89.9f);UpdateCamera();}
+            else if(panning){target+=camera.transform.rotation*new Vector3(-delta.x,delta.y,0)*distance/Mathf.Max(1,contentRect.height)*.65f;UpdateCamera();}
+            else if(draggingCom || dragging && draggedRotor>=0 && draggedRotor<Rotors.Count){
+                var ray=Ray(e.localPosition);if(!dragPlane.Raycast(ray,out float hit))return;var point=stage.transform.InverseTransformPoint(ray.GetPoint(hit)+dragOffset);
+                if(draggingCom){var mass=(JObject)document.profile["massProperties"];mass["centerOfMassLocalM"]=Array(DragPosition(point,Vec(mass["centerOfMassLocalM"])));}
+                else {
+                    var geometry=(JObject)Rotors[draggedRotor]["geometry"];var old=Vec(geometry["positionLocalM"]);
+                    if(Tool=="Axis"){
+                        var direction=(point-old)/Mathf.Max(.0001f,distance*.16f)+dragStartAxis;
+                        if(direction.sqrMagnitude>1e-10f)geometry["thrustAxisLocal"]=Array(direction.normalized);
+                    } else geometry["positionLocalM"]=Array(DragPosition(point,old));
                 }
                 overlay.MarkDirtyRepaint();
             }
-            if(orbiting||panning||dragging)e.StopPropagation();
+            if(orbiting||panning||dragging||draggingCom)e.StopPropagation();
         }
         private void Up(PointerUpEvent e)
         {
-            bool edit=dragging;dragging=orbiting=panning=false;if(this.HasPointerCapture(e.pointerId))this.ReleasePointer(e.pointerId);
-            if(edit)LastEditedField="rotors["+draggedRotor+"].geometry."+(Tool=="Axis"?"thrustAxisLocal":"positionLocalM");
+            bool comEdit=draggingCom,rotorEdit=dragging;dragging=draggingCom=orbiting=panning=false;
+            if(this.HasPointerCapture(e.pointerId))this.ReleasePointer(e.pointerId);
+            if(comEdit)LastEditedField="massProperties.centerOfMassLocalM";
+            else if(rotorEdit)LastEditedField="rotors["+draggedRotor+"].geometry."+(Tool=="Axis"?"thrustAxisLocal":"positionLocalM");
             SaveView();Changed?.Invoke();e.StopPropagation();
         }
         public Vector2 Project(Vector3 point)
@@ -249,6 +282,7 @@ namespace DroneLab.UI
         private static Vector3 Axis(int k)=>k==0?Vector3.right:k==1?Vector3.up:Vector3.forward;
         private void RebuildSchematic()
         {
+            procedural.SetActive(!HasImportedModel);
             for(int i=procedural.transform.childCount-1;i>=0;i--) { var go=procedural.transform.GetChild(i).gameObject;go.SetActive(false);Object.Destroy(go); }
             if(document==null)return;
             var dimensions=Vec(document.profile["massProperties"]["dimensionsM"]);
@@ -281,25 +315,55 @@ namespace DroneLab.UI
             public GeometryOverlay(DroneModelViewport v){this.v=v;generateVisualContent+=Draw;}
             public void RefreshLabels()
             {
-                Clear();labels.Clear();foreach(var rotor in v.Rotors){var label=new Label((string)rotor["rotorId"]);label.AddToClassList("rotor-label");label.selection.isSelectable=false;label.pickingMode=PickingMode.Ignore;Add(label);labels.Add(label);}
-                var com=new Label("+ COM");com.AddToClassList("rotor-label");com.selection.isSelectable=false;com.pickingMode=PickingMode.Ignore;Add(com);labels.Add(com);
+                if(labels.Count!=v.Rotors.Count+1) {
+                    Clear();labels.Clear();
+                    for(int i=0;i<v.Rotors.Count+1;i++) {
+                        var label=new Label();label.AddToClassList("rotor-label");label.selection.isSelectable=false;label.pickingMode=PickingMode.Ignore;
+                        Add(label);labels.Add(label);
+                    }
+                }
+                UpdateLabels();
+            }
+            // Run from the scheduler / input callbacks, never from generateVisualContent.
+            public void UpdateLabels()
+            {
+                if(v.document==null)return;
+                for(int i=0;i<v.Rotors.Count && i<labels.Count;i++) {
+                    var rotor=v.Rotors[i];var center=v.Project(Vec(rotor["geometry"]["positionLocalM"]));
+                    PositionLabel(labels[i],center+new Vector2(15,-25),(string)rotor["rotorId"]+" · "+(string)rotor["geometry"]["spinDirection"]);
+                }
+                if(labels.Count>v.Rotors.Count)PositionLabel(labels.Last(),v.Project(Vec(v.document.profile["massProperties"]["centerOfMassLocalM"])),"+ COM");
+            }
+            private static void PositionLabel(Label label,Vector2 position,string text)
+            {
+                if(label.text!=text)label.text=text;
+                if(label.style.left.value.value!=position.x)label.style.left=position.x;
+                if(label.style.top.value.value!=position.y)label.style.top=position.y;
             }
             private void Draw(MeshGenerationContext c)
             {
                 if(v.document==null)return;var p=c.painter2D;float grid=Mathf.Max(.01f,v.distance/4);
                 p.lineWidth=1;p.strokeColor=new Color(.3f,.3f,.3f,.35f);
                 for(int i=-8;i<=8;i++){Line(p,v.Project(new Vector3(i*grid,0,-8*grid)),v.Project(new Vector3(i*grid,0,8*grid)));Line(p,v.Project(new Vector3(-8*grid,0,i*grid)),v.Project(new Vector3(8*grid,0,i*grid)));}
+                if(v.MassEditingEnabled) {
+                    var half=Vec(v.document.profile["massProperties"]["dimensionsM"])*.5f;p.strokeColor=new Color(.78f,.8f,.8f);p.lineWidth=1.5f;
+                    for(int corner=0;corner<8;corner++)for(int axis=0;axis<3;axis++)if((corner & (1<<axis))==0) {
+                        Vector3 Point(int index)=>new Vector3((index&1)==0?-half.x:half.x,(index&2)==0?-half.y:half.y,(index&4)==0?-half.z:half.z);
+                        Line(p,v.Project(Point(corner)),v.Project(Point(corner | (1<<axis))));
+                    }
+                    var com=Vec(v.document.profile["massProperties"]["centerOfMassLocalM"]);var center=v.Project(com);
+                    p.strokeColor=Color.white;p.lineWidth=v.CenterOfMassSelected?3:2;p.BeginPath();p.Arc(center,v.CenterOfMassSelected?12:9,0,360);p.Stroke();
+                    Line(p,center-new Vector2(15,0),center+new Vector2(15,0));Line(p,center-new Vector2(0,15),center+new Vector2(0,15));
+                    if(v.CenterOfMassSelected)for(int k=0;k<3;k++){p.strokeColor=k==0?new Color(.9f,.6f,.6f):k==1?new Color(.65f,.85f,.7f):new Color(.65f,.75f,.95f);Arrow(p,center,v.Project(com+Axis(k)*v.distance*.13f));}
+                }
                 for(int i=0;i<v.Rotors.Count;i++) {
                     var rotor=v.Rotors[i];var pos=Vec(rotor["geometry"]["positionLocalM"]);var axis=Vec(rotor["geometry"]["thrustAxisLocal"]);
                     var center=v.Project(pos);bool selected=i==v.SelectedRotor;float len=v.distance*.16f;
                     p.lineWidth=selected?2.5f:1.5f;p.strokeColor=selected?Color.white:new Color(.72f,.72f,.72f);
                     p.BeginPath();p.Arc(center,selected?12:8,0,360);p.Stroke();
                     Arrow(p,center,v.Project(pos+axis*len));
-                    if(i<labels.Count){labels[i].style.left=center.x+15;labels[i].style.top=center.y-25;labels[i].text=(string)rotor["rotorId"]+" · "+(string)rotor["geometry"]["spinDirection"];}
                     if(v.EditingEnabled && selected && v.Tool=="Move")for(int k=0;k<3;k++) {p.strokeColor=k==0?new Color(.9f,.6f,.6f):k==1?new Color(.65f,.85f,.7f):new Color(.65f,.75f,.95f);Arrow(p,center,v.Project(pos+Axis(k)*v.distance*.13f));}
                 }
-                var com=v.Project(Vec(v.document.profile["massProperties"]["centerOfMassLocalM"]));
-                if(labels.Count>v.Rotors.Count){labels.Last().style.left=com.x;labels.Last().style.top=com.y;}
             }
             private static void Line(Painter2D p,Vector2 a,Vector2 b){if(a.x < -9000 || b.x < -9000)return;p.BeginPath();p.MoveTo(a);p.LineTo(b);p.Stroke();}
             private static void Arrow(Painter2D p,Vector2 a,Vector2 b){Line(p,a,b);var d=(b-a).normalized;if(d.sqrMagnitude<.01)return;var side=new Vector2(-d.y,d.x);Line(p,b,b-d*10+side*5);Line(p,b,b-d*10-side*5);}
