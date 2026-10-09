@@ -53,7 +53,7 @@ namespace DroneLab.UI
                     if(element.focusable && element.enabledInHierarchy && element.tabIndex>=0 && element.worldBound.width>0 && element.worldBound.height>0 && element.resolvedStyle.display!=DisplayStyle.None)candidates.Add(element);
                 });
                 if(candidates.Count==0)return;int index=candidates.IndexOf(panel.focusController.focusedElement as VisualElement);
-                candidates[(index+(evt.shiftKey?-1:1)+candidates.Count)%candidates.Count].Focus();evt.StopPropagation();evt.PreventDefault();
+                candidates[(index+(evt.shiftKey?-1:1)+candidates.Count)%candidates.Count].Focus();evt.StopPropagation();
             },TrickleDown.TrickleDown);
             Rebuild();UpdateState();schedule.Execute(()=>close.Focus());
         }

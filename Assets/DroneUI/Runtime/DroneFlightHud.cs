@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 
 namespace DroneLab.UI
 {
-    public enum DroneFlightViewMode { Cinema, Pilot, Engineer, Diagnostics }
+    public enum DroneFlightViewMode { Cinema, Pilot, Engineer, Diagnostics, Route }
 
     /// <summary>Compact pilot HUD and cinema visibility. Reads a single telemetry snapshot.</summary>
     internal sealed class DroneFlightHud
@@ -61,18 +61,24 @@ namespace DroneLab.UI
             wind = Text(pilotInstruments, "", "pilot-wind");
             warning = Text(pilotRoot, "", "pilot-warning");
             var navigation = Element(pilotRoot, "pilot-navigation");
-            modeButton = Button(navigation, "F2  Пилот ▴", () => modePicker.style.display = modePicker.style.display.value == DisplayStyle.None ? DisplayStyle.Flex : DisplayStyle.None);
+            modeButton = Button(navigation, "F2  Пилот ▴", () => TogglePicker());
             cameraButton = Button(navigation, "C  FPV", onCamera);
             Button(navigation, "Управление", onControls);
             modePicker = Element(pilotRoot, "flight-mode-picker"); modePicker.style.display = DisplayStyle.None;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 5; i++) {
                 var view = (DroneFlightViewMode)i;
                 Button(modePicker, ViewCaption(view), () => changeView(view));
             }
             cameraCaption = Text(pilotRoot, "", "pilot-camera-caption");
             cinemaHint = Element(parent, "cinema-hint");
-            Text(cinemaHint, "F1 КИНО · F2 ПИЛОТ · F3 ИНЖЕНЕР · F4 ДИАГНОСТИКА · C КАМЕРА · ESC ПАУЗА", "cinema-hint-text");
+            Text(cinemaHint, "F1 КИНО · F2 ПИЛОТ · F3 ИНЖЕНЕР · F4 ДИАГНОСТИКА · F5 МАРШРУТ · C КАМЕРА · ESC ПАУЗА", "cinema-hint-text");
             SetView(DroneFlightViewMode.Pilot);
+        }
+        private void TogglePicker()
+        {
+            bool open=modePicker.style.display.value==DisplayStyle.None;
+            modePicker.style.display=open ? DisplayStyle.Flex : DisplayStyle.None;
+            if(open) { pilotRoot.BringToFront(); modePicker.BringToFront(); }
         }
         private static VisualElement Element(VisualElement parent, string css)
         {
@@ -90,6 +96,7 @@ namespace DroneLab.UI
         {
             // Space is a flight axis; clicking a HUD button must not leave it armed for keyboard activation.
             var button = new Button(click) { text = text, focusable = false }; button.AddToClassList("pilot-button");
+            button.RegisterCallback<PointerDownEvent>(_=>button.panel?.focusController?.focusedElement?.Blur());
             button.RegisterCallback<PointerEnterEvent>(_ => { if (camera != null) camera.PointerOverUI = true; });
             button.RegisterCallback<PointerLeaveEvent>(_ => { if (camera != null) camera.PointerOverUI = false; });
             parent.Add(button); return button;
@@ -120,8 +127,8 @@ namespace DroneLab.UI
             fpvRoot.style.display = isFpv ? DisplayStyle.Flex : DisplayStyle.None;
             horizon.style.display = isFpv ? DisplayStyle.None : DisplayStyle.Flex;
             string control = pilot == null ? "НЕТ УПРАВЛЕНИЯ" : pilot.autoLevel ? "ANGLE" : "РУЧНОЙ";
-            mode.text = control + (pilot != null && pilot.altitudeHold ? " · ВЫСОТА" : "");
-            mode.tooltip = "Удержание высоты управляет только вертикальным движением; положение X/Z не удерживается.";
+            mode.text = (pilot?.PositionHold==true ? "ПОЗИЦИЯ X/Z" : control) + (pilot != null && pilot.altitudeHold ? " · ВЫСОТА" : "");
+            mode.tooltip = pilot?.PositionHold==true ? "Удержание текущей точки X/Z по GPS через наклон и тягу." : "H: высота; J: текущая точка X/Z. Авиагоризонт пока использует ориентацию физики при исправной IMU; фильтр оценки ориентации не реализован.";
             battery.text = data.BatteryPercent.HasValue ? "БАТАРЕЯ " + Number(data.BatteryPercent.Value, "0") + "%  ·  " + Number(data.Voltage ?? 0, "0.0") + " В" : "БАТАРЕЯ НЕ ЗАДАНА";
             charge.style.width = Length.Percent((float)Math.Max(0, Math.Min(100, data.BatteryPercent ?? 0)));
             temperature.style.display = data.MotorTemperatureC.HasValue ? DisplayStyle.Flex : DisplayStyle.None;
@@ -130,16 +137,16 @@ namespace DroneLab.UI
             var elapsed = TimeSpan.FromSeconds(Math.Max(0, data.TimeS));
             time.text = (elapsed.TotalHours >= 1 ? elapsed.ToString(@"hh\:mm\:ss") : elapsed.ToString(@"mm\:ss"));
             time.tooltip = "Время симуляции. При паузе останавливается, при возврате на старт сбрасывается.";
-            ground.text = data.SurfaceDistance.HasValue ? "ДО ПОВЕРХНОСТИ " + Number(data.SurfaceDistance.Value, "0.0") + " м" : "ДО ПОВЕРХНОСТИ —";
-            ground.tooltip = "Истинное вертикальное расстояние от центра корпуса до первого внешнего Collider. Это не измерение дальномера.";
-            vertical.text = "ВЕРТИКАЛЬНАЯ " + data.VerticalSpeed.ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture) + " м/с";
-            home.text = "ДО СТАРТА " + Number(data.HomeDistance, "0") + " м";
-            attitude.text = "КРЕН " + Signed(data.Roll) + "°  ·  ТАНГАЖ " + Signed(data.Pitch) + "°";
+            ground.text = data.SurfaceDistance.HasValue ? "ДАЛЬНОМЕР " + Number(data.SurfaceDistance.Value, "0.0") + " м" : "ДАЛЬНОМЕР —";
+            ground.tooltip = "Измеренное расстояние вдоль луча установленного дальномера.";
+            vertical.text = data.HeightValid ? "ВЕРТИКАЛЬНАЯ " + data.VerticalSpeed.ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture) + " м/с" : "БАРОМЕТР · НЕТ ДАННЫХ";
+            home.text = data.GpsValid ? "ДО СТАРТА " + Number(data.HomeDistance, "0") + " м" : "GPS · КАРТА НЕ ОБНОВЛЯЕТСЯ";
+            attitude.text = data.AttitudeValid ? "КРЕН " + Signed(data.Roll) + "°  ·  ТАНГАЖ " + Signed(data.Pitch) + "°" : "IMU · НЕТ ДАННЫХ";
             float windSpeed = data.Wind.magnitude;
             float flowHeading = DroneFlightMath.Heading(data.Wind);
             wind.text = "ВЕТЕР " + Number(windSpeed, "0.0") + " м/с" + (windSpeed > .05f ? "  ·  НАПРАВЛЕНИЕ " + Number(flowHeading, "000") + "°" : "");
             wind.tooltip = "Фактическая скорость воздушного потока у дрона. Направление показывает, куда дует ветер.";
-            cameraCaption.text = isFpv ? "FPV · 90°" : "КАМЕРА ПРЕСЛЕДОВАНИЯ";
+            cameraCaption.text = isFpv ? "FPV · "+camera.Camera.fieldOfView.ToString("0")+"°" : camera?.Mode==DroneFlightCameraMode.Free ? "СВОБОДНАЯ КАМЕРА" : "КАМЕРА ПРЕСЛЕДОВАНИЯ";
             cameraButton.text = isFpv ? DroneKeyBindings.Caption(FlightKeyAction.Camera) + "  Третье лицо" : DroneKeyBindings.Caption(FlightKeyAction.Camera) + "  FPV";
             string message = data.MotorFault ? "ОТКАЗ ДВИГАТЕЛЯ" : data.PowerLimited ? "ОГРАНИЧЕНИЕ МОЩНОСТИ" :
                 data.BatteryPercent.HasValue && data.BatteryPercent.Value <= 20 ? "НИЗКИЙ ЗАРЯД БАТАРЕИ" : !data.Armed ? "МОТОРЫ ВЫКЛЮЧЕНЫ · " + DroneKeyBindings.Caption(FlightKeyAction.Arm) : "";
@@ -150,15 +157,17 @@ namespace DroneLab.UI
         }
         private static string ViewCaption(DroneFlightViewMode view)
         {
-            var actions = new[] { FlightKeyAction.Cinema, FlightKeyAction.Pilot, FlightKeyAction.Engineer, FlightKeyAction.Diagnostics };
-            var names = new[] { "Кино", "Пилот", "Инженер", "Диагностика" };
+            var actions = new[] { FlightKeyAction.Cinema, FlightKeyAction.Pilot, FlightKeyAction.Engineer, FlightKeyAction.Diagnostics, FlightKeyAction.Route };
+            var names = new[] { "Кино", "Пилот", "Инженер", "Диагностика", "Маршрут" };
             return DroneKeyBindings.Caption(actions[(int)view]) + "  " + names[(int)view];
         }
         public void RefreshSensors(DroneSensorRig sensors)
         {
             var gps = sensors.Channel(SensorKind.Gps); var range = sensors.Channel(SensorKind.Rangefinder);
-            string fix = !gps.Settings.enabled ? "выкл." : gps.Faulted ? "потеря данных" : gps.Latest?.Valid == true ? "доступен" : "ожидание";
-            string distance = range.Latest?.Valid == true ? Number(range.Latest.Value.Value.X, "0.00") + " м" : "нет измерения";
+            string fix = sensors.Available(SensorKind.Gps) ? "доступен" : "нет данных";
+            cameraButton.SetEnabled(sensors.CameraAvailable);
+            cameraButton.tooltip=sensors.CameraAvailable ? "Бортовая камера" : "Камера отключена или отказала";
+            string distance = sensors.Available(SensorKind.Rangefinder) ? Number(range.Latest.Value.Value.X, "0.00") + " м" : "нет измерения";
             sensorStatus.text = "GPS " + fix + " · ДАЛЬНОМЕР " + distance;
         }
         private static string Number(double value, string format) => value.ToString(format, CultureInfo.InvariantCulture);

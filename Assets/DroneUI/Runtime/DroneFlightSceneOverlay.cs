@@ -21,6 +21,7 @@ namespace DroneLab.UI
             public readonly float Width;
             public Segment(Vector2 from, Vector2 to, Color color, float width) { From = from; To = to; Color = color; Width = width; }
         }
+        public float MaxArrowPixels=120;
         public bool Forces = true, RangeBeam = true, CameraCone, Trail;
         public DroneFlightTelemetry Telemetry;
         public DroneFlightSceneOverlay(DronePhysicsBody selectedBody, DroneSensorRig selectedRig, DroneFlightCamera selectedCamera)
@@ -42,7 +43,7 @@ namespace DroneLab.UI
             foreach (var label in labels) label.style.display = DisplayStyle.None;
             if (camera?.Camera == null || body == null || !body.IsReady) return;
             Color ink = Color.white; float width = 2;
-            var screen = new Rect(0, 0, contentRect.width, contentRect.height);
+            var screen = new Rect(12, 120, Mathf.Max(1,contentRect.width-24), Mathf.Max(1,contentRect.height-240));
             void Line(Vector3 a, Vector3 b) {
                 if (!Project(a, out var from) || !Project(b, out var to) || !DroneFlightMath.ClipSegment(screen, ref from, ref to)) return;
                 segments.Add(new Segment(from, to, ink, width));
@@ -51,13 +52,17 @@ namespace DroneLab.UI
             void Arrow(Vector3 vector, float scale, Color color, string title, string unit, int index) {
                 if (vector.sqrMagnitude < .0001f) return;
                 var origin = body.transform.TransformPoint(body.Body.centerOfMass);
-                var end = origin + vector * scale; ink = color;
-                Line(origin, end);
-                if (!Project(origin, out var a) || !Project(end, out var b) || !screen.Contains(b)) return;
+                var end = origin + vector.normalized * Mathf.Min(vector.magnitude*scale,.5f); ink = color;
+                if (!Project(origin, out var a) || !Project(end, out var b) || !screen.Contains(a)) return;
+                var delta=b-a; if(delta.sqrMagnitude<.01f) return;
+                float pixels=Mathf.Min(MaxArrowPixels,delta.magnitude*Mathf.Max(1,vector.magnitude*scale/.5f));
+                b=a+delta.normalized*pixels;
+                if(!DroneFlightMath.ClipSegment(screen,ref a,ref b)) return;
+                ScreenLine(a,b);
                 var direction = (b - a).normalized; var normal = new Vector2(-direction.y, direction.x);
                 ScreenLine(b - direction * 10 + normal * 4, b); ScreenLine(b, b - direction * 10 - normal * 4);
                 var label = labels[index]; label.text = title + " " + vector.magnitude.ToString("0.00") + " " + unit;
-                label.style.left = b.x + 8; label.style.top = b.y - 13; label.style.color = color; label.style.display = DisplayStyle.Flex;
+                label.style.left = Mathf.Clamp(b.x+8,12,Mathf.Max(12,contentRect.width-740)); label.style.top = Mathf.Clamp(b.y-13,120,contentRect.height-150); label.style.color = color; label.style.display = DisplayStyle.Flex;
             }
             if (Forces) {
                 Vector3 thrust = Vector3.zero;
@@ -85,7 +90,17 @@ namespace DroneLab.UI
             }
             if (Trail && Telemetry != null) {
                 width = 1.5f; ink = new Color(.72f, .82f, .80f);
-                for (int i = 1; i < Telemetry.Trail.Count; i++) Line(Telemetry.Trail[i - 1], Telemetry.Trail[i]);
+                float phase=0;
+                for (int i = 1; i < Telemetry.Trail.Count; i++) {
+                    if(!Project(Telemetry.Trail[i-1],out var a) || !Project(Telemetry.Trail[i],out var b) || !DroneFlightMath.ClipSegment(screen,ref a,ref b)) continue;
+                    float length=Vector2.Distance(a,b); if(length<.01f) continue;
+                    var direction=(b-a)/length;
+                    for(float t=0;t<length;) {
+                        float step=Mathf.Min(length-t,14-phase);
+                        if(phase<9) ScreenLine(a+direction*t,a+direction*(t+Mathf.Min(step,9-phase)));
+                        t+=step; phase=(phase+step)%14;
+                    }
+                }
             }
             MarkDirtyRepaint();
         }

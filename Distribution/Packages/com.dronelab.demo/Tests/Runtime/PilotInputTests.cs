@@ -28,6 +28,16 @@ namespace DroneLab.Physics.Tests
             if(hadBindings) PlayerPrefs.SetString("DroneLab.FlightKeys.v1",savedBindings); else PlayerPrefs.DeleteKey("DroneLab.FlightKeys.v1");
             PlayerPrefs.Save(); DroneKeyBindings.Reload(); base.TearDown();
         }
+        [Test] public void OldBindingsRetainCustomKeysWhenNavigationActionsAreAdded()
+        {
+            DroneKeyBindings.TryAssign(FlightKeyAction.Climb,Key.R,out _);
+            string old="{\"keys\":[";
+            for(int i=0;i<18;i++) old+=(i==0 ? "" : ",")+(int)DroneKeyBindings.Get((FlightKeyAction)i);
+            PlayerPrefs.SetString("DroneLab.FlightKeys.v1",old+"]}"); DroneKeyBindings.Reload();
+            Assert.That(DroneKeyBindings.Get(FlightKeyAction.Climb),Is.EqualTo(Key.R));
+            Assert.That(DroneKeyBindings.Get(FlightKeyAction.PositionHold),Is.EqualTo(Key.J));
+            Assert.That(DroneKeyBindings.Get(FlightKeyAction.Route),Is.EqualTo(Key.F5));
+        }
         [Test] public void RemappedClimbUsesNewKeyAndStopsUsingSpace()
         {
             Assert.That(DroneKeyBindings.TryAssign(FlightKeyAction.Climb,Key.R,out _),Is.True);

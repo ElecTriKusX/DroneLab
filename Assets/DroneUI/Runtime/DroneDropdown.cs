@@ -32,6 +32,7 @@ namespace DroneLab.UI
         private readonly Label caption;
         private VisualElement overlay;
         private Action stageEscape;
+        private bool flightInput;
         public DroneDropdown(string title, List<string> items, int initial) : base(title, new VisualElement())
         {
             choices = items; AddToClassList("drone-dropdown");
@@ -46,6 +47,12 @@ namespace DroneLab.UI
             trigger.RegisterCallback<KeyDownEvent>(evt => {
                 if (evt.keyCode == KeyCode.DownArrow || evt.keyCode == KeyCode.UpArrow) { Open(); evt.StopPropagation(); }
             });
+            RegisterCallback<AttachToPanelEvent>(_ => {
+                for(var ancestor=parent;ancestor!=null;ancestor=ancestor.parent) if(ancestor.ClassListContains("flight-ui")) {
+                    flightInput=true; focusable=false; trigger.focusable=false; break;
+                }
+            });
+            trigger.RegisterCallback<PointerDownEvent>(_=> { if(flightInput) panel?.focusController?.focusedElement?.Blur(); });
             RegisterCallback<DetachFromPanelEvent>(_ => Close());
         }
         public override void SetValueWithoutNotify(string newValue) { base.SetValueWithoutNotify(newValue); if (caption != null) caption.text = newValue; }
@@ -71,10 +78,10 @@ namespace DroneLab.UI
             var buttons = new List<Button>();
             for (int i = 0; i < choices.Count; i++) {
                 int selected = i;
-                var option = new Button(() => { bool same = index == selected; index = selected; if (same) Reselected?.Invoke(); Close(); trigger.Focus(); }) { text = choices[i] };
+                var option = new Button(() => { bool same = index == selected; index = selected; if (same) Reselected?.Invoke(); Close(); RestoreFocus(); }) { text = choices[i] };
                 option.selection.isSelectable = false; option.AddToClassList("drone-dropdown-option"); option.EnableInClassList("selected", i == index); popup.Add(option); buttons.Add(option);
                 option.RegisterCallback<KeyDownEvent>(evt => {
-                    if (evt.keyCode == KeyCode.Escape) { Close(); trigger.Focus(); evt.StopPropagation(); }
+                    if (evt.keyCode == KeyCode.Escape) { Close(); RestoreFocus(); evt.StopPropagation(); }
                     else if (evt.keyCode == KeyCode.DownArrow || evt.keyCode == KeyCode.UpArrow) {
                         int next = (selected + (evt.keyCode == KeyCode.DownArrow ? 1 : -1) + buttons.Count) % buttons.Count;
                         buttons[next].Focus(); popup.ScrollTo(buttons[next]); evt.StopPropagation();
@@ -83,9 +90,11 @@ namespace DroneLab.UI
             }
             popup.schedule.Execute(() => { int active = Mathf.Max(0, index); buttons[active].Focus(); popup.ScrollTo(buttons[active]); });
             // Capture Escape before the menu's own navigation handler.
-            stageEscape = () => { Close(); trigger.Focus(); };
+            stageEscape = () => { Close(); RestoreFocus(); };
             host.RegisterCallback<KeyDownEvent>(Escape, TrickleDown.TrickleDown);
         }
+        private void RestoreFocus()
+        { if(flightInput) panel?.focusController?.focusedElement?.Blur(); else trigger.Focus(); }
         private void Escape(KeyDownEvent evt) { if (evt.keyCode == KeyCode.Escape) { stageEscape?.Invoke(); evt.StopImmediatePropagation(); } }
         private void Close()
         {

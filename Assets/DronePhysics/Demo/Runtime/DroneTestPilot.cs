@@ -34,7 +34,7 @@ namespace DroneLab.Simulation
         public Vector3 DesiredAngularRateLocal { get; private set; }
         public Vector3 RequestedTorqueLocal { get; private set; }
         public FlightInput CurrentInput=>input;
-        string IFlightControlTelemetry.ControlMode=>autoLevel ? "Angle" : "Acro";
+        string IFlightControlTelemetry.ControlMode=>PositionHold ? "PositionHold" : autoLevel ? "Angle" : "Acro";
         bool IFlightControlTelemetry.AltitudeHold=>altitudeHold;
         DVector3 IFlightControlTelemetry.DesiredRateLocal=>DronePhysicsBody.FromUnity(DesiredAngularRateLocal);
         string IFlightControlTelemetry.ExportSettingsJson()=>JsonUtility.ToJson(this);
@@ -43,6 +43,30 @@ namespace DroneLab.Simulation
         private double[] commands;
         private FlightInput input;
         private readonly FlightController controller=new FlightController();
+        private readonly PositionController positionController=new PositionController();
+        public INavigationFeedback NavigationFeedback { get; set; }
+        public bool PositionHold { get; private set; }
+        public Vector3 PositionTarget { get; private set; }
+        public float NavigationSpeedMps { get; set; } = 3;
+        public string NavigationMessage { get; private set; }
+        public bool DisarmOnInputLoss { get; set; } = true;
+        public bool HoldPosition()
+        {
+            if (physicsBody == null || NavigationFeedback == null || !NavigationFeedback.TryHorizontal(out _, out _)) {
+                NavigationMessage="GPS недоступен: удержание X/Z не включено"; return false;
+            }
+            SetNavigationTarget(physicsBody.Body.position); return true;
+        }
+        public void SetNavigationTarget(Vector3 target)
+        {
+            if (float.IsNaN(target.x) || float.IsNaN(target.y) || float.IsNaN(target.z) || float.IsInfinity(target.x) || float.IsInfinity(target.y) || float.IsInfinity(target.z)) throw new ArgumentException("Invalid navigation target.");
+            if (!PositionHold) positionController.Reset();
+            PositionHold=true; PositionTarget=target; autoLevel=true; altitudeHold=true;
+            targetAltitude=target.y; previousAltitudeHold=true; previousAutoLevel=true;
+            NavigationMessage="Удержание X/Z";
+        }
+        public void CancelPositionHold(string reason="Ручное управление")
+        { PositionHold=false; positionController.Reset(); NavigationMessage=reason; }
         private Vector3 smoothedRate;
         private double lastCollective, transitionCollective;
         private float transitionRemaining;
@@ -79,8 +103,8 @@ namespace DroneLab.Simulation
             }
             var frame=DronePilotInput.Read(inputDevice,manualCollectiveFraction);
             input=frame.Command;
-            if(!frame.Available) { physicsBody.SetArmed(false); return; }
-            if(previousDeviceId!=0 && previousDeviceId!=frame.DeviceId) { physicsBody.SetArmed(false); ResetControl(); }
+            if(!frame.Available) { if(DisarmOnInputLoss) physicsBody.SetArmed(false); input=default; return; }
+            if(DisarmOnInputLoss && previousDeviceId!=0 && previousDeviceId!=frame.DeviceId) { physicsBody.SetArmed(false); ResetControl(); }
             previousDeviceId=frame.DeviceId;
             if(frame.Reset) { ResetPose(); return; }
             if(frame.Arm) { physicsBody.SetArmed(!physicsBody.Armed); ResetControl(); previousArmed=false; }
@@ -99,6 +123,7 @@ namespace DroneLab.Simulation
         }
         private void ResetPose()
         {
+            CancelPositionHold("Возврат на старт");
             physicsBody.ResetMotorState(); ResetControl(); input=default;
             physicsBody.Body.position=startPosition; physicsBody.Body.rotation=startRotation;
             physicsBody.Body.linearVelocity=Vector3.zero; physicsBody.Body.angularVelocity=Vector3.zero;
@@ -114,10 +139,15 @@ namespace DroneLab.Simulation
             double densityScale=physicsBody.Air.Density/p.Density;
             if(!physicsBody.Armed)
             {
+                if (PositionHold) CancelPositionHold("Моторы выключены");
                 targetAltitude=body.position.y; ResetControl(); previousArmed=false;
                 previousAltitudeHold=altitudeHold; previousAutoLevel=autoLevel; return;
             }
-            if(!previousArmed) { ResetControl(); targetAltitude=body.position.y; previousArmed=true; }
+            if(!previousArmed) { ResetControl(); if(!PositionHold) targetAltitude=body.position.y; previousArmed=true; }
+            DVector3 navigationPosition=default, navigationVelocity=default;
+            if (PositionHold && (!autoLevel || !altitudeHold || Math.Abs(input.Roll)>.05 || Math.Abs(input.Pitch)>.05)) CancelPositionHold();
+            if (PositionHold && (NavigationFeedback == null || !NavigationFeedback.TryHorizontal(out navigationPosition, out navigationVelocity)))
+                CancelPositionHold("GPS потерян: навигация остановлена, удерживается только высота");
             bool integrate=!Saturated && !(physicsBody.Power?.Limited ?? false) && !physicsBody.Drive.HasFault;
             if(altitudeHold!=previousAltitudeHold || autoLevel!=previousAutoLevel)
             {
@@ -131,8 +161,9 @@ namespace DroneLab.Simulation
             if(altitudeHold)
             {
                 targetAltitude+=(float)input.Climb*climbSpeedMps*dt;
-                targetAltitude=Mathf.Clamp(targetAltitude,body.position.y-2,body.position.y+2);
-                double accel=controller.ClimbAcceleration(targetAltitude-body.position.y,body.linearVelocity.y,dt,
+                if (!PositionHold) targetAltitude=Mathf.Clamp(targetAltitude,body.position.y-2,body.position.y+2);
+                else PositionTarget=new Vector3(PositionTarget.x,targetAltitude,PositionTarget.z);
+                double accel=controller.ClimbAcceleration(Mathf.Clamp(targetAltitude-body.position.y,-2,2),body.linearVelocity.y,dt,
                     altitudeGain,altitudePid,verticalVelocityGain,verticalVelocityPid,
                     Math.Max(2,climbSpeedMps),4,integrate && upright>0.35f);
                 collective=upright>0.35f ? p.Mass*(p.Gravity+accel)/upright : 0;
@@ -160,6 +191,11 @@ namespace DroneLab.Simulation
                 var planar=Vector2.ClampMagnitude(new Vector2((float)input.Roll,(float)input.Pitch),1);
                 float tilt=Mathf.Tan(maxTiltDegrees*Mathf.Deg2Rad);
                 Vector3 desiredUp=(Vector3.up+(heading*new Vector3(planar.x,0,planar.y))*tilt).normalized;
+                if (PositionHold) {
+                    double limit=Math.Min(2.5,p.Gravity*Math.Tan(maxTiltDegrees*Mathf.Deg2Rad));
+                    var a=positionController.Acceleration(DronePhysicsBody.FromUnity(PositionTarget),navigationPosition,navigationVelocity,dt,NavigationSpeedMps,limit,integrate);
+                    desiredUp=new Vector3((float)(a.X/p.Gravity),1,(float)(a.Z/p.Gravity)).normalized;
+                }
                 var error=transform.InverseTransformDirection(Vector3.Cross(transform.up,desiredUp));
                 desiredRate=DronePhysicsBody.ToUnity(controller.AttitudeRate(DronePhysicsBody.FromUnity(error),
                     DronePhysicsBody.FromUnity(rate),dt,attitudeGain,attitudePid,maxRateDegrees*Mathf.Deg2Rad,integrate));

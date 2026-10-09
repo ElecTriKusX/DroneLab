@@ -20,7 +20,9 @@ namespace DroneLab.UI
         private Label menuStatus;
         private DroneFlightCamera cameraController;
         private DroneFlightHud hud;
-        private DroneFlightTelemetry telemetry;
+        private DroneFlightTelemetry telemetry, sensorTelemetry;
+        private DroneFlightRoutePlanner route;
+        private bool focusPaused;
         private DroneSensorRig sensors;
         private DroneFlightWorkbench workbench;
         private DroneFlightControls controls;
@@ -30,7 +32,8 @@ namespace DroneLab.UI
         private float previousTimeScale;
         public void Configure(DronePhysicsBody selectedBody, DroneTestPilot selectedPilot, string map, string weather, string returnScene, string launchError = null, DroneFlightCamera flightCamera = null)
         {
-            body = selectedBody; pilot = selectedPilot; menuScene = returnScene; error = launchError; cameraController = flightCamera;
+            body = selectedBody; pilot = selectedPilot;
+            if(pilot!=null) { pilot.DisarmOnFocusLoss=false; pilot.DisarmOnInputLoss=false; } menuScene = returnScene; error = launchError; cameraController = flightCamera;
             panel = ScriptableObject.CreateInstance<PanelSettings>(); panel.scaleMode = PanelScaleMode.ScaleWithScreenSize;
             panel.referenceResolution = new Vector2Int(1920, 1080); panel.sortingOrder = 90;
             panel.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight; panel.match = 1;
@@ -40,11 +43,14 @@ namespace DroneLab.UI
             var sheet = Resources.Load<StyleSheet>("DroneLab/Scenarios"); if (sheet != null) root.styleSheets.Add(sheet);
             var flightSheet = Resources.Load<StyleSheet>("DroneLab/Flight"); if (flightSheet != null) root.styleSheets.Add(flightSheet);
             if (body != null && body.IsReady) {
-                telemetry = new DroneFlightTelemetry(body);
+                telemetry = new DroneFlightTelemetry(body); sensorTelemetry=new DroneFlightTelemetry(body);
                 sensors = body.gameObject.AddComponent<DroneSensorRig>(); sensors.Configure(body, cameraController?.Camera);
+                if(cameraController!=null) cameraController.SensorRig=sensors;
                 hud = new DroneFlightHud(root, cameraController, body.name, map, weather, SetView, ToggleCamera, OpenControls);
                 workbench = new DroneFlightWorkbench(root, body, pilot, sensors, cameraController, SetView);
-                telemetry.Sample(pilot); hud.Refresh(telemetry, pilot);
+                if(pilot!=null) pilot.NavigationFeedback=sensors;
+                if(cameraController!=null) route=new DroneFlightRoutePlanner(root,body,pilot,sensors,cameraController);
+                telemetry.Sample(pilot); sensorTelemetry.ApplySensors(telemetry,sensors); hud.Refresh(sensorTelemetry, pilot);
                 root.RegisterCallback<GeometryChangedEvent>(_ => root.EnableInClassList("flight-compact", root.contentRect.width < 1650));
             }
             overlay = new VisualElement(); overlay.AddToClassList("scenario-prompt"); root.Add(overlay);
@@ -66,13 +72,23 @@ namespace DroneLab.UI
             if (returning || paused == value || error != null && !value) return;
             if (value) { previousTimeScale = Time.timeScale; Time.timeScale = 0; if (pilot != null) { previousAutomaticControl = pilot.AutomaticControl; pilot.AutomaticControl = false; pilot.SetFlightInput(default); } }
             else { Time.timeScale = previousTimeScale; if (pilot != null) pilot.AutomaticControl = previousAutomaticControl; }
-            paused = value; overlay.style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
+            paused = value; overlay.style.display = value ? DisplayStyle.Flex : DisplayStyle.None; if(value) overlay.BringToFront();
             if (cameraController != null) { cameraController.Paused = value; cameraController.PointerOverUI = false; }
         }
-        private void SetView(DroneFlightViewMode view) { if (!paused && !returning) { hud?.SetView(view); workbench?.SetView(view); } }
+        private void SetView(DroneFlightViewMode view) { if (!paused && !returning) { hud?.SetView(view); workbench?.SetView(view); route?.SetView(view); } }
         private void OpenControls() { if (returning || error != null) return; SetPaused(true); overlay.style.display = DisplayStyle.None; controls?.SetOpen(true); }
         private void CloseControls() { controls?.SetOpen(false); SetPaused(false); }
-        private void ToggleCamera() { if (!paused && !returning) { cameraController?.ToggleMode(); nextHudUpdate = 0; } }
+        private void ToggleCamera() { if (!paused && !returning && sensors?.CameraAvailable==true) {
+            if(hud?.View==DroneFlightViewMode.Route) SetView(DroneFlightViewMode.Pilot);
+            cameraController?.ToggleMode(); nextHudUpdate = 0;
+        } }
+        private void OnApplicationFocus(bool focused)
+        {
+            if(document==null || returning) return;
+            if(!focused && !paused) { focusPaused=true; SetPaused(true); }
+            else if(focused && focusPaused) { focusPaused=false; SetPaused(false); }
+        }
+        private void FixedUpdate() { if(!paused && !returning) route?.FixedTick(Time.fixedDeltaTime); }
         private void Update()
         {
             if (document == null || returning) return;
@@ -81,28 +97,34 @@ namespace DroneLab.UI
                 var openDropdown = document.rootVisualElement.Query<DroneDropdown>().ToList().Find(field => field.IsOpen);
                 if (openDropdown != null) openDropdown.ClosePopup();
                 else if (controls?.IsOpen == true) { if (controls.IsCapturing) controls.CancelCapture(); else CloseControls(); }
-                else if (workbench?.Editing == true) document.rootVisualElement.focusController?.focusedElement?.Blur();
+                else if (workbench?.Editing == true || route?.Editing==true) document.rootVisualElement.focusController?.focusedElement?.Blur();
                 else SetPaused(!paused);
             }
             controls?.Tick(keyboard);
-            if (!paused && hud != null && workbench?.Editing != true) {
+            if (!paused && hud != null && workbench?.Editing != true && route?.Editing!=true) {
                 if (DroneKeyBindings.Pressed(keyboard, FlightKeyAction.Cinema)) SetView(DroneFlightViewMode.Cinema);
                 if (DroneKeyBindings.Pressed(keyboard, FlightKeyAction.Pilot)) SetView(DroneFlightViewMode.Pilot);
                 if (DroneKeyBindings.Pressed(keyboard, FlightKeyAction.Engineer)) SetView(DroneFlightViewMode.Engineer);
                 if (DroneKeyBindings.Pressed(keyboard, FlightKeyAction.Diagnostics)) SetView(DroneFlightViewMode.Diagnostics);
+                if (DroneKeyBindings.Pressed(keyboard, FlightKeyAction.Route)) SetView(DroneFlightViewMode.Route);
+                if (DroneKeyBindings.Pressed(keyboard, FlightKeyAction.PositionHold) && pilot!=null) { if(pilot.PositionHold) pilot.CancelPositionHold(); else pilot.HoldPosition(); }
                 if (DroneKeyBindings.Pressed(keyboard, FlightKeyAction.Camera)) ToggleCamera();
                 if (DroneKeyBindings.Pressed(keyboard, FlightKeyAction.Controls)) OpenControls();
                 if (DroneKeyBindings.Pressed(keyboard, FlightKeyAction.Reset)) cameraController?.SnapToTarget();
+            }
+            route?.Tick(paused);
+            if(sensors!=null && !sensors.CameraAvailable && cameraController?.Mode==DroneFlightCameraMode.Fpv) {
+                cameraController.SetMode(DroneFlightCameraMode.Chase); sensors.Log("Камера отказала: FPV выключен");
             }
             hud?.TickHint(paused);
             if (telemetry != null && Time.unscaledTime >= nextHudUpdate) {
                 nextHudUpdate = Time.unscaledTime + .1f;
                 telemetry.Sample(pilot);
-                if (telemetry.ResetDetected) { sensors?.ResetReadings(); cameraController?.SnapToTarget(); workbench?.ResetPanels(); }
-                hud.Refresh(telemetry, pilot); hud.RefreshSensors(sensors); workbench?.Refresh(telemetry);
+                if (telemetry.ResetDetected) { sensors?.ResetReadings(); cameraController?.SnapToTarget(); workbench?.ResetPanels(); route?.Reset(); }
+                sensorTelemetry.ApplySensors(telemetry,sensors); hud.Refresh(sensorTelemetry, pilot); hud.RefreshSensors(sensors); workbench?.Refresh(telemetry);
             }
         }
-        private void LateUpdate() { workbench?.RefreshSceneOverlay(); }
+        private void LateUpdate() { workbench?.RefreshSceneOverlay(); route?.RefreshOverlay(); }
         private void ReturnToMenu()
         {
             if (returning) return;

@@ -8,7 +8,7 @@ using UnityEngine;
 namespace DroneLab.UI
 {
     [DefaultExecutionOrder(50)]
-    public sealed class DroneSensorRig : MonoBehaviour
+    public sealed class DroneSensorRig : MonoBehaviour, INavigationFeedback
     {
         [Serializable] private sealed class Saved { public SensorSettings[] sensors; public double latitude, longitude; }
         private DronePhysicsBody body;
@@ -22,6 +22,23 @@ namespace DroneLab.UI
         public double TimeS => body?.SimulationTimeS ?? 0;
         public double? GpsSpeedDerived { get; private set; }
         private SensorReading? previousGps;
+        private DVector3 gpsVelocity;
+        private readonly GpsNavigationFilter navigationGps=new GpsNavigationFilter();
+        public Vector3 OriginWorld => origin;
+        public bool Available(SensorKind kind)
+        {
+            var channel=Channel(kind); var reading=channel.Latest;
+            return channel.Settings.enabled && !channel.Faulted && reading.HasValue && reading.Value.Valid &&
+                TimeS-reading.Value.CapturedAt <= channel.Settings.latencyMs/1000 + Math.Max(.5,3/channel.Settings.frequencyHz);
+        }
+        public bool CameraAvailable => Settings(SensorKind.Camera).enabled && !Channel(SensorKind.Camera).Faulted;
+        public bool TryHorizontal(out DVector3 position, out DVector3 velocity)
+        {
+            position=default; velocity=default;
+            if(!Available(SensorKind.Gps)) return false;
+            position=navigationGps.Predict(TimeS) + DronePhysicsBody.FromUnity(origin-body.Body.rotation*LocalPosition(SensorKind.Gps));
+            velocity=navigationGps.Velocity; return true;
+        }
         public double Latitude { get; private set; }
         public double Longitude { get; private set; }
         public double ReferenceAltitude { get; private set; }
@@ -56,7 +73,7 @@ namespace DroneLab.UI
             Settings(kind).Validate(); Channel(kind).Apply(Settings(kind));
             if (kind == SensorKind.Rangefinder) Channel(kind).MaximumValue = Settings(kind).maxRangeM;
             if (kind == SensorKind.Accelerometer) hasPrevious = false;
-            if (kind == SensorKind.Gps) { previousGps = null; GpsSpeedDerived = null; }
+            if (kind == SensorKind.Gps) { previousGps = null; gpsVelocity=default; navigationGps.Reset(); GpsSpeedDerived = null; }
             if (kind == SensorKind.Camera) SensorCamera?.ClearFrames();
             Save(); Log(Title(kind) + ": настройки изменены");
         }
@@ -68,11 +85,11 @@ namespace DroneLab.UI
                 setting.maxRangeM = old.maxRangeM; setting.cameraFovDeg = old.cameraFovDeg;
                 channels[i].Apply(setting);
             }
-            hasPrevious = false; SensorCamera?.ClearFrames(); Save(); Log(ideal ? "Датчики: идеальные" : "Датчики: с шумом");
+            hasPrevious = false; previousGps=null; gpsVelocity=default; navigationGps.Reset(); GpsSpeedDerived=null; SensorCamera?.ClearFrames(); Save(); Log(ideal ? "Датчики: идеальные" : "Датчики: с шумом");
             Channel(SensorKind.Rangefinder).MaximumValue = Settings(SensorKind.Rangefinder).maxRangeM;
         }
         public void SetFault(SensorKind kind, bool fault)
-        { Channel(kind).SetFault(fault); if (kind == SensorKind.Gps) { previousGps = null; GpsSpeedDerived = null; } if (kind == SensorKind.Camera) SensorCamera?.ClearFrames(); Log(Title(kind) + (fault ? ": отказ / потеря данных" : ": восстановлен")); }
+        { Channel(kind).SetFault(fault); if (kind == SensorKind.Gps) { previousGps = null; gpsVelocity=default; navigationGps.Reset(); GpsSpeedDerived = null; } if (kind == SensorKind.Camera) SensorCamera?.ClearFrames(); Log(Title(kind) + (fault ? ": отказ / потеря данных" : ": восстановлен")); }
         public void SetGeographicOrigin(double latitude, double longitude)
         { SensorMath.LocalToGeographic(default, latitude, longitude, 0); Latitude = latitude; Longitude = longitude; Save(); Log("Изменена условная геопривязка GPS"); }
         public void Log(string text)
@@ -119,13 +136,17 @@ namespace DroneLab.UI
         private void Capture(SensorKind kind, double time, DVector3 truth, bool valid)
         { var channel = Channel(kind); if (channel.Due(time)) channel.Capture(time, truth, valid); }
         public void ResetReadings()
-        { foreach (var channel in channels) channel.Reset(); previousTime = -1; hasPrevious = false; previousGps = null; GpsSpeedDerived = null; SensorCamera?.ClearFrames(); Log("Возврат на старт: показания и очереди сброшены"); }
+        { foreach (var channel in channels) channel.Reset(); previousTime = -1; hasPrevious = false; previousGps = null; gpsVelocity=default; navigationGps.Reset(); GpsSpeedDerived = null; SensorCamera?.ClearFrames(); Log("Возврат на старт: показания и очереди сброшены"); }
         private void GpsDelivered(SensorReading reading)
         {
             GpsSpeedDerived = null;
+            if(reading.Valid) navigationGps.Feed(reading.Value,reading.CapturedAt,Settings(SensorKind.Gps).noiseStd);
             if (reading.Valid && previousGps.HasValue && previousGps.Value.Valid && reading.Sequence > previousGps.Value.Sequence && reading.CapturedAt > previousGps.Value.CapturedAt) {
                 var delta = reading.Value - previousGps.Value.Value;
-                GpsSpeedDerived = Math.Sqrt(delta.X * delta.X + delta.Z * delta.Z) / (reading.CapturedAt - previousGps.Value.CapturedAt);
+                double dt=reading.CapturedAt-previousGps.Value.CapturedAt;
+                double alpha=1-Math.Exp(-dt/.6);
+                gpsVelocity=gpsVelocity*(1-alpha)+new DVector3(delta.X/dt,0,delta.Z/dt)*alpha;
+                GpsSpeedDerived=gpsVelocity.Length;
             }
             previousGps = reading;
         }

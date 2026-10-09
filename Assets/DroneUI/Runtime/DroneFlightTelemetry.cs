@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using DroneLab.Simulation;
+using DroneLab.Sensors;
 using UnityEngine;
 
 namespace DroneLab.UI
 {
-    /// <summary>Truth-only F1/F2 adapter. Does not impersonate a GPS, barometer or IMU.</summary>
+    /// <summary>Physical snapshot or separate sensor-driven pilot snapshot; physics diagnostics keep the physical snapshot.</summary>
     internal sealed class DroneFlightTelemetry
     {
         private readonly DronePhysicsBody body;
@@ -35,6 +36,54 @@ namespace DroneLab.UI
         public bool MotorFault { get; private set; }
         public bool Saturated { get; private set; }
         public bool ResetDetected { get; private set; }
+        public bool GpsValid { get; private set; }=true;
+        public bool HeightValid { get; private set; }=true;
+        public bool AttitudeValid { get; private set; }=true;
+        public bool HeadingValid { get; private set; }=true;
+        private long gpsSequence=-1, baroSequence=-1;
+        private double lastBaroTime;
+        private float lastHeight;
+        private bool gpsGap;
+        public void ApplySensors(DroneFlightTelemetry truth, DroneSensorRig rig)
+        {
+            Armed=truth.Armed; TimeS=truth.TimeS; Wind=truth.Wind; MotorFault=truth.MotorFault;
+            PowerLimited=truth.PowerLimited; Saturated=truth.Saturated; BatteryPercent=truth.BatteryPercent;
+            Voltage=truth.Voltage; MotorTemperatureC=truth.MotorTemperatureC;
+            if(truth.ResetDetected) { trail.Clear(); gpsSequence=baroSequence=-1; gpsGap=false; VerticalSpeed=0; }
+            GpsValid=rig.TryHorizontal(out var pos,out var vel);
+            if(GpsValid) {
+                Position=rig.OriginWorld+DronePhysicsBody.ToUnity(rig.Channel(SensorKind.Gps).Latest.Value.Value)-body.Body.rotation*rig.LocalPosition(SensorKind.Gps); GroundSpeed=(float)vel.Length;
+                HomeDistance=new Vector2(Position.x-start.x,Position.z-start.z).magnitude;
+                var reading=rig.Channel(SensorKind.Gps).Latest.Value;
+                if(reading.Sequence!=gpsSequence) {
+                    if(gpsGap && trail.Count>0) trail.Add(new Vector3(float.NaN,float.NaN,float.NaN));
+                    if(trail.Count>=2048) trail.RemoveRange(0,512);
+                    trail.Add(Position); gpsSequence=reading.Sequence; gpsGap=false;
+                }
+            } else gpsGap=true;
+            HeightValid=rig.Available(SensorKind.Barometer);
+            if(HeightValid) {
+                var r=rig.Channel(SensorKind.Barometer).Latest.Value;
+                RelativeHeight=(float)rig.BarometricHeight(r.Value.X);
+                if(r.Sequence!=baroSequence) {
+                    if(baroSequence>=0 && r.CapturedAt>lastBaroTime) {
+                        double dt=r.CapturedAt-lastBaroTime;
+                        VerticalSpeed=Mathf.Lerp(VerticalSpeed,(RelativeHeight-lastHeight)/(float)dt,(float)(1-Math.Exp(-dt/.8)));
+                    }
+                    lastBaroTime=r.CapturedAt; lastHeight=RelativeHeight; baroSequence=r.Sequence;
+                }
+            } else baroSequence=-1;
+            SurfaceDistance=rig.Available(SensorKind.Rangefinder) ? (float?)rig.Channel(SensorKind.Rangefinder).Latest.Value.Value.X : null;
+            AttitudeValid=rig.Available(SensorKind.Accelerometer) && rig.Available(SensorKind.Gyroscope);
+            if(AttitudeValid) { Pitch=truth.Pitch; Roll=truth.Roll; }
+            HeadingValid=AttitudeValid && rig.Available(SensorKind.Magnetometer);
+            if(HeadingValid) {
+                var field=rig.LocalRotation(SensorKind.Magnetometer)*DronePhysicsBody.ToUnity(rig.Channel(SensorKind.Magnetometer).Latest.Value.Value);
+                var tilt=Quaternion.Inverse(Quaternion.Euler(0,truth.Heading,0))*body.Body.rotation;
+                var level=tilt*field;
+                Heading=Mathf.Repeat(Mathf.Atan2(-level.x,level.z)*Mathf.Rad2Deg,360);
+            }
+        }
         public DroneFlightTelemetry(DronePhysicsBody selectedBody)
         { body = selectedBody; start = selectedBody.Body.position; Position = start; trail.Add(start); }
         public void Sample(DroneTestPilot pilot)

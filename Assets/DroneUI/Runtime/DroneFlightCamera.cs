@@ -5,9 +5,9 @@ using UnityEngine.Rendering.HighDefinition;
 
 namespace DroneLab.UI
 {
-    public enum DroneFlightCameraMode { Chase, Fpv }
+    public enum DroneFlightCameraMode { Chase, Fpv, Free }
 
-    /// <summary>One HDRP camera, two views. Never owns input axes or physical forces.</summary>
+    /// <summary>One HDRP observer camera: chase, FPV and route free view. Never owns input axes or physical forces.</summary>
     [DisallowMultipleComponent, RequireComponent(typeof(Camera))]
     public sealed class DroneFlightCamera : MonoBehaviour
     {
@@ -15,6 +15,7 @@ namespace DroneLab.UI
         public bool Paused { get; set; }
         public bool PointerOverUI { get; set; }
         public Camera Camera => flightCamera;
+        public DroneSensorRig SensorRig { get; set; }
         public float OrbitSensitivity { get; set; } = .18f;
         public float ZoomSensitivity { get; set; } = .22f;
         private Transform target;
@@ -22,6 +23,7 @@ namespace DroneLab.UI
         private Vector3 dimensions;
         private float distance, baseDistance, orbitYaw, orbitPitch = 22;
         private float originalFov, originalNear;
+        private float freeYaw, freePitch=55, freeSpeed=12;
         private bool configured, snap;
         private bool capturingOrbit, previousCursorVisible;
         private CursorLockMode previousCursorLock;
@@ -55,7 +57,12 @@ namespace DroneLab.UI
         public void SetMode(DroneFlightCameraMode mode)
         {
             ReleaseOrbit();
+            bool enteringFree=mode==DroneFlightCameraMode.Free && Mode!=mode;
             Mode = mode; snap = true;
+            if(enteringFree && target!=null) {
+                transform.position=target.position+new Vector3(0,18,-12);
+                freeYaw=0; freePitch=55; transform.rotation=Quaternion.Euler(freePitch,freeYaw,0);
+            }
             if (flightCamera != null) flightCamera.fieldOfView = mode == DroneFlightCameraMode.Fpv ? 90 : originalFov;
         }
         public static void MakeSharp(HDAdditionalCameraData data)
@@ -72,6 +79,19 @@ namespace DroneLab.UI
         {
             if (!configured || target == null) return;
             var mouse = Mouse.current;
+            if(Mode==DroneFlightCameraMode.Free) {
+                if(!Paused && Application.isFocused && !PointerOverUI) {
+                    if(mouse?.rightButton.isPressed==true) { var delta=mouse.delta.ReadValue(); freeYaw+=delta.x*OrbitSensitivity; freePitch=Mathf.Clamp(freePitch-delta.y*OrbitSensitivity,-85,85); }
+                    if(mouse!=null) freeSpeed=DroneFlightMath.ZoomDistance(freeSpeed,-mouse.scroll.ReadValue().y,.15f,2,60);
+                    var k=Keyboard.current; if(k!=null) {
+                        float x=(k.dKey.isPressed?1:0)-(k.aKey.isPressed?1:0), z=(k.wKey.isPressed?1:0)-(k.sKey.isPressed?1:0), y=(k.eKey.isPressed?1:0)-(k.qKey.isPressed?1:0);
+                        var direction=Quaternion.Euler(0,freeYaw,0)*Vector3.ClampMagnitude(new Vector3(x,0,z),1)+Vector3.up*y;
+                        transform.position+=direction*freeSpeed*Time.deltaTime;
+                    }
+                    transform.rotation=Quaternion.Euler(freePitch,freeYaw,0);
+                }
+                return;
+            }
             bool canOrbit = !Paused && Application.isFocused && !PointerOverUI && Mode == DroneFlightCameraMode.Chase && mouse != null;
             if (capturingOrbit && (!canOrbit || !mouse.rightButton.isPressed)) ReleaseOrbit();
             if (canOrbit)
@@ -96,12 +116,14 @@ namespace DroneLab.UI
         }
         private void PlaceCamera(float dt)
         {
-            if (target == null || flightCamera == null) return;
+            if (target == null || flightCamera == null || Mode==DroneFlightCameraMode.Free) return;
             if (Mode == DroneFlightCameraMode.Fpv)
             {
                 // A provisional camera mount outside the profile's nose, independent of any imported GLB hierarchy.
-                var mount = new Vector3(0, dimensions.y * .15f, dimensions.z * .5f + .06f);
-                transform.SetPositionAndRotation(target.TransformPoint(mount), target.rotation);
+                var mount = SensorRig!=null ? SensorRig.LocalPosition(DroneLab.Sensors.SensorKind.Camera) : new Vector3(0, dimensions.y * .15f, dimensions.z * .5f + .06f);
+                var fpvRotation=target.rotation*(SensorRig!=null ? SensorRig.LocalRotation(DroneLab.Sensors.SensorKind.Camera) : Quaternion.identity);
+                if(SensorRig!=null) flightCamera.fieldOfView=(float)SensorRig.Settings(DroneLab.Sensors.SensorKind.Camera).cameraFovDeg;
+                transform.SetPositionAndRotation(target.TransformPoint(mount), fpvRotation);
                 snap = false; return;
             }
             var focus = target.position + Vector3.up * Mathf.Max(.18f, dimensions.y * .3f);

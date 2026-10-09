@@ -39,7 +39,7 @@ namespace DroneLab.UI
             mode.RegisterValueChangedCallback(evt => { errorOnly = evt.newValue == modes[1]; Refresh(); }); controls.Add(mode);
             var axisRow = new VisualElement(); axisRow.AddToClassList("sensor-axis-row"); Add(axisRow);
             for (int i = 0; i < 3; i++) {
-                axes[i] = new Toggle { value = true }; axes[i].AddToClassList("sensor-axis-toggle");
+                axes[i] = new Toggle { value = true, focusable=false }; axes[i].AddToClassList("sensor-axis-toggle"); axes[i].RegisterCallback<PointerDownEvent>(_=>panel?.focusController?.focusedElement?.Blur());
                 axes[i].RegisterValueChangedCallback(_ => Refresh()); axisRow.Add(axes[i]);
             }
             unit = Label("sensor-plot-unit");

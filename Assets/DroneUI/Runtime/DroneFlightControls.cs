@@ -63,8 +63,16 @@ namespace DroneLab.UI
             scroll.verticalScroller.highButton.style.display = DisplayStyle.None;
         }
         private static void Slider(VisualElement parent, string label, float min, float max, float value, Action<float> change)
-        { var slider = new UnityEngine.UIElements.Slider(label, min, max) { value = value, showInputField = true }; slider.RegisterValueChangedCallback(evt => change(evt.newValue)); parent.Add(slider); }
-        public void SetOpen(bool open) { capturing = null; root.style.display = open ? DisplayStyle.Flex : DisplayStyle.None; if (open) { message.text = "Настройки сохраняются автоматически."; Refresh(); } else PlayerPrefs.Save(); }
+        {
+            var group=new VisualElement(); group.AddToClassList("flight-camera-setting"); parent.Add(group);
+            Label(group,label,"flight-note");
+            var row=new VisualElement(); row.AddToClassList("flight-camera-setting-row"); group.Add(row);
+            var slider=new UnityEngine.UIElements.Slider(min,max) { value=value,showInputField=false }; row.Add(slider);
+            var field=new FloatField { value=value,isDelayed=true }; field.AddToClassList("flight-camera-number"); row.Add(field);
+            slider.RegisterValueChangedCallback(evt=> { field.SetValueWithoutNotify(evt.newValue); change(evt.newValue); });
+            field.RegisterValueChangedCallback(evt=> { float v=float.IsNaN(evt.newValue)||float.IsInfinity(evt.newValue) ? value : Mathf.Clamp(evt.newValue,min,max); field.SetValueWithoutNotify(v); slider.SetValueWithoutNotify(v); change(v); });
+        }
+        public void SetOpen(bool open) { capturing = null; root.style.display = open ? DisplayStyle.Flex : DisplayStyle.None; if (open) { root.BringToFront(); message.text = "Настройки сохраняются автоматически."; Refresh(); } else PlayerPrefs.Save(); }
         private void Refresh() { foreach (var item in buttons) item.Value.text = DroneKeyBindings.Caption(item.Key); }
         private void BeginCapture(FlightKeyAction action)
         { capturing = action; captureAfter = Time.unscaledTime + .1f; Refresh(); buttons[action].text = "Нажмите…"; message.text = "Новое назначение: " + DroneKeyBindings.Name(action); }

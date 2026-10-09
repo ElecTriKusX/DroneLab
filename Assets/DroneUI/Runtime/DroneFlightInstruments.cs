@@ -36,6 +36,9 @@ namespace DroneLab.UI
             label.style.display = DisplayStyle.Flex;
         }
         public void SetData(DroneFlightTelemetry telemetry) { data = telemetry; RefreshLabels(); MarkDirtyRepaint(); }
+        private bool Available => data!=null && (kind==FlightInstrumentKind.Map ||
+            (kind==FlightInstrumentKind.Heading ? data.HeadingValid : kind==FlightInstrumentKind.Altitude ? data.HeightValid :
+             kind==FlightInstrumentKind.Speed ? data.GpsValid : data.AttitudeValid));
         private void RefreshLabels()
         {
             if (data == null) return;
@@ -43,6 +46,7 @@ namespace DroneLab.UI
             foreach (var label in ticks) label.style.display = DisplayStyle.None;
             value.style.display = DisplayStyle.None;
             if (w < 1 || h < 1) return;
+            if(!Available) { Put(value,"НЕТ ДАННЫХ",0,h/2-15,w); return; }
             if (kind == FlightInstrumentKind.Heading)
             {
                 float origin = Mathf.Floor(data.Heading / 15) * 15;
@@ -98,7 +102,7 @@ namespace DroneLab.UI
         }
         private void Draw(MeshGenerationContext context)
         {
-            if (data == null) return;
+            if (!Available) return;
             float w = contentRect.width, h = contentRect.height;
             if (w < 1 || h < 1) return;
             var painter = context.painter2D; painter.lineWidth = 1.4f; painter.strokeColor = Ink;
@@ -208,6 +212,7 @@ namespace DroneLab.UI
                 // Clip segments before drawing; old trail points may lie outside the current scale.
                 for (int i = 1; i < data.Trail.Count; i++)
                 {
+                    if(float.IsNaN(data.Trail[i-1].x) || float.IsNaN(data.Trail[i].x)) continue;
                     var a = Map(data.Trail[i - 1]); var b = Map(data.Trail[i]);
                     if (DroneFlightMath.ClipSegment(rect, ref a, ref b)) Line(a, b);
                 }
@@ -215,7 +220,7 @@ namespace DroneLab.UI
                 Polygon(new[] { home + new Vector2(-6, 0), home + new Vector2(0, -6), home + new Vector2(6, 0), home + new Vector2(6, 7), home + new Vector2(-6, 7) }, false);
                 var drone = Map(data.Position); float heading = data.Heading * Mathf.Deg2Rad;
                 Vector2 Rotate(Vector2 point) => drone + new Vector2(point.x * Mathf.Cos(heading) - point.y * Mathf.Sin(heading), point.x * Mathf.Sin(heading) + point.y * Mathf.Cos(heading));
-                painter.fillColor = Ink;
+                painter.fillColor = data.GpsValid && data.HeadingValid ? Ink : Dim;
                 Polygon(new[] { Rotate(new Vector2(0, -11)), Rotate(new Vector2(7, 8)), Rotate(new Vector2(0, 4)), Rotate(new Vector2(-7, 8)) }, true);
                 Line(new Vector2(w - 80, h - 9), new Vector2(w - 80 + rect.width / 4, h - 9));
             }

@@ -25,6 +25,29 @@ namespace DroneLab.Physics.Tests
             foreach(double omega in physics.Omega) { min=System.Math.Min(min,omega); max=System.Math.Max(max,omega); }
             return PhysicsMath.OmegaToRpm(max-min);
         }
+        private sealed class NavigationFeedback : INavigationFeedback
+        {
+            public DronePhysicsBody Body; public bool Available=true;
+            public bool TryHorizontal(out DVector3 position,out DVector3 velocity)
+            { position=DronePhysicsBody.FromUnity(Body.Body.position); velocity=DronePhysicsBody.FromUnity(Body.Body.linearVelocity); return Available; }
+        }
+        [UnityTest] public IEnumerator PositionHoldReturnsToCapturedXZThroughMotorCommands()
+        {
+            StartHover(); var feedback=new NavigationFeedback { Body=physics }; pilot.NavigationFeedback=feedback;
+            var captured=physics.Body.position; Assert.That(pilot.HoldPosition(),Is.True);
+            physics.Body.position+=new Vector3(3,0,-2); rig.Step(3000);
+            var delta=physics.Body.position-captured;
+            Assert.That(new Vector2(delta.x,delta.z).magnitude,Is.LessThan(.4));
+            Assert.That(Mathf.Abs(delta.y),Is.LessThan(.5)); yield break;
+        }
+        [UnityTest] public IEnumerator PositionHoldCancelsOnGpsLossAndManualTilt()
+        {
+            StartHover(); var feedback=new NavigationFeedback { Body=physics }; pilot.NavigationFeedback=feedback;
+            Assert.That(pilot.HoldPosition(),Is.True); feedback.Available=false; rig.Step();
+            Assert.That(pilot.PositionHold,Is.False); Assert.That(pilot.altitudeHold,Is.True); Assert.That(physics.Armed,Is.True);
+            feedback.Available=true; rig.Step(); Assert.That(pilot.PositionHold,Is.False);
+            pilot.HoldPosition(); pilot.SetTestInput(.2f,0,0,0); rig.Step(); Assert.That(pilot.PositionHold,Is.False); yield break;
+        }
         [UnityTest] public IEnumerator HeldYawTracksRateAndReleaseBrakes()
         {
             StartHover(); pilot.SetTestInput(0,0,1,0);

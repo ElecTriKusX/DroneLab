@@ -73,8 +73,8 @@ namespace DroneLab.UI
         private bool ContainsEditor(VisualElement element)
         {
             if (element == null || root.style.display.value == DisplayStyle.None) return false;
-            if (panel.Contains(element) || graphCard.Contains(element)) return true;
-            for (var parent = element; parent != null; parent = parent.parent) if (parent.ClassListContains("drone-dropdown-overlay")) return true;
+            for (var parent = element; parent != null; parent = parent.parent)
+                if (parent is DoubleField || parent is FloatField || parent is IntegerField || parent is TextField || parent.ClassListContains("drone-dropdown-overlay")) return true;
             return false;
         }
         public bool Editing => ContainsEditor(panel.panel?.focusController?.focusedElement as VisualElement);
@@ -114,6 +114,8 @@ namespace DroneLab.UI
             if (view == DroneFlightViewMode.Diagnostics) {
                 Text(content, "ЗАПИСЬ ПОЛЁТА", "flight-subtitle");
                 recordButton = Button(content, recording.Active ? "Остановить запись CSV" : "Начать запись CSV", ToggleRecording);
+                Number(content,"Интервал строки CSV, с",recording.IntervalS,.02,10,x=>recording.IntervalS=x);
+                Text(content,"Время симуляции. Интервал применяется к физике и отдельно к каждому датчику; частота датчика может быть ниже.","flight-note");
                 recordStatus = Text(content, "", "flight-note");
                 Button(content, "Открыть папку записей", () => { var folder = System.IO.Path.Combine(Application.persistentDataPath, "DroneLab", "Flights"); System.IO.Directory.CreateDirectory(folder); Application.OpenURL(new Uri(folder).AbsoluteUri); });
             }
@@ -124,7 +126,7 @@ namespace DroneLab.UI
             var names = SensorNames();
             var selector = new DroneDropdown("Датчик", names, (int)selected);
             selector.RegisterValueChangedCallback(evt => SelectSensor((SensorKind)selector.index)); content.Add(selector);
-            Text(content, DroneSensorRig.Unit(selected), "flight-note");
+
             Row("sensorState", "Состояние");
             if (view == DroneFlightViewMode.Diagnostics) {
                 Row("sensorTruth", "Эталон в момент замера"); Row("sensorMeasured", "Измерение"); if (selected != SensorKind.Camera) Row("sensorError", "Ошибка измерения"); Row("sensorAge", "Время / возраст замера");
@@ -149,14 +151,18 @@ namespace DroneLab.UI
             Button(presetRow, "С шумом", () => { rig.Preset(false); Build(); });
             Text(content, "Пресеты применяются ко всем датчикам. Ручное изменение — пользовательские настройки; сохраняются для этого дрона.", "flight-note");
             Number(content, "Частота, Гц", settings.frequencyHz, 1, selected == SensorKind.Camera ? 30 : 200, x => { settings.frequencyHz = x; rig.Apply(selected); });
-            Number(content, "Задержка, мс", settings.latencyMs, 0, 2000, x => { settings.latencyMs = x; rig.Apply(selected); });
+            var errors=new Foldout { text="Погрешности измерения", value=false }; content.Add(errors);
+            var foldToggle=errors.Q<UnityEngine.UIElements.Toggle>();
+            if(foldToggle!=null) { foldToggle.focusable=false; foldToggle.RegisterCallback<PointerDownEvent>(_=>foldToggle.panel?.focusController?.focusedElement?.Blur()); }
+            Text(errors,"Позиция датчика — место на корпусе. Погрешность — добавка к показанию, она не перемещает датчик.","flight-note");
+            Number(errors, "Задержка, мс", settings.latencyMs, 0, 2000, x => { settings.latencyMs = x; rig.Apply(selected); });
             if (selected != SensorKind.Camera) {
-                Number(content, "Шум σ, " + DroneSensorRig.Unit(selected), settings.noiseStd, 0, 1000, x => { settings.noiseStd = x; rig.Apply(selected); });
+                Number(errors, "Шум σ, " + DroneSensorRig.Unit(selected), settings.noiseStd, 0, 1000, x => { settings.noiseStd = x; rig.Apply(selected); });
                 if (selected == SensorKind.Barometer || selected == SensorKind.Rangefinder)
-                    Number(content, "Постоянное смещение", settings.bias[0], -1000, 1000, x => { settings.bias[0] = x; rig.Apply(selected); });
-                else Vector(content, "Смещение X/Y/Z", settings.bias, 1000, x => { settings.bias = x; rig.Apply(selected); });
+                    Number(errors, "Погрешность показания", settings.bias[0], -1000, 1000, x => { settings.bias[0] = x; rig.Apply(selected); });
+                else Vector(errors, "Погрешность X/Y/Z", settings.bias, 1000, x => { settings.bias = x; rig.Apply(selected); });
             }
-            Vector(content, "Крепление X/Y/Z, м", settings.positionM, 20, x => { settings.positionM = x; rig.Apply(selected); });
+            Vector(content, "Позиция датчика, м", settings.positionM, 20, x => { settings.positionM = x; rig.Apply(selected); });
             Vector(content, "Поворот X/Y/Z, °", settings.rotationDeg, 360, x => { settings.rotationDeg = x; rig.Apply(selected); });
             if (selected == SensorKind.Rangefinder) Number(content, "Дальность, м", settings.maxRangeM, .1, 1000, x => { settings.maxRangeM = x; rig.Apply(selected); });
             if (selected == SensorKind.Camera) { Number(content, "Вертикальный обзор, °", settings.cameraFovDeg, 20, 140, x => { settings.cameraFovDeg = x; rig.Apply(selected); }); Text(content, "Изображение 320×180. Частота ограничена кадровой и физической частотой; светочувствительность и шум матрицы не моделируются.", "flight-note"); }
@@ -164,10 +170,7 @@ namespace DroneLab.UI
                 Number(content, "Широта старта, °", rig.Latitude, -85, 85, x => rig.SetGeographicOrigin(x, rig.Longitude));
                 Number(content, "Долгота старта, °", rig.Longitude, -180, 180, x => rig.SetGeographicOrigin(rig.Latitude, x));
             }
-            Text(content, "ВИЗУАЛИЗАЦИЯ", "flight-subtitle");
-            Toggle(content, "Луч дальномера", sceneOverlay.RangeBeam, x => sceneOverlay.RangeBeam = x);
-            Toggle(content, "Область обзора камеры", sceneOverlay.CameraCone, x => sceneOverlay.CameraCone = x);
-            Toggle(content, "Маршрут в сцене", sceneOverlay.Trail, x => sceneOverlay.Trail = x);
+
         }
         private void BuildEnvironment()
         {
@@ -177,7 +180,13 @@ namespace DroneLab.UI
             Number(content, "Скорость, м/с", windSpeed, 0, 40, x => { windSpeed = x; UpdateWind(); });
             Number(content, "Направление (откуда), °", windFrom, 0, 359.9, x => { windFrom = x; UpdateWind(); });
             Text(content, body.Parameters.Environment.WindEnabled ? "0° — с севера, 90° — с востока. Возврат к профилю восстанавливает исходные порывы. Осадки здесь показываются из профиля среды." : "В профиле отключено влияние ветра: ручной ветер не применяется к физике. Включите модуль в конфигураторе.", "flight-note");
+                        Text(content, "ВИЗУАЛИЗАЦИЯ", "flight-subtitle");
+            Toggle(content, "Луч дальномера", sceneOverlay.RangeBeam, x => sceneOverlay.RangeBeam = x);
+            Toggle(content, "Область обзора камеры", sceneOverlay.CameraCone, x => sceneOverlay.CameraCone = x);
+            Toggle(content, "Маршрут в сцене", sceneOverlay.Trail, x => sceneOverlay.Trail = x);
             Toggle(content, "Стрелки сил и ветра", sceneOverlay.Forces, x => sceneOverlay.Forces = x);
+            Number(content,"Длина стрелок на экране, px",sceneOverlay.MaxArrowPixels,60,180,x=>sceneOverlay.MaxArrowPixels=(float)x);
+            Text(content,"Стрелки сохраняют направление; длина ограничена для читаемости. Величины показаны числами.","flight-note");
         }
         private void UpdateWind()
         {
@@ -190,11 +199,14 @@ namespace DroneLab.UI
             if (pilot != null) {
                 angleToggle = Toggle(content, "Стабилизация наклона (Angle)", pilot.autoLevel, x => { pilot.autoLevel = x; rig.Log("Angle: " + x); });
                 heightToggle = Toggle(content, "Удержание высоты", pilot.altitudeHold, x => { pilot.altitudeHold = x; rig.Log("Удержание высоты: " + x); });
+                Button(content,"Удерживать текущую точку X/Z",()=> { pilot.HoldPosition(); });
+                Button(content,"Вернуть ручное управление",()=>pilot.CancelPositionHold());
+                Row("navigation","Навигация");
                 Number(content, "Максимальный наклон, °", pilot.maxTiltDegrees, 1, 45, x => pilot.maxTiltDegrees = (float)x);
                 Number(content, "Скорость подъёма, м/с", pilot.climbSpeedMps, .1, 10, x => pilot.climbSpeedMps = (float)x);
                 Number(content, "Ручная тяга, доля", pilot.manualCollectiveFraction, .1, .95, x => pilot.manualCollectiveFraction = (float)x);
             }
-            Text(content, "Контроллер использует физическое состояние Rigidbody. Отключение GPS изменяет показания GPS; удержание высоты продолжает работать. Удержание X/Z и навигация по GPS не подключены.", "flight-note");
+            Text(content, "J удерживает текущую точку X/Z по GPS; H удерживает только высоту. Ручной крен/тангаж отменяет удержание точки. Потеря GPS останавливает навигацию. Контуры наклона и высоты пока используют состояние физики.", "flight-note");
         }
         private void BuildFaults()
         {
@@ -222,6 +234,7 @@ namespace DroneLab.UI
             Put("position", V(rb.position)); Put("velocity", V(rb.linearVelocity)); Put("attitude", V(new Vector3(telemetry.Roll, telemetry.Pitch, telemetry.Heading)));
             Put("rate", V(Quaternion.Inverse(rb.rotation) * rb.angularVelocity * Mathf.Rad2Deg));
             Put("power", body.Power == null ? "Модель батареи не задана" : N(body.Power.Soc * 100) + "% · " + N(body.Power.TerminalVoltage) + " В · " + N(body.Power.Current) + " А · " + N(body.Power.ElectricalPower) + " Вт");
+            Put("navigation",pilot==null ? "—" : pilot.NavigationMessage+(pilot.PositionHold ? " · X/Z "+N(pilot.PositionTarget.x)+" / "+N(pilot.PositionTarget.z)+" м" : ""));
             Put("controller", pilot == null ? "Нет контроллера" : (pilot.autoLevel ? "Angle" : "Ручной") + (pilot.altitudeHold ? " · удержание высоты" : "") + (pilot.Saturated ? " · насыщение" : ""));
             double thrust = 0; foreach (double force in body.ThrustN) thrust += force;
             Put("thrust", N(thrust)); Put("weight", N(body.Parameters.Mass * body.Parameters.Gravity)); Put("drag", V(body.DragForce)); Put("rotorDrag", V(body.RotorDragForce)); Put("torque", V(body.DragTorque)); Put("density", N(body.Air.Density, "0.0000"));
@@ -241,7 +254,12 @@ namespace DroneLab.UI
             if (valid && selected == SensorKind.Barometer) Put("baroHeight", N(rig.BarometricHeight(reading.Value.Value.X)));
             if (valid && selected == SensorKind.Gps) { var geo = SensorMath.LocalToGeographic(reading.Value.Value, rig.Latitude, rig.Longitude, rig.ReferenceAltitude); Put("geographic", N(geo.X, "0.000000") + "° / " + N(geo.Y, "0.000000") + "° / " + N(geo.Z) + " м"); }
             if (cameraImage != null) cameraImage.image = rig.SensorCamera.Image;
-            if (recordStatus != null) recordStatus.text = recording.Active ? "Записывается: " + recording.Rows + " строк физики\n" + recording.Folder : recording.Folder ?? "CSV физики, измерений и события сохраняются в папку приложения.";
+            if (recordStatus != null) {
+                bool visible=recording.Active || recording.Folder!=null && Time.unscaledTime-recording.StoppedAt < 7;
+                recordStatus.style.display=visible ? DisplayStyle.Flex : DisplayStyle.None;
+                recordStatus.text=recording.Active ? "Записывается: " + recording.Rows + " строк физики\n" + recording.Folder : recording.Folder;
+                if(recordButton!=null) recordButton.text=recording.Active ? "Остановить запись CSV" : "Начать запись CSV";
+            }
         }
         private string ReadingValue(SensorReading reading, bool truth)
         { var value = truth ? reading.Truth : reading.Value; return selected == SensorKind.Barometer || selected == SensorKind.Rangefinder ? N(value.X) : selected == SensorKind.Camera ? "320 × 180 · " + N(value.Z, "0") + "°" : V(DronePhysicsBody.ToUnity(value)); }
@@ -249,12 +267,12 @@ namespace DroneLab.UI
         private static string V(Vector3 vector) => N(vector.x) + " / " + N(vector.y) + " / " + N(vector.z);
         private static VisualElement Element(VisualElement parent, string css) { var element = new VisualElement { pickingMode = PickingMode.Ignore }; element.AddToClassList(css); parent.Add(element); return element; }
         private static Label Text(VisualElement parent, string text, string css) { var label = new Label(text) { pickingMode = PickingMode.Ignore }; label.AddToClassList(css); parent.Add(label); return label; }
-        private static Button Button(VisualElement parent, string text, Action action) { var button = new Button(action) { text = text, focusable = false }; button.AddToClassList("pilot-button"); parent.Add(button); return button; }
-        private static UnityEngine.UIElements.Toggle Toggle(VisualElement parent, string caption, bool value, Action<bool> change) { var toggle = new UnityEngine.UIElements.Toggle(caption) { value = value }; toggle.RegisterValueChangedCallback(evt => change(evt.newValue)); parent.Add(toggle); return toggle; }
+        private static Button Button(VisualElement parent, string text, Action action) { var button = new Button(action) { text = text, focusable = false }; button.AddToClassList("pilot-button"); button.RegisterCallback<PointerDownEvent>(_=>button.panel?.focusController?.focusedElement?.Blur()); parent.Add(button); return button; }
+        private static UnityEngine.UIElements.Toggle Toggle(VisualElement parent, string caption, bool value, Action<bool> change) { var toggle = new UnityEngine.UIElements.Toggle(caption) { value = value, focusable=false }; toggle.RegisterCallback<PointerDownEvent>(_=>toggle.panel?.focusController?.focusedElement?.Blur()); toggle.AddToClassList("flight-toggle"); toggle.RegisterValueChangedCallback(evt => change(evt.newValue)); parent.Add(toggle); return toggle; }
         private static void Number(VisualElement parent, string caption, double value, double min, double max, Action<double> change)
-        { var field = new DoubleField(caption) { value = value, isDelayed = true }; field.RegisterValueChangedCallback(evt => { double number = double.IsNaN(evt.newValue) || double.IsInfinity(evt.newValue) ? value : Math.Max(min, Math.Min(max, evt.newValue)); field.SetValueWithoutNotify(number); change(number); }); parent.Add(field); }
+        { var field = new DoubleField(caption) { value = value, isDelayed = true }; field.AddToClassList("flight-number"); field.RegisterValueChangedCallback(evt => { double number = double.IsNaN(evt.newValue) || double.IsInfinity(evt.newValue) ? value : Math.Max(min, Math.Min(max, evt.newValue)); field.SetValueWithoutNotify(number); change(number); }); parent.Add(field); }
         private static void Vector(VisualElement parent, string caption, double[] value, float max, Action<double[]> change)
-        { var field = new Vector3Field(caption) { value = DronePhysicsBody.ToUnity(DVector3.From(value)) }; field.RegisterValueChangedCallback(evt => { var result = evt.newValue; for (int i = 0; i < 3; i++) result[i] = float.IsNaN(result[i]) || float.IsInfinity(result[i]) ? 0 : Mathf.Clamp(result[i], -max, max); field.SetValueWithoutNotify(result); change(new[] { (double)result.x, result.y, result.z }); }); parent.Add(field); }
+        { var field = new Vector3Field(caption) { value = DronePhysicsBody.ToUnity(DVector3.From(value)) }; field.AddToClassList("flight-vector"); field.RegisterValueChangedCallback(evt => { var result = evt.newValue; for (int i = 0; i < 3; i++) result[i] = float.IsNaN(result[i]) || float.IsInfinity(result[i]) ? 0 : Mathf.Clamp(result[i], -max, max); field.SetValueWithoutNotify(result); change(new[] { (double)result.x, result.y, result.z }); }); parent.Add(field); }
         private void ReleaseKeyboard() { if (ownsKeyboard && pilot != null) { pilot.readKeyboard = previousReadKeyboard; pilot.SetFlightInput(default); } ownsKeyboard = false; }
         public void Dispose() { ReleaseKeyboard(); graph.Dispose(); recording.Dispose(); if (body != null && ReferenceEquals(body.RuntimeWindOverride, wind)) body.RuntimeWindOverride = null; }
     }
