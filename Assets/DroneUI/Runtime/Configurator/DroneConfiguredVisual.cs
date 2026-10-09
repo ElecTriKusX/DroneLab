@@ -2,6 +2,7 @@ using System;
 using DroneLab.Configurator;
 using DroneLab.Simulation;
 using UnityEngine;
+using Newtonsoft.Json.Linq;
 
 namespace DroneLab.UI
 {
@@ -11,9 +12,12 @@ namespace DroneLab.UI
         private DroneProfileDocument document;
         private GameObject visual;
         private RuntimeGltfModelLoader loader;
+        private readonly DroneRotorVisuals rotorVisuals=new DroneRotorVisuals();
+        private DronePhysicsBody body;
         public void Configure(DroneProfileDocument value)
         {
             document=value.Copy();
+            body=GetComponent<DronePhysicsBody>();
             foreach(var renderer in GetComponentsInChildren<Renderer>())renderer.enabled=false;
             foreach(var collider in GetComponentsInChildren<Collider>())collider.enabled=false;
             var box=GetComponent<BoxCollider>();if(box==null)box=gameObject.AddComponent<BoxCollider>();box.enabled=true;box.center=Vector3.zero;
@@ -33,7 +37,14 @@ namespace DroneLab.UI
                 t.localRotation=Quaternion.Euler(DroneModelViewport.Vec(document.visual["rotationEulerDeg"]));
                 if((bool?)document.visual["centerModel"]??true)if(RuntimeGltfModelLoader.TryGetBoundsInFrame(t,visual.transform,out var bounds))t.localPosition=-bounds.center;
                 foreach(var renderer in visual.GetComponentsInChildren<Renderer>())if(!renderer.transform.IsChildOf(t))renderer.enabled=false;
+                rotorVisuals.Bind(t,(JArray)document.profile["rotors"],(JObject)document.visual["rotorNodes"]);
+                if(rotorVisuals.Issues.Count>0)Debug.LogWarning("DroneLab visual bindings: "+string.Join("; ",rotorVisuals.Issues),this);
             }catch(Exception ex){Debug.LogWarning("DroneLab model: "+ex.Message,this);}
+        }
+        private void LateUpdate()
+        {
+            if(document==null || body==null || body.Omega==null)return;
+            rotorVisuals.Step(transform,(JArray)document.profile["rotors"],index=>index<body.Omega.Length?body.Omega[index]:0,Time.deltaTime);
         }
     }
 }

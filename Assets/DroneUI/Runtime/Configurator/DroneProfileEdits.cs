@@ -6,6 +6,19 @@ namespace DroneLab.UI
 {
     public static class DroneProfileEdits
     {
+        // Called only for explicit power-module edits. Loading/saving preserves existing modes.
+        public static void SelectBatteryMode(JObject profile)
+        {
+            if(profile?["physicsConfiguration"]?["modules"] is not JObject modules || profile["powerSystem"]?["battery"] is not JObject battery)return;
+            bool electrical=(bool?)modules["motorElectrical"]==true;
+            bool enabled=electrical || (bool?)modules["batteryDischarge"]==true || (bool?)modules["batteryVoltageSag"]==true;
+            if(!enabled && (string)battery["mode"]=="None")return;
+            battery["mode"]=electrical?"Electrical":"Simple";
+            // Authoring estimates, as with other added fields; never replace entered battery data.
+            var defaults=(JObject)DroneParameterSchema.Default(new JObject{["$ref"]="#/$defs/BatteryProfile"});
+            foreach(var property in defaults.Properties())
+                if(property.Name!="mode" && property.Name!="thermal" && battery[property.Name]==null)battery[property.Name]=property.Value.DeepClone();
+        }
         public static void SetOptionalText(JObject value,string key,string text)
         {
             if(string.IsNullOrWhiteSpace(text))value.Remove(key);else value[key]=text;

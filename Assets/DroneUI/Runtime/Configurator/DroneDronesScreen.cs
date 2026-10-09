@@ -23,6 +23,7 @@ namespace DroneLab.UI
         private string original,section="Model",inspectorSection;
         private bool newProfile,busy,disposed;
         private int rotorIndex,galleryRevision;
+        private string[] bindingRotorIds=Array.Empty<string>();
         private VisualElement navigation,inspector,prompt;
         private VisualElement toolsToolbar;
         private Label massEstimate;
@@ -165,6 +166,7 @@ namespace DroneLab.UI
         {
             ++galleryRevision;galleryRenderer?.Dispose();galleryRenderer?.RemoveFromHierarchy();galleryRenderer=null;
             viewport?.Dispose();CloseValidation();CloseDataWindow();selected=value;document=value.Copy();newProfile=created;original=document.Snapshot();preview=null;errors.Clear();input.Clear();rotorIndex=0;section="Model";inspectorSection=null;inspectorOffsets.Clear();expandedGroups.Clear();
+            bindingRotorIds=((JArray)document.profile["rotors"]).Select(r=>(string)r["rotorId"]).ToArray();
             foreach(var pair in document.unfinishedInputs){input[pair.Key]=pair.Value;errors[pair.Key]="Незавершённое значение из черновика.";}
             body.Clear();page.RemoveFromClassList("drone-gallery-page");page.AddToClassList("drone-editor-page");page.EnableInClassList("drone-wide-inspector",wideInspector);body.RemoveFromClassList("drone-gallery-body");heading.text="НАСТРОЙКА ДРОНА";
             navigation=Scroll(body,"drone-navigation");var center=Box(body,"drone-center");inspector=Box(body,"drone-inspector");
@@ -231,6 +233,7 @@ namespace DroneLab.UI
                 case "Model":ModelInspector(scroll);break;
                 case "Mass":MassInspector(scroll);break;
                 case "Rotor":if(rotor!=null && viewport.SelectedRotor>=0){
+                    scroll.Add(new DroneModelBindingTree(viewport,(JObject)document.visual["rotorNodes"],rotor,()=>{Changed();}));
                     DroneProfileFields.Button(scroll,"Открыть характеристики винта",()=>OpenPerformance(rotor,rp));fields.Object(scroll,rotor,"RotorProfile",rp,"performance");
                     DroneProfileFields.Button(scroll,"Применить двигатель и винт ко всем",()=> {foreach(var r in rotors.OfType<JObject>())if(r!=rotor)foreach(string key in new[]{"motor","propeller","performance","advancedAerodynamics","operatingEnvelope"}){if(rotor[key]!=null)r[key]=rotor[key].DeepClone();else r.Remove(key);fields.ClearErrors("rotors["+rotors.IndexOf(r)+"]."+key);}Changed();RebuildInspector();});
                     var remove=DroneProfileFields.Button(scroll,"Удалить ротор «"+(string)rotor["rotorId"]+"»",()=>Ask("Удалить ротор?","Точка ротора, двигатель, винт и характеристики будут удалены из текущего профиля.",("Отмена",()=>{}),("Удалить",RemoveRotor)));remove.SetEnabled(rotors.Count>1);
@@ -370,6 +373,16 @@ namespace DroneLab.UI
         private void Changed()
         {
             if(document==null || disposed)return;document.unfinishedInputs.Clear();foreach(var key in errors.Keys)if(input.TryGetValue(key,out var value))document.unfinishedInputs[key]=value;
+            var ids=((JArray)document.profile["rotors"]).Select(r=>(string)r["rotorId"]).ToArray();
+            if(ids.Distinct().Count()==ids.Length){
+                if(ids.Length==bindingRotorIds.Length && !ids.SequenceEqual(bindingRotorIds)){
+                    var bindings=(JObject)document.visual["rotorNodes"];var old=(JObject)bindings.DeepClone();
+                    foreach(string id in bindingRotorIds)bindings.Remove(id);
+                    for(int i=0;i<ids.Length;i++)if(old[bindingRotorIds[i]]!=null)bindings[ids[i]]=old[bindingRotorIds[i]].DeepClone();
+                    viewport?.RefreshRotorBindings();
+                }
+                bindingRotorIds=ids;
+            }
             if(document.profile["coordinateSystem"]?["modelScaleMetersPerUnit"] is JValue scale)document.visual["scale"]=scale.DeepClone();
             viewport?.ApplyTransform();viewport?.GeometryChanged();UpdateMassEstimate();UpdateViewportControls();UpdateState();
         }
@@ -437,7 +450,7 @@ namespace DroneLab.UI
         private void RemoveRotor()
         {
             var rotors=(JArray)document.profile["rotors"];if(rotors.Count<=1)return;string id=(string)rotors[rotorIndex]["rotorId"];
-            fields.RemoveRow(rotors,rotorIndex,"rotors");((JObject)document.visual["rotorNodes"]).Remove(id);rotorIndex=Math.Min(rotorIndex,rotors.Count-1);viewport.Select(rotorIndex);Changed();viewport.GeometryChanged(true);BuildNavigation();RebuildInspector();
+            fields.RemoveRow(rotors,rotorIndex,"rotors");((JObject)document.visual["rotorNodes"]).Remove(id);viewport.RefreshRotorBindings();rotorIndex=Math.Min(rotorIndex,rotors.Count-1);viewport.Select(rotorIndex);Changed();viewport.GeometryChanged(true);BuildNavigation();RebuildInspector();
         }
         private void Validate()
         {
@@ -493,7 +506,7 @@ namespace DroneLab.UI
             try {
                 var chosen=await DroneFileDialog.Pick(false,DroneProfileLibrary.Root,"Модель дрона","model.glb","glb,gltf");
                 if(chosen.Failed)throw new IOException(chosen.Error);if(string.IsNullOrEmpty(chosen.Path)||disposed)return;
-                if(await viewport.LoadModel(chosen.Path,true)) {document.sourceModel=chosen.Path;Changed();RebuildInspector();}
+                if(await viewport.LoadModel(chosen.Path,true)) {document.sourceModel=chosen.Path;document.visual.Remove("bundledModel");Changed();RebuildInspector();}
             }catch(Exception ex){Status(ex.Message,true);}finally{busy=false;if(!disposed)UpdateState();}
         }
         private async void ImportProfile()

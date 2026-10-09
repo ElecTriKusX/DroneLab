@@ -39,7 +39,7 @@
 .drone-vector-row .environment-field { margin: 0 8px 0 0; }
 .drone-vector-row .environment-field > .unity-base-field__label { width: 22px; }
 .drone-field-group { margin: 8px 0 14px; padding-top: 10px; border-top-width: 1px; border-top-color: rgb(57, 65, 71); }
-.drone-field-group > .unity-foldout__toggle { min-height: 30px; font-size: 17px; color: rgb(228, 235, 239); -unity-font-style: bold; }
+.drone-field-group > .drone-group-header > .unity-foldout__toggle { min-height: 30px; font-size: 17px; color: rgb(228, 235, 239); -unity-font-style: bold; }
 .drone-field-group .unity-foldout__content { margin-left: 8px; }
 .optional-parameter { min-height: 30px; flex-grow: 1; margin: 6px 0; border-width: 1px; border-color: rgb(61, 75, 85); border-radius: 4px; background-color: rgb(28, 34, 39); color: rgb(169, 185, 196); font-size: 14px; -unity-text-align: middle-left; padding-left: 10px; }
 .remove-parameter { border-width: 0; background-color: transparent; color: rgb(132, 149, 161); font-size: 12px; margin-bottom: 10px; -unity-text-align: middle-right; }
@@ -162,8 +162,8 @@
 .drone-editor-page .drone-vector-row { margin-bottom: 18px; }
 .drone-editor-page .drone-vector-row .environment-field > .unity-base-field__label { min-height: 16px; margin-bottom: 5px; font-size: 12px; color: rgb(144, 150, 153); }
 .drone-editor-page .drone-field-group, .drone-data-overlay .drone-field-group { margin: 8px 0 18px; padding: 0; border-width: 1px; border-color: rgb(57, 61, 63); border-radius: 7px; background-color: rgb(27, 28, 29); }
-.drone-editor-page .drone-field-group > .unity-foldout__toggle, .drone-data-overlay .drone-field-group > .unity-foldout__toggle { min-height: 46px; padding: 6px 42px 6px 10px; margin: 0; font-size: 16px; color: rgb(227, 230, 229); background-color: transparent; }
-.drone-field-group > .unity-foldout__toggle > .parameter-help { position: absolute; right: 10px; top: 10px; }
+.drone-editor-page .drone-field-group > .drone-group-header > .unity-foldout__toggle, .drone-data-overlay .drone-field-group > .drone-group-header > .unity-foldout__toggle { min-height: 46px; padding: 6px 42px 6px 10px; margin: 0; font-size: 16px; color: rgb(227, 230, 229); background-color: transparent; }
+.drone-field-group > .drone-group-header > .unity-foldout__toggle > .parameter-help { position: absolute; right: 10px; top: 10px; }
 .drone-editor-page .drone-field-group .unity-foldout__content, .drone-data-overlay .drone-field-group .unity-foldout__content { margin: 0; padding: 16px 16px 0; }
 .drone-editor-page .optional-parameter, .drone-data-overlay .optional-parameter { min-height: 38px; margin: 4px 0 16px; background-color: rgb(28, 29, 30); border-color: rgb(61, 65, 67); color: rgb(153, 161, 164); }
 .drone-editor-page .remove-parameter, .drone-data-overlay .remove-parameter { color: rgb(145, 153, 157); }
@@ -224,9 +224,9 @@
 .drone-remove-control { width: 24px; min-width: 24px; height: 24px; min-height: 24px; flex-shrink: 0; padding: 0; margin: 0 0 8px 6px; border-width: 0; border-radius: 4px; background-color: transparent; color: rgb(140, 151, 157); font-size: 20px; }
 .drone-remove-control:hover, .drone-remove-control:focus { background-color: rgb(53, 42, 43); color: rgb(233, 153, 149); }
 .drone-vector-heading .drone-remove-control { margin-bottom: 0; }
-.drone-field-group.removable-group > .unity-foldout__toggle { padding-right: 74px; }
-.drone-field-group.removable-group > .unity-foldout__toggle > .parameter-help { right: 42px; }
-.drone-field-group > .unity-foldout__toggle > .drone-remove-control { position: absolute; top: 10px; right: 10px; margin: 0; }
+.drone-field-group.removable-group > .drone-group-header > .unity-foldout__toggle { padding-right: 74px; }
+.drone-field-group.removable-group > .drone-group-header > .unity-foldout__toggle > .parameter-help { right: 42px; }
+.drone-field-group > .drone-group-header > .unity-foldout__toggle > .drone-remove-control { position: absolute; top: 10px; right: 10px; margin: 0; }
 .drone-model-dimensions-action { align-items: center; margin: 4px 0 12px; }
 .drone-model-dimensions-action .drone-button { flex-grow: 1; flex-basis: 0; min-width: 0; min-height: 42px; font-size: 14px; }
 .drone-validation-window { width: 900px; max-width: 90%; height: 78%; min-height: 400px; padding: 24px 28px; border-width: 1px; border-color: rgb(91, 97, 100); border-radius: 12px; background-color: rgb(24, 25, 26); }
@@ -247,9 +247,9 @@
 .drone-switch:disabled { opacity: .45; }
 .drone-inertia-estimate { font-size: 14px; white-space: normal; color: rgb(178, 191, 198); padding: 14px; margin: 8px 0 18px; border-width: 1px; border-color: rgb(69, 80, 86); border-radius: 6px; background-color: rgb(27, 30, 32); }
 /* Foldout arrows keep their own control; no nested checkbox/input frame. */
-.drone-editor-page .drone-field-group > .unity-foldout__toggle > .unity-base-field__input, .drone-data-overlay .drone-field-group > .unity-foldout__toggle > .unity-base-field__input { flex-grow: 0; min-width: 0; min-height: 0; border-width: 0; background-color: transparent; padding: 0; }
-.drone-editor-page .drone-field-group > .unity-foldout__toggle .unity-toggle__input, .drone-data-overlay .drone-field-group > .unity-foldout__toggle .unity-toggle__input { min-width: 0; min-height: 0; border-width: 0; background-color: transparent; }
-.drone-editor-page .drone-field-group > .unity-foldout__toggle .unity-base-field__label, .drone-data-overlay .drone-field-group > .unity-foldout__toggle .unity-base-field__label { color: rgb(224, 230, 230); }
+.drone-editor-page .drone-field-group > .drone-group-header > .unity-foldout__toggle > .unity-base-field__input, .drone-data-overlay .drone-field-group > .drone-group-header > .unity-foldout__toggle > .unity-base-field__input { flex-grow: 0; min-width: 0; min-height: 0; border-width: 0; background-color: transparent; padding: 0; }
+.drone-editor-page .drone-field-group > .drone-group-header > .unity-foldout__toggle .unity-toggle__input, .drone-data-overlay .drone-field-group > .drone-group-header > .unity-foldout__toggle .unity-toggle__input { min-width: 0; min-height: 0; border-width: 0; background-color: transparent; }
+.drone-editor-page .drone-field-group > .drone-group-header > .unity-foldout__toggle .unity-base-field__label, .drone-data-overlay .drone-field-group > .drone-group-header > .unity-foldout__toggle .unity-base-field__label { color: rgb(224, 230, 230); }
 .drone-data-overlay .drone-table-panel > .drone-panel-title { flex-grow: 0; flex-shrink: 0; flex-basis: auto; min-height: 24px; }
 .drone-data-overlay .drone-table-host { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-height: 0; }
 .drone-data-overlay .drone-table-scroll .unity-scroll-view__content-container { flex-grow: 0; justify-content: flex-start; align-items: flex-start; padding: 0; }
@@ -268,8 +268,8 @@
 .drone-editor-page .drone-parameter-row, .drone-data-overlay .drone-parameter-row { border-width: 0; background-color: transparent; }
 
 /* Explicit group titles remain visible without inheriting Toggle's input layout. */
-.drone-field-group > .unity-foldout__toggle { flex-direction: row; align-items: center; }
-.drone-field-group > .unity-foldout__toggle > .unity-base-field__input { width: 20px; min-width: 20px; flex-shrink: 0; }
+.drone-field-group > .drone-group-header > .unity-foldout__toggle { flex-direction: row; align-items: center; }
+.drone-field-group > .drone-group-header > .unity-foldout__toggle > .unity-base-field__input { width: 20px; min-width: 20px; flex-shrink: 0; }
 .drone-group-title { flex-grow: 1; flex-basis: 0; min-width: 0; white-space: normal; margin: 0 0 0 6px; font-size: 16px; color: rgb(227, 230, 229); -unity-font-style: bold; }
 .drone-viewport-snap { flex-direction: row; align-items: center; justify-content: flex-end; flex-grow: 1; min-width: 265px; margin-left: 12px; }
 .drone-viewport-snap .drone-switch { flex-grow: 0; flex-basis: auto; min-height: 34px; padding: 4px 8px; }
@@ -277,6 +277,18 @@
 .drone-viewport-snap > .parameter-help { flex-shrink: 0; }
 
 /* Draw the expand indicator with the established vector icon, independent of skin. */
-.drone-editor-page .drone-field-group > .unity-foldout__toggle > .unity-base-field__input, .drone-data-overlay .drone-field-group > .unity-foldout__toggle > .unity-base-field__input { display: none; }
+.drone-editor-page .drone-field-group > .drone-group-header > .unity-foldout__toggle > .unity-base-field__input, .drone-data-overlay .drone-field-group > .drone-group-header > .unity-foldout__toggle > .unity-base-field__input { display: none; }
 .drone-group-arrow { width: 20px; height: 20px; min-width: 20px; flex-shrink: 0; color: rgb(185, 195, 199); }
 .drone-group-arrow.is-open { rotate: 90deg; }
+
+.drone-model-bindings { margin-bottom: 20px; padding: 12px; border-width: 1px; border-color: rgb(55, 59, 63); border-radius: 8px; background-color: rgb(26, 28, 31); }
+.drone-model-tree { height: 250px; min-height: 160px; margin-top: 8px; margin-bottom: 8px; }
+.drone-model-tree-row { flex-direction: row; align-items: center; min-height: 30px; }
+.drone-model-tree-row .unity-button { min-height: 28px; margin: 2px; padding: 4px 6px; -unity-text-align: middle-left; white-space: normal; }
+.drone-model-tree-row .drone-model-tree-arrow { width: 24px; flex-shrink: 0; }
+
+/* Category controls are siblings of the toggle, so category focus cannot open help. */
+.drone-group-header { flex-direction: row; align-items: center; padding-right: 10px; }
+.drone-group-header > .unity-foldout__toggle { flex-grow: 1; flex-shrink: 1; min-width: 0; }
+.drone-editor-page .drone-group-header > .unity-foldout__toggle, .drone-data-overlay .drone-group-header > .unity-foldout__toggle { padding-right: 10px; }
+.drone-group-header > .parameter-help, .drone-group-header > .drone-remove-control { position: relative; flex-shrink: 0; margin-left: 6px; }

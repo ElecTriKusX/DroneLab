@@ -26,7 +26,12 @@ namespace DroneLab.Configurator
                 if (!parsed) return (false, "Не удалось прочитать модель. Проверьте glTF 2.0 и доступность её текстур/буферов.");
                 if (this == null || request != revision || parent == null) return (false, "Загрузка отменена.");
                 instance = new GameObject(Path.GetFileNameWithoutExtension(path)); instance.transform.SetParent(parent, false);
-                bool instantiated = await candidate.InstantiateMainSceneAsync(instance.transform);
+                // One stable wrapper regardless of the GLB scene's root count.
+                // The default adds an extra Scene object when there are multiple roots,
+                // which would change every persisted sibling-index path.
+                var instantiator=new GameObjectInstantiator(candidate,instance.transform,
+                    settings:new InstantiationSettings{SceneObjectCreation=SceneObjectCreation.Never});
+                bool instantiated = await candidate.InstantiateMainSceneAsync(instantiator);
                 if (!instantiated || this == null || request != revision || parent == null) return (false, "Не удалось создать 3D-модель или загрузка отменена.");
                 // Keep the old model until the replacement is completely ready.
                 ReleaseCurrent(); LoadedRoot = instance.transform; instance = null;
@@ -47,21 +52,29 @@ namespace DroneLab.Configurator
         {
             if (root == null || node == null || node == root) return "";
 
-            string path = node.name;
+            // Sibling indices survive duplicate names, slashes and broken source encodings.
+            string path = node.GetSiblingIndex().ToString(System.Globalization.CultureInfo.InvariantCulture);
             Transform current = node.parent;
             while (current != null && current != root)
             {
-                path = current.name + "/" + path;
+                path = current.GetSiblingIndex().ToString(System.Globalization.CultureInfo.InvariantCulture) + "/" + path;
                 current = current.parent;
             }
 
-            return current == root ? path : "";
+            return current == root ? "@/" + path : "";
         }
 
         public static Transform FindByPath(Transform root, string path)
         {
             if (root == null) return null;
-            return string.IsNullOrWhiteSpace(path) ? root : root.Find(path);
+            if(string.IsNullOrWhiteSpace(path))return root;
+            if(!path.StartsWith("@/",StringComparison.Ordinal))return root.Find(path); // Existing documents.
+            var node=root;
+            foreach(string segment in path.Substring(2).Split('/')) {
+                if(!int.TryParse(segment,System.Globalization.NumberStyles.None,System.Globalization.CultureInfo.InvariantCulture,out int index) || index<0 || index>=node.childCount)return null;
+                node=node.GetChild(index);
+            }
+            return node;
         }
 
         public static bool TryGetWorldBounds(Transform root, out Bounds bounds)

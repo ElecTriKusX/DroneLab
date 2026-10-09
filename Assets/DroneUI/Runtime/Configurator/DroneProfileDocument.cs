@@ -63,6 +63,13 @@ namespace DroneLab.UI
                 var item = new DroneProfileDocument { id = "builtin-" + names[i], category = i == 0 ? "Учебные" : "Исследовательские", profile = JObject.Parse(Resource(names[i])) };
                 item.profile["metadata"]["name"] = titles[i]; list.Add(item);
             }
+            foreach(var token in BundledCatalog()["profiles"] as JArray ?? new JArray()) {
+                try {
+                    var item=token.ToObject<DroneProfileDocument>();
+                    if(hidden.Contains(item.id))continue;
+                    PrepareForEditing(item);list.Add(item);
+                } catch(Exception ex){problems.Add("Встроенный DJI-профиль: "+ex.Message);}
+            }
             Directory.CreateDirectory(Root);
             foreach (string directory in Directory.GetDirectories(Root)) {
                 try {
@@ -161,7 +168,19 @@ namespace DroneLab.UI
         {
             if (!string.IsNullOrEmpty(document.sourceModel)) return document.sourceModel;
             var model = (string)document.visual["modelFile"]; if (string.IsNullOrEmpty(model)) return null;
-            return DroneModelFiles.Contained(Folder(document.id),model);
+            string local=DroneModelFiles.Contained(Folder(document.id),model);
+            if(File.Exists(local))return local;
+            string bundled=(string)document.visual["bundledModel"];
+            if(!string.IsNullOrEmpty(bundled)) {
+                if(BundledCatalog()["models"]?[bundled] is not JObject descriptor)throw new InvalidOperationException("Встроенная модель не найдена в каталоге: "+bundled);
+                return DroneBundledModels.Resolve(Path.Combine(Application.streamingAssetsPath,"DroneLab","DroneModels"),Path.Combine(Root,".bundled-models"),descriptor);
+            }
+            return local;
+        }
+        private static JObject BundledCatalog()
+        {
+            var catalog=Resources.Load<TextAsset>("DroneLab/BuiltinDrones");
+            return catalog==null?new JObject():JObject.Parse(catalog.text);
         }
         public static DroneProfileDocument Import(string path)
         {
@@ -199,6 +218,7 @@ namespace DroneLab.UI
                 if(!FiniteNumber(visual[key]))throw new ArgumentException("Некорректная настройка 3D-вида: "+key);
             if((double)visual["scale"]<=0 || (double)visual["previewDistance"]<=0 || visual["rotorNodes"] is not JObject || visual["modelFile"].Type!=JTokenType.String || visual["centerModel"].Type!=JTokenType.Boolean || visual["previewOrthographic"].Type!=JTokenType.Boolean)
                 throw new ArgumentException("Некорректные настройки визуальной модели.");
+            DroneVisualBindings.Validate((JObject)visual["rotorNodes"]);
             item.visual=visual;item.unfinishedInputs??=new Dictionary<string,string>();
             item.category=item.Category;
         }

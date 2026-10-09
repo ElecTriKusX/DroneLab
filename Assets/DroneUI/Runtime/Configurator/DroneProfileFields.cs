@@ -29,7 +29,11 @@ namespace DroneLab.UI
                     add.AddToClassList("optional-parameter");row.Add(add);DroneHelp.Attach(row,()=>DroneParameterSchema.Tooltip(key,property.Value));continue;
                 }
                 Action remove=required.Contains(key)?null:()=>{value.Remove(key);ClearErrors(child);changed();rebuild();};
-                Field(host,key,property.Value,value[key],child,t=>value[key]=t,remove);
+                Field(host,key,property.Value,value[key],child,t=>{
+                    value[key]=t;
+                    if(definition=="PhysicsModulesProfile" && (key=="motorElectrical" || key=="batteryDischarge" || key=="batteryVoltageSag"))
+                        DroneProfileEdits.SelectBatteryMode(value.Root as JObject);
+                },remove);
             }
         }
         public void Field(VisualElement host,string key,JToken unresolved,JToken value,string path,Action<JToken> write,Action remove=null)
@@ -40,10 +44,13 @@ namespace DroneLab.UI
                 var section=new Foldout {text="",value=expanded.TryGetValue(path,out var open)?open:key=="geometry"};section.AddToClassList("drone-field-group");host.Add(section);
                 if(key=="operatingEnvelope")Label(section,"Контроль области применения: предупреждает о превышении заданных скоростей. Силы и ограничение движения не добавляет.","scenario-hint");
                 var header=section.Q<Toggle>();header.tooltip=label;
+                // Help is a sibling: Toggle delegates focus to nested focusable controls.
+                var headerRow=new VisualElement();headerRow.AddToClassList("drone-group-header");
+                header.RemoveFromHierarchy();section.hierarchy.Insert(0,headerRow);headerRow.Add(header);
                 var arrow=new DroneMenuIcon(MenuIconKind.Chevron);arrow.AddToClassList("drone-group-arrow");arrow.EnableInClassList("is-open",section.value);header.Add(arrow);
                 section.RegisterValueChangedCallback(evt=>{if(evt.target==section){expanded[path]=evt.newValue;arrow.EnableInClassList("is-open",evt.newValue);}});
-                Label(header,label,"drone-group-title");DroneHelp.Attach(header,()=>DroneParameterSchema.Tooltip(key,unresolved));
-                if(remove!=null){section.AddToClassList("removable-group");RemoveControl(header,label,remove);}
+                Label(header,label,"drone-group-title");DroneHelp.Attach(headerRow,()=>DroneParameterSchema.Tooltip(key,unresolved));
+                if(remove!=null){section.AddToClassList("removable-group");RemoveControl(headerRow,label,remove);}
                 Object(section,(JObject)value,DroneParameterSchema.Definition(unresolved),path);ReadOnly(section);return;
             }
             if(type=="array") {
@@ -117,7 +124,7 @@ namespace DroneLab.UI
             string mode=(string)value["model"]??(string)value["mode"];
             // Thermal parameters have one editing location in the Thermal inspector.
             if(type=="MotorElectricalProfile" && (key=="thermal" || key=="escThermal" || key=="resistanceReferenceTemperatureK" || key=="resistanceTemperatureCoefficientPerK"))return false;
-            if(type=="BatteryProfile" && key=="thermal")return false;
+            if(type=="BatteryProfile" && (key=="thermal" || key=="mode"))return false;
             if(type=="RotorPerformanceProfile") {
                 if(key=="kThrustNPerRadPerSecSquared" || key=="kTorqueNmPerRadPerSecSquared")return mode=="OmegaSquared";
                 if(key=="ct" || key=="cq")return mode=="CtCq";
@@ -132,7 +139,6 @@ namespace DroneLab.UI
                 if(key=="surfaces")return mode=="Surfaces";
             }
             if(type=="ProjectedAreaProfile") {if(key=="samples")return mode!="AxisApproximation";if(key=="referenceAreaM2")return mode=="AxisApproximation";}
-            if(type=="BatteryProfile" && key!="mode" && mode=="None")return false;
             return true;
         }
         internal static VisualElement Row(VisualElement parent){var v=new VisualElement();v.AddToClassList("drone-row");parent.Add(v);return v;}

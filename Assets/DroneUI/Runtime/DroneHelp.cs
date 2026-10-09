@@ -27,7 +27,8 @@ namespace DroneLab.UI
                 popup.RegisterCallback<GeometryChangedEvent>(_ => { if (popup != null) popup.style.top = Mathf.Min(anchor.y - 16, Mathf.Max(12, host.resolvedStyle.height - popup.resolvedStyle.height - 12)); });
             }
             button.RegisterCallback<PointerEnterEvent>(_ => Show()); button.RegisterCallback<PointerLeaveEvent>(_ => Hide());
-            button.RegisterCallback<FocusInEvent>(_ => Show()); button.RegisterCallback<FocusOutEvent>(_ => Hide());
+            button.RegisterCallback<FocusInEvent>(evt => { if(evt.target==button)Show(); }); button.RegisterCallback<FocusOutEvent>(_ => Hide());
+            button.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
             button.clicked += () => { if (popup == null) Show(); else Hide(); };
             field.RegisterCallback<DetachFromPanelEvent>(_ => Hide());
         }

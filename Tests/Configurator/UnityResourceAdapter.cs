@@ -12,7 +12,10 @@ namespace UnityEngine
             return File.Exists(file)?new TextAsset(File.ReadAllText(file)) as T:null;
         }
     }
-    public static class Application { public static string persistentDataPath=Path.Combine(Path.GetTempPath(),"DroneLab-configurator-tests-"+Guid.NewGuid().ToString("N")); }
+    public static class Application {
+        public static string persistentDataPath=Path.Combine(Path.GetTempPath(),"DroneLab-configurator-tests-"+Guid.NewGuid().ToString("N"));
+        public static string streamingAssetsPath=Path.Combine(AppContext.BaseDirectory,"StreamingAssets");
+    }
     public struct Vector3
     {
         public float x,y,z;

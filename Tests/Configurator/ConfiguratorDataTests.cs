@@ -9,6 +9,93 @@ using NUnit.Framework;
 
 public sealed class ConfiguratorDataTests
 {
+    [TestCase("dji_mavic_3")][TestCase("dji_mini_3")][TestCase("dji_avata2")][TestCase("dji_m600_ul_ver")]
+    public void DjiDefaultsIncludeValidatedProfileAndOriginalModelWithoutImport(string key)
+    {
+        var document=DroneProfileLibrary.LoadAll(out var warnings).Single(d=>d.id=="builtin-"+key);
+        Assert.That(warnings,Is.Empty);Assert.That(document.draft,Is.False);
+        Assert.That(DroneProfileLibrary.Validate(document).Success,Is.True);
+        Assert.That(Directory.Exists(Path.Combine(DroneProfileLibrary.Root,".bundled-models")),Is.False,"Gallery listing must not extract all models");
+        string path=DroneProfileLibrary.ModelPath(document);
+        Assert.That(File.Exists(path),Is.True);Assert.That(DroneProfileLibrary.ModelPath(document),Is.EqualTo(path));
+        DroneModelFiles.ValidateLocalModel(path);
+        var catalog=JObject.Parse(UnityEngine.Resources.Load<UnityEngine.TextAsset>("DroneLab/BuiltinDrones").text);
+        using(var file=File.OpenRead(path))using(var hash=System.Security.Cryptography.SHA256.Create())
+            Assert.That(BitConverter.ToString(hash.ComputeHash(file)).Replace("-","").ToLowerInvariant(),Is.EqualTo((string)catalog["models"][key]["sha256"]));
+        // A saved override still resolves its supplied model on the next catalog load.
+        document.profile["metadata"]["name"]="Edited DJI";DroneProfileLibrary.Save(document,false);
+        var reloaded=DroneProfileLibrary.LoadAll(out _).Single(d=>d.id==document.id);
+        Assert.That(reloaded.Name,Is.EqualTo("Edited DJI"));Assert.That(DroneProfileLibrary.ModelPath(reloaded),Is.EqualTo(path));
+        DroneProfileLibrary.Delete(reloaded);
+        Assert.That(DroneProfileLibrary.LoadAll(out _).Any(d=>d.id==document.id),Is.False);
+    }
+    [Test] public void BundledModelRejectsChangedBytesAndLeavesNoPartialModel()
+    {
+        using(var zip=System.IO.Compression.ZipFile.Open(Path.Combine(temp,"model.zip"),System.IO.Compression.ZipArchiveMode.Create))
+            using(var writer=new StreamWriter(zip.CreateEntry("model.glb").Open()))writer.Write("incorrect data");
+        var descriptor=new JObject{["archive"]="model.zip",["file"]="model.glb",["sha256"]=new string('0',64),["sizeBytes"]=14};
+        Assert.Throws<InvalidDataException>(()=>DroneBundledModels.Resolve(temp,Path.Combine(temp,"cache"),descriptor));
+        Assert.That(Directory.GetFiles(Path.Combine(temp,"cache"),"*",SearchOption.AllDirectories),Is.Empty);
+    }
+    [TestCase("../model.glb")][TestCase("C:\\model.glb")][TestCase("model/inside.glb")]
+    public void BundledModelCannotEscapeItsCache(string file)
+    {
+        var descriptor=new JObject{["archive"]="model.zip",["file"]=file,["sha256"]=new string('0',64),["sizeBytes"]=14};
+        Assert.Throws<ArgumentException>(()=>DroneBundledModels.Resolve(temp,temp,descriptor));
+    }
+    [Test] public void BatteryModeFollowsModulesAndPreservesEnteredValues()
+    {
+        var profile=DroneProfileLibrary.Create().profile;var battery=(JObject)profile["powerSystem"]["battery"];
+        var modules=(JObject)profile["physicsConfiguration"]["modules"];
+        battery["capacityAh"]=7.3;
+        DroneProfileEdits.SelectBatteryMode(profile);Assert.That((string)battery["mode"],Is.EqualTo("None"));
+        modules["batteryDischarge"]=true;DroneProfileEdits.SelectBatteryMode(profile);
+        Assert.That((string)battery["mode"],Is.EqualTo("Simple"));Assert.That((double)battery["capacityAh"],Is.EqualTo(7.3));
+        Assert.That(battery["ocvCurve"],Is.Not.Null);
+        modules["motorElectrical"]=true;DroneProfileEdits.SelectBatteryMode(profile);Assert.That((string)battery["mode"],Is.EqualTo("Electrical"));
+        modules["motorElectrical"]=false;DroneProfileEdits.SelectBatteryMode(profile);Assert.That((string)battery["mode"],Is.EqualTo("Simple"));
+        Assert.That((double)battery["capacityAh"],Is.EqualTo(7.3));
+    }
+    [TestCase("dji_mavic_3_approx",.895,4,5.0)]
+    [TestCase("dji_mini_3_approx",.248,4,2.453)]
+    [TestCase("dji_avata2_approx",.377,4,2.15)]
+    [TestCase("dji_m600_ul_ver_approx",9.1,6,27.0)]
+    public void ApproximateDjiProfilesPassRuntimeValidation(string name,double mass,int rotors,double capacity)
+    {
+        var doc=new DroneProfileDocument{profile=JObject.Parse(DroneProfileLibrary.Resource(name))};
+        DroneProfileLibrary.PrepareForEditing(doc);var result=DroneProfileLibrary.Validate(doc);
+        Assert.That(result.Success,Is.True,string.Join("\n",result.Issues.Select(i=>i.ToString())));
+        Assert.That((double)doc.profile["massProperties"]["massKg"],Is.EqualTo(mass));
+        Assert.That(((JArray)doc.profile["rotors"]).Count,Is.EqualTo(rotors));
+        Assert.That((double)doc.profile["powerSystem"]["battery"]["capacityAh"],Is.EqualTo(capacity));
+        Assert.That(doc.profile["environment"],Is.Null);
+        Assert.That(((JArray)doc.profile["parameterProvenance"]).Any(p=>(string)p["sourceType"]=="Estimated"),Is.True);
+        var parameters=result.Parameters;var power=new DroneLab.Physics.PowerSystem(parameters);
+        var speeds=parameters.Rotors.Select(r=>r.MaxOmega).ToArray();var actual=new double[speeds.Length];
+        power.Resolve(speeds,actual,.01,true);
+        double available=parameters.Rotors.Select((r,i)=>r.Performance.Evaluate(actual[i],0,parameters.Density).Thrust).Sum();
+        Assert.That(available,Is.GreaterThan(parameters.Mass*parameters.Gravity*1.2),"Approximate power limits must leave a thrust reserve at full charge.");
+    }
+    [TestCase("CW",90.0)][TestCase("CCW",-90.0)]
+    public void VisualRotationUsesRadiansPerSecondAndSpinConvention(string spin,double expected)
+    {
+        Assert.That(DroneVisualBindings.AdvancePhase(0,Math.PI,.5,spin),Is.EqualTo(expected).Within(1e-10));
+        Assert.That(DroneVisualBindings.AdvancePhase(expected,0,1,spin),Is.EqualTo(expected));
+        Assert.That(DroneVisualBindings.AdvancePhase(expected,double.NaN,1,spin),Is.EqualTo(expected));
+    }
+    [Test] public void MultipleBladeBindingsSurviveImportAndSave()
+    {
+        var doc=DroneProfileLibrary.Create();doc.visual["rotorNodes"]=new JObject{["FL"]=new JArray("@/0/1/2","@/0/1/3"),["FR"]="Legacy/Propeller"};
+        string before=doc.visual["rotorNodes"].ToString();DroneProfileLibrary.PrepareForEditing(doc);DroneProfileLibrary.Save(doc,true);
+        var imported=DroneProfileLibrary.Import(Path.Combine(DroneProfileLibrary.Folder(doc.id),"document.json"));
+        Assert.That(imported.visual["rotorNodes"].ToString(),Is.EqualTo(before));
+    }
+    [TestCase("123")][TestCase("[123]")][TestCase("[\"\"]")][TestCase("[\"@/0\",\"@/0\"]")][TestCase("\"@/0/-1\"")]
+    public void InvalidVisualBindingsAreRejected(string json)
+    {
+        var doc=DroneProfileLibrary.Create();doc.visual["rotorNodes"]=new JObject{["FL"]=JToken.Parse(json)};
+        Assert.Throws<ArgumentException>(()=>DroneProfileLibrary.PrepareForEditing(doc));
+    }
     private string temp;
     [SetUp] public void SetUp(){temp=Path.Combine(Path.GetTempPath(),"drone-config-test-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(temp);UnityEngine.Application.persistentDataPath=Path.Combine(temp,"library");}
     [TearDown] public void TearDown(){Directory.Delete(temp,true);}

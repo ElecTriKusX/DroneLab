@@ -6,7 +6,7 @@ Defaults are estimates sampled from the committed examples, not measurements.
 import json
 from pathlib import Path
 r=Path(__file__).resolve().parents[1]
-schema=json.loads((r/'Assets/DronePhysics/Resources/DronePhysics/drone-profile.schema.json').read_text());defs=schema['$defs']
+schema=json.loads((r/'Assets/DronePhysics/Resources/DronePhysics/drone-profile.schema.json').read_text(encoding='utf-8'));defs=schema['$defs']
 text='''schemaVersion|Версия схемы||Версия согласованного контракта физики. Её меняют только вместе с поддержкой новой схемы в движке.
 metadata|Описание аппарата||Название и описание модели; не меняют физические силы.
 name|Название||Имя дрона в галерее и отчётах.
@@ -29,7 +29,7 @@ bladeFlapping|Маховое движение лопастей||Добавляе
 inducedDrag|Осевой поток||Добавляет ограниченную эмпирическую поправку тяги от осевого потока. Нельзя накладывать на карту RPM/J, уже учитывающую этот эффект.
 batteryDischarge|Разряд батареи||Интегрирует потреблённый ток и уменьшает SOC. Требует модели батареи и ёмкости.
 batteryVoltageSag|Просадка напряжения||Учитывает падение напряжения I·R под нагрузкой. Требует электрической модели питания.
-motorElectrical|Электрический привод||Связывает напряжение, ток, момент мотора и ограничения ESC. Требует модели Electrical и данных каждого мотора.
+motorElectrical|Электрический привод||Связывает напряжение, ток, момент мотора и ограничения ESC. При включении конфигуратор автоматически выбирает электрический расчёт питания; нужны электрические данные каждого мотора.
 gyroscopicRotorEffects|Гироскопический момент||Добавляет момент от вращающихся роторов при изменении ориентации рамы. Требует момента инерции ротора и совместимого режима привода.
 massProperties|Масса и инерция||Определяют линейное и угловое ускорение дрона от заданных сил и моментов.
 massKg|Общая масса|кг|Полная масса аппарата с батареей, двигателями и нагрузкой. Не прибавляйте массу двигателей второй раз.
@@ -122,7 +122,7 @@ coefficient|Коэффициент экрана||Неотрицательный 
 minHeightRadiusRatio|Минимальная высота / радиус||Нижний предел отношения h/R в формуле экрана. Устраняет сингулярность при касании земли.
 maxMultiplier|Максимальное усиление||Максимальный множитель положительной тяги у земли. Не меньше 1.
 powerSystem|Питание и нагрев||Модель батареи, ограничения мощности и включение теплового расчёта.
-battery|Батарея||None выключает модель питания; Simple использует упрощённый расход; Electrical связывает батарею и электрический привод.
+battery|Батарея||Напряжение, ёмкость, начальный заряд и ограничения батареи. Разряд, просадка напряжения и электрический привод включаются в разделе «Модули»; способ расчёта питания выбирается автоматически по электрическому приводу. Сохранённые режимы существующих профилей сохраняются до изменения модулей.
 cellCount|Число ячеек||Число последовательно соединённых ячеек; напряжения OCV задаются для всего пакета, не одной ячейки.
 nominalVoltageV|Номинальное напряжение|В|Номинальное напряжение всего пакета. Не путайте с OCV при полном заряде.
 capacityAh|Ёмкость|А·ч|Ёмкость батареи в ампер-часах: 1300 мА·ч = 1,3 А·ч. Участвует в интегрировании SOC.
@@ -165,8 +165,8 @@ def walk(value,rule):
  elif rule['type']=='array':
   for v in value:walk(v,rule['items'])
 for file in ['quad_test_thermal','quad_test_basic','quad_test_rpm_table','quad_test_performance_map','quad_test_surfaces','reference_crazyflie20']:
- walk(json.loads((r/f'Assets/DronePhysics/Resources/DronePhysics/{file}.json').read_text()),{'$ref':'#/$defs/DroneProfile'})
+ walk(json.loads((r/f'Assets/DronePhysics/Resources/DronePhysics/{file}.json').read_text(encoding='utf-8')),{'$ref':'#/$defs/DroneProfile'})
 examples.update({'rotationEulerDeg':[0,0,0],'name':'Новый дрон','schemaVersion':'1.0.0','thrustAxisLocal':[0,1,0],'normalLocal':[0,1,0],'directionLocal':[1,0,0],'principalAxesRotationXyzw':[0,0,0,1],'sourceType':'User','source':'Ввод в конфигураторе','confidence':1,'modelScaleMetersPerUnit':1})
 for k,v in {'EfficiencyPoint':{'loadFraction':0,'efficiency':0.85},'RotorOperatingEnvelopeProfile':{'model':'ReportOnly','maxAxialClimbSpeedMps':10,'maxAxialDescentSpeedMps':5,'maxLateralSpeedMps':20}}.items(): examples['$types'].setdefault(k,v)
-for f,d in [('DroneParameters',help),('DroneParameterDefaults',examples)]: (r/f'Assets/DroneUI/Resources/DroneLab/{f}.json').write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+for f,d in [('DroneParameters',help),('DroneParameterDefaults',examples)]: (r/f'Assets/DroneUI/Resources/DroneLab/{f}.json').write_bytes((json.dumps(d,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
 print('Catalog:',len(keys),'physical field keys with help; defaults for',len(examples['$types']),'structures')

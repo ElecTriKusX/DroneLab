@@ -46,6 +46,10 @@ namespace DroneLab.UI
         public string ViewName { get; private set; } = "3D";
         public string LastEditedField { get; private set; }
         private string schematicGeometry;
+        private Transform selectedModelNode;
+        private readonly DroneRotorVisuals rotorVisuals=new DroneRotorVisuals();
+        private double lastVisualTime;
+        public bool TestRotorSpin { get; set; }
         public event Action<int> Selected;
         public event Action SelectionCleared;
         public event Action Changed;
@@ -90,7 +94,12 @@ namespace DroneLab.UI
             RegisterCallback<PointerDownEvent>(Down); RegisterCallback<PointerMoveEvent>(Move); RegisterCallback<PointerUpEvent>(Up);
             RegisterCallback<PointerCaptureOutEvent>(_=> { dragging=draggingCom=orbiting=panning=false; });
             RegisterCallback<WheelEvent>(e=> { LastEditedField=null;distance=Mathf.Clamp(distance*Mathf.Exp(e.delta.y*.045f),.005f,100000); UpdateCamera(); SaveView();Changed?.Invoke();e.StopPropagation(); });
-            tick=schedule.Execute(()=> { if(!disposed){overlay.UpdateLabels();overlay.MarkDirtyRepaint();} }).Every(33);
+            tick=schedule.Execute(()=> { if(!disposed){
+                double now=Time.realtimeSinceStartupAsDouble;
+                if(TestRotorSpin)rotorVisuals.Step(stage.transform,Rotors,i=>i==SelectedRotor?2*Math.PI:0,Math.Min(.1,Math.Max(0,now-lastVisualTime)));
+                else rotorVisuals.Restore();
+                lastVisualTime=now;overlay.UpdateLabels();overlay.MarkDirtyRepaint();
+            } }).Every(33);
             Resize(); UpdateCamera();
         }
         private GameObject Child(string name) { var go=new GameObject(name) { layer=PreviewLayer, hideFlags=HideFlags.DontSave }; go.transform.SetParent(stage.transform,false); return go; }
@@ -109,6 +118,7 @@ namespace DroneLab.UI
         public void SetDocument(DroneProfileDocument value)
         {
             document=value; SelectedRotor=-1;CenterOfMassSelected=false;
+            selectedModelNode=null;TestRotorSpin=false;rotorVisuals.Restore();
             if(value.profile["coordinateSystem"]?["modelScaleMetersPerUnit"] is JValue scale)value.visual["scale"]=scale.DeepClone();
             yaw=(float?)value.visual["previewYaw"]??35; pitch=(float?)value.visual["previewPitch"]??25;
             camera.orthographic=(bool?)value.visual["previewOrthographic"]??false;
@@ -122,6 +132,8 @@ namespace DroneLab.UI
             var result=await loader.LoadAsync(path,modelFrame.transform);
             if(disposed)return false;
             if(!result.success) { Status?.Invoke(result.error);return false; }
+            selectedModelNode=null;TestRotorSpin=false;
+            if(normalize)document.visual["rotorNodes"]=new JObject();
             foreach(var node in loader.LoadedRoot.GetComponentsInChildren<Transform>(true))node.gameObject.layer=PreviewLayer;
             if(normalize && RuntimeGltfModelLoader.TryGetBoundsInFrame(loader.LoadedRoot,modelFrame.transform,out var bounds)) {
                 float size=Mathf.Max(bounds.size.x,Mathf.Max(bounds.size.y,bounds.size.z));
@@ -132,12 +144,14 @@ namespace DroneLab.UI
                 document.profile["coordinateSystem"]["modelScaleMetersPerUnit"]=document.visual["scale"].DeepClone();
             }
             procedural.SetActive(false); ApplyTransform(); if(normalize)Frame();else UpdateCamera();
+            RefreshRotorBindings();
             Status?.Invoke(normalize ? "Модель вписана в габарит профиля. Проверьте её реальный размер в метрах." : "Модель загружена с сохранённым масштабом и материалами.");
             return true;
         }
         public void ApplyTransform()
         {
             if(!HasImportedModel)return;
+            rotorVisuals.Restore();
             var t=loader.LoadedRoot; t.localPosition=Vector3.zero;
             t.localScale=Vector3.one*(float)((double?)document.visual["scale"]??1);
             t.localRotation=Quaternion.Euler(Vec(document.visual["rotationEulerDeg"]));
@@ -156,16 +170,21 @@ namespace DroneLab.UI
             if(!HasImportedModel && (rebuild || geometry!=schematicGeometry)){RebuildSchematic();schematicGeometry=geometry;}
             overlay.RefreshLabels(); overlay.MarkDirtyRepaint();
         }
-        public void Select(int rotor) { SelectedRotor=rotor;CenterOfMassSelected=false; overlay.RefreshLabels(); overlay.MarkDirtyRepaint(); }
+        public void Select(int rotor) { SelectedRotor=rotor;CenterOfMassSelected=false;TestRotorSpin=false;
+            selectedModelNode=rotor>=0 && rotor<Rotors.Count?RuntimeGltfModelLoader.FindByPath(ModelRoot,DroneRotorVisuals.Paths(document.visual["rotorNodes"][(string)Rotors[rotor]["rotorId"]]).FirstOrDefault()??"__unbound__"):null;
+            overlay.RefreshLabels(); overlay.MarkDirtyRepaint(); }
+        public void SelectModelNode(Transform node){selectedModelNode=node;overlay.MarkDirtyRepaint();}
+        public void RefreshRotorBindings(){rotorVisuals.Bind(ModelRoot,Rotors,(JObject)document.visual["rotorNodes"]);TestRotorSpin=false;if(rotorVisuals.Issues.Count>0)Status?.Invoke("Проверьте привязки винтов: "+string.Join("; ",rotorVisuals.Issues));}
         public void SetEditContext(bool rotors,bool mass)
         {
             if(EditingEnabled==rotors && MassEditingEnabled==mass)return;
             EditingEnabled=rotors;MassEditingEnabled=mass;
+            if(!rotors){selectedModelNode=null;TestRotorSpin=false;rotorVisuals.Restore();}
             if(mass)SelectedRotor=-1;if(!mass)CenterOfMassSelected=false;overlay.RefreshLabels();overlay.MarkDirtyRepaint();
         }
         public void ClearSelection()
         {
-            SelectedRotor=-1;CenterOfMassSelected=false;draggedRotor=-1;SelectionCleared?.Invoke();overlay.MarkDirtyRepaint();
+            SelectedRotor=-1;CenterOfMassSelected=false;draggedRotor=-1;selectedModelNode=null;TestRotorSpin=false;rotorVisuals.Restore();SelectionCleared?.Invoke();overlay.MarkDirtyRepaint();
         }
         public void ScaleModelToPhysicalDimensions()
         {
@@ -354,6 +373,14 @@ namespace DroneLab.UI
             private void Draw(MeshGenerationContext c)
             {
                 if(v.document==null)return;var p=c.painter2D;float grid=Mathf.Max(.01f,v.distance/4);
+                if(v.selectedModelNode!=null){
+                    p.strokeColor=new Color(.7f,.86f,1f,.9f);p.lineWidth=1.5f;
+                    foreach(var renderer in v.selectedModelNode.GetComponentsInChildren<Renderer>(true)){
+                        var bounds=renderer.localBounds;
+                        Vector3 Corner(int index)=>v.stage.transform.InverseTransformPoint(renderer.transform.TransformPoint(bounds.center+Vector3.Scale(bounds.extents,new Vector3((index&1)==0?-1:1,(index&2)==0?-1:1,(index&4)==0?-1:1))));
+                        for(int corner=0;corner<8;corner++)for(int axis=0;axis<3;axis++)if((corner&(1<<axis))==0)Line(p,v.Project(Corner(corner)),v.Project(Corner(corner|(1<<axis))));
+                    }
+                }
                 p.lineWidth=1;p.strokeColor=new Color(.3f,.3f,.3f,.35f);
                 for(int i=-8;i<=8;i++){Line(p,v.Project(new Vector3(i*grid,0,-8*grid)),v.Project(new Vector3(i*grid,0,8*grid)));Line(p,v.Project(new Vector3(-8*grid,0,i*grid)),v.Project(new Vector3(8*grid,0,i*grid)));}
                 if(v.MassEditingEnabled) {

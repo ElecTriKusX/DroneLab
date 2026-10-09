@@ -3,7 +3,8 @@
   "references": [
     "DroneLab.UI",
     "DroneLab.Physics",
-    "Enviro3.Runtime"
+    "Enviro3.Runtime",
+    "DroneLab.Configurator"
   ],
   "includePlatforms": [
     "Editor"
